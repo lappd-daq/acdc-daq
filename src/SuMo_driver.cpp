@@ -82,7 +82,6 @@ int main(int argc, char* argv[]){
       sumo.sync_usb(0);
       sumo.align_lvds();
       cout << "aligning LVDS SERDES interface...\n";
-      usleep(100000);
       cout << "run 'status' to check\n";
     }
     ////      
@@ -95,7 +94,6 @@ int main(int argc, char* argv[]){
 	sumo.set_pedestal_value(num);
 	sumo.set_pedestal_value(num);
 	cout << "setting level...\n";
-	usleep(2000);
 	cout << "Pedestal Voltage set to " << num*1200/4096 << " mV\n";
       }
     }
@@ -109,7 +107,6 @@ int main(int argc, char* argv[]){
 	sumo.set_dll_vdd(num);
 	sumo.set_dll_vdd(num);
 	cout << "setting level...\n";
-	usleep(2000);
 	cout << "DLL p-voltage set to " << num*1200/4096 << " mV\n";
       }
     }
@@ -130,14 +127,12 @@ int main(int argc, char* argv[]){
      ////
     else if (cmdline.find("take ped") == 0){
       sumo.set_usb_read_mode(16);
-      usleep(1000);
       sumo.dump_data();
       sumo.generate_ped(true);
     }
     ////
     else if (cmdline.find("make lut") == 0){
       sumo.set_usb_read_mode(16);
-      usleep(1000);
       sumo.dump_data();
       sumo.dump_data();
       //sscanf(cmdline.c_str(), "make lut \n");
@@ -149,9 +144,8 @@ int main(int argc, char* argv[]){
     ////
     else if (cmdline.find("status") == 0){
       sumo.set_usb_read_mode(16);
-      usleep(1000);
-      sumo.dump_data();
-      sumo.dump_data();
+      //      sumo.dump_data();
+      //sumo.dump_data();
 
       if(cmdline.find("status AC") == 0 || cmdline.find("status ac") == 0){
 	sumo.set_usb_read_mode(16);
@@ -195,7 +189,7 @@ int main(int argc, char* argv[]){
     else if (cmdline.find("cal on") == 0){
       sumo.toggle_CAL(true);
     }
-    else if (cmdline.find("cal off") == 0){
+    else if (cmdline.find("cal off") == 0){ 
       sumo.toggle_CAL(false);
     }
     ////

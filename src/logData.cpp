@@ -1,6 +1,48 @@
+#include <string.h>
+#include <iostream>
+#include <fstream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sstream>
 #include "SuMo.h"
 
+/* specific to file */
+const int NUM_ARGS = 4;
+const char* filename = "logData";
+const char* description = "log data from DAQ";
 using namespace std;
+
+int main(int argc, char* argv[]){
+  if(argc == 2 && std::string(argv[1]) == "-h"){
+    cout << endl;
+    cout << filename << " :: " << description << endl;
+    cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
+    return 1; 
+  }
+  else if(argc != NUM_ARGS){
+    cout << "error: wrong number of arguments" << endl;
+    return -1;
+  }
+  else{
+    int num_checks = 5; 
+    int num_events = 100;
+    int acq_rate   = 10000;
+    SuMo command;
+    char log_data_filename[100];
+    
+    strcpy(log_data_filename, argv[1]);
+    num_events = atoi(argv[2]);
+    int trig_mode = atoi(argv[3]);
+    
+    command.set_usb_read_mode(16); 
+    if(command.check_active_boards(num_checks))
+      return 1;
+
+    command.log_data(log_data_filename, num_events, trig_mode, acq_rate);
+    
+    return 0;
+  }
+}
 
 int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate){
 
@@ -38,11 +80,8 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   }
   else{
     set_usb_read_mode(16);
-    usleep(1000);
     dump_data();
   }
-
-  usleep(1000);
 
   load_ped();
 

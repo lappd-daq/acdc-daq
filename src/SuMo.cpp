@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <fstream>
+#include <iomanip>
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
@@ -11,15 +12,12 @@
 //associated .cpp files:
 #include "make_ped_and_lin.cpp"
 #include "oscilloscope.cpp"
-#include "log_data.cpp"
-
 //#define WRAP_CONSTANT 90
 
 using namespace std;
 
 SuMo::SuMo()
 {
-  dump_data();
   DC_ACTIVE[0] = false;
   DC_ACTIVE[1] = false;
   DC_ACTIVE[2] = false;
@@ -28,7 +26,7 @@ SuMo::SuMo()
 
 SuMo::~SuMo()
 {
-  dump_data();
+  //dump_data();
 }
 
 int SuMo::check_active_boards(void){
@@ -43,17 +41,23 @@ int SuMo::check_active_boards(void){
   return num_boards_active;
 }
 
+int SuMo::check_active_boards(int NUM){
+  int temp = 0;
+  while(check_active_boards() == 0){
+      read_CC(false, false);
+      temp++;
+      if(temp > NUM){
+	cout << "failed to find connected ADC boards" << endl;
+	return 1;
+      }
+    }
+  return 0;
+}
+
 int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS){
   sync_usb(0);
   set_usb_read_mode(4);
-  
-  //for(int i=0;i<5;i++){
-    //for(int j=0;j<psec_buffersize; j++)
-      //AC_RAW_DATA[i][j] = 0;
-  //}
-
-  usleep(1000);
-
+ 
   bool tt = SHOW_AC_STATUS;
   int samples;
   unsigned short buffer[cc_buffersize];
@@ -79,81 +83,83 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS){
     }
 
     //CC_BIN_COUNT = (CC_INFO[3] & 0x18) >> 3;
-    if(SHOW_CC_STATUS)
-      printf(" CC BIN COUNT: %d\n", CC_BIN_COUNT);
-
     if(SHOW_CC_STATUS){
+      printf(" CC BIN COUNT: %d\n", CC_BIN_COUNT);
       printf( "Central Card USB connection status: ");
+    
       if(buffer[1] == 0xDEAD && buffer[13] == 0xBEEF)
 	printf(" ONLINE\n");
       else
 	printf(" OFFLINE. check USB connection\n");
       
-      printf("Digital Card connection status: \n");
-      if(buffer[2] & 0x1){
-	printf("* DC 1 detected!! \n");
-	DC_ACTIVE[0] = true;
-	if(tt){
-	  usleep(1000);
-	  read_AC(false,0,0);
-	  get_AC_info(true);
-	  manage_cc_fifo(1);
-	}      
-      }
-      else{
-	printf("* DC 1 not connected \n");
-	DC_ACTIVE[0] = false;
-      }
-      if(buffer[2] & 0x2){
-	printf("* DC 2 detected!! \n");
-	DC_ACTIVE[1] = true;
-	if(tt){
-	  usleep(1000);
-	  read_AC(false,0,1);
-	  get_AC_info(true);
-	  manage_cc_fifo(1);
-	}    
-      }
-      else{
-	printf("* DC 2 not connected \n");      
-	DC_ACTIVE[1] = false;
-      }
-      if(buffer[2] & 0x4){
-	printf("* DC 3 detected!! \n");
-	DC_ACTIVE[2] = true;
-	if(tt){
-	  usleep(1000);
-	  read_AC(false,0,2);
-	  get_AC_info(true);
-	  manage_cc_fifo(1);
-	}    
-      }
-      else{
-	printf("* DC 3 not connected \n");  
-	DC_ACTIVE[2] = false;
-      }
-      if(buffer[2] & 0x8){
-	printf("* DC 4 detected!! \n");
-	DC_ACTIVE[3] = true;
-	if(tt){
-	  usleep(1000);
-	  read_AC(false,0,3);
-	  get_AC_info(true);
-	  manage_cc_fifo(1);
-	}    
-      }
-      else{
-	printf("* DC 4 not connected \n"); 
-	DC_ACTIVE[3] = false;
-      }
-      printf("*******\n");
+      printf("ACDC connection status: \n");
     }
-    manage_cc_fifo(1);
+    /* look for ACDC 1 */
+    if(buffer[2] & 0x1){
+      DC_ACTIVE[0] = true;
+      if(SHOW_CC_STATUS) printf("* DC 1 detected!! \n");
+      if(tt){
+	read_AC(false,0,0);
+	get_AC_info(true);
+	manage_cc_fifo(1);
+      }      
+    }
+    else{
+      if(SHOW_CC_STATUS) printf("* DC 1 not connected \n");
+      DC_ACTIVE[0] = false;
+    }
+    /* look for ACDC 2 */
+    if(buffer[2] & 0x2){
+      if(SHOW_CC_STATUS) printf("* DC 2 detected!! \n");
+      DC_ACTIVE[1] = true;
+      if(tt){
+	read_AC(false,0,1);
+	get_AC_info(true);
+	manage_cc_fifo(1);
+      }    
+    }
+    else{
+      if(SHOW_CC_STATUS) printf("* DC 2 not connected \n");      
+      DC_ACTIVE[1] = false;
+    }
+    /* look for ACDC 3 */   
+    if(buffer[2] & 0x4){
+      if(SHOW_CC_STATUS) printf("* DC 3 detected!! \n");
+      DC_ACTIVE[2] = true;
+      if(tt){
+	read_AC(false,0,2);
+	get_AC_info(true);
+	manage_cc_fifo(1);
+      }    
+    }
+    else{
+      if(SHOW_CC_STATUS) printf("* DC 3 not connected \n");  
+      DC_ACTIVE[2] = false;
+    }
+    /* look for ACDC 4 */   
+    if(buffer[2] & 0x8){
+      if(SHOW_CC_STATUS) printf("* DC 4 detected!! \n");
+      DC_ACTIVE[3] = true;
+      if(tt){
+	read_AC(false,0,3);
+	get_AC_info(true);
+	manage_cc_fifo(1);
+      }    
+    }
+    else{
+      if(SHOW_CC_STATUS) printf("* DC 4 not connected \n"); 
+      DC_ACTIVE[3] = false;
+    }
+    if(SHOW_CC_STATUS) printf("*******\n");
+    
+    //manage_cc_fifo(1);
     usb.freeHandles();
 
   //delete[] buffer;
-  return 0;
+    return 0;
   }
+  else
+    return 1;
 }
 
 int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
@@ -271,56 +277,47 @@ int SuMo::dump_data(){
    
 
 int SuMo::get_AC_info(bool PRINT){
-  bool tt = PRINT;
   bool trig_mode, trig_sign;
-  if(tt) printf("--------\n");
+  unsigned long long int temp = (unsigned long long int)AC_INFO[2][11];
+  unsigned short ref_volt_mv  = 1200;
+  unsigned short num_bits     = 4096;
 
   EVENT_COUNT =  AC_INFO[3][11] | AC_INFO[4][11] << 16;
-  if(tt) printf("EVENT_COUNT: %d ",EVENT_COUNT);
-  
-  unsigned long long int temp = (unsigned long long int)AC_INFO[2][11];
-
-  TIMESTAMP = temp << 32 | AC_INFO[1][11] << 16 |  AC_INFO[0][11] ;
-  if(tt) printf(" LAST TRIG TIMESTAMP: %llu \n",TIMESTAMP);
-  
+  TIMESTAMP = temp << 32 | AC_INFO[1][11] << 16 |  AC_INFO[0][11];
   LAST_AC_INSTRUCT=  AC_INFO[0][12] | AC_INFO[1][12] << 16;
   LAST_LAST_AC_INSTRUCT=  AC_INFO[2][12] | AC_INFO[3][12] << 16;
-  if(tt) printf("LAST INSTRUCTS: x%X , x%X \n\n", LAST_AC_INSTRUCT, LAST_LAST_AC_INSTRUCT);
-
+  
   for (int i = 0; i < 5; i++){
-    if(tt) printf("PSEC #%i:", i+1);
-    
     RO_CNT[i] = (float) AC_INFO[i][4] * 10 * pow(2,11)/ (pow(10,6));
-    if(tt) printf(" RO Freq: %.2f MHz ",RO_CNT[i]);
-
     RO_TARGET_CNT[i] = (float) AC_INFO[i][5] * 10 * pow(2,11)/(pow(10,6));
-    if(tt) printf("(target: %.2f MHz) ||",RO_TARGET_CNT[i]);
-
-    VBIAS[i] = (float) AC_INFO[i][6] * 1250/4096;
-    if(tt) printf(" Ped Voltage: %.2f mV ||", VBIAS[i]);
-    
-    TRIGGER_THRESHOLD[i] = (float) AC_INFO[i][7] * 1250/4096;
+    VBIAS[i] = (float) AC_INFO[i][6] * ref_volt_mv/num_bits;
+    TRIGGER_THRESHOLD[i] = (float) AC_INFO[i][7] * ref_volt_mv/num_bits;
     trig_mode = SELF_TRIG_MODE[i] = AC_INFO[i][10] & 0x40;
     trig_sign = TRIG_SIGN[i] = AC_INFO[i][10] & 0x80;
-    if(0){
-      if(trig_mode) 
-	printf(" Trig Thresh: %.2f mV (ENABLED, sign: %d) ||", TRIGGER_THRESHOLD[i], trig_sign);
-      else
-	printf(" Trig Thresh: %.2f mV (DISABLED) ||", TRIGGER_THRESHOLD[i]);
+    RO_DAC_VALUE[i] = (float) AC_INFO[i][8] * ref_volt_mv/num_bits;
+    LAST_SAMPLING_BIN[i] = (int) AC_INFO[i][9] >> 1;
+  }
+  
+  if(PRINT){
+    cout << std::fixed;
+    cout << std::setprecision(2);
+    cout << "--------" << endl;
+    cout << "EVENT_COUNT: " << EVENT_COUNT;
+    cout << " LAST TRIG TIMESTAMP: " << TIMESTAMP;
+    cout << endl;
+    cout <<"LAST INSTRUCTS: 0x" <<  std::hex << LAST_AC_INSTRUCT << ", 0x" << LAST_LAST_AC_INSTRUCT << endl;
+    for (int i = 0; i < 5; i++){
+      cout << "PSEC:" << i;
+      cout << "|ADC clock/trgt:" << RO_CNT[i];
+      cout << "/" << RO_TARGET_CNT[i] << "MHz";
+      cout << ",bias:" <<  RO_DAC_VALUE[i] <<"mV";
+      cout << "|Ped:"<<  VBIAS[i] << "mV";
+      cout << "|Trig:"<< TRIGGER_THRESHOLD[i] << "mV";
+      cout << endl;
     }
-
-    RO_DAC_VALUE[i] = (float) AC_INFO[i][8] * 1250/4096;
-    if(tt) printf(" RO DAC Voltage: %.2f mV ||", RO_DAC_VALUE[i]);
-
-    //LAST_SAMPLING_BIN[i] = (int) AC_INFO[i][9] >> 1;
-    //if(0) printf(" Last Bin: %i\n", LAST_SAMPLING_BIN[i]);
-
-
-    if(0) printf("--------\n");
-    if(tt) printf("\n");
+    cout << endl;
   } 
   return 0;
-
 }
 
 

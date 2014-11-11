@@ -74,7 +74,6 @@ int ScopePipe::init()
   //send_cmd("set xlabel \'Sample Number\' ");
   //send_cmd("set ylabel \'voltage [mV]\' ");
 
-
   return (0);
 }
 
