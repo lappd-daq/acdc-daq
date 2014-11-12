@@ -14,6 +14,19 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 
+#datafiles
+*.txt
+/calibrations/*
+*.hdf5
+
+# compile files
+/obj/*
+/bin/*
+
+#temp files
+/src/*~
+/include/*~
+
 # =========================
 # Operating System Files
 # =========================
