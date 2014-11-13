@@ -23,7 +23,7 @@ int SuMo::scope_AC( int trig_mode, bool output_mode, int AC_adr){
     return 1;
   }
   
-  //load_ped();
+  load_ped();
   //mypipe.plot_init();
   
   //while(run){
@@ -31,19 +31,16 @@ int SuMo::scope_AC( int trig_mode, bool output_mode, int AC_adr){
   psec_cnt = 0;
   manage_cc_fifo(1);
   if(trig_mode) set_usb_read_mode(7);
-  usleep(100000);
     //if(count == 100) break;
   //if(!trig_mode) software_trigger(1 << AC_adr);
   if(!trig_mode){ 
     set_usb_read_mode(AC_adr);
     software_trigger((unsigned int)15);
   }
-  usleep(100);
   
   read_AC(true, 1, AC_adr); 
-  //read_ACS(true);
   check_event = 0;
-  get_AC_info(false);
+  get_AC_info(false, AC_adr);
   //if(trig_mode) manage_cc_fifo(1);
 
     for(int i = 0; i < AC_CHANNELS; i++){
@@ -55,7 +52,7 @@ int SuMo::scope_AC( int trig_mode, bool output_mode, int AC_adr){
 	  //sample -= LUT[(int)PED_DATA[i][j]][i]*1000;
 	}
 	else{
-	  sample = (float) AC_RAW_DATA[psec_cnt][i%6*256+j];
+	  sample = (float) acdcData[AC_adr].AC_RAW_DATA[psec_cnt][i%6*256+j];
 	  sample -= (float) PED_DATA[AC_adr][i][j];
 	}
 	pdat[i][j] = sample;
@@ -92,9 +89,7 @@ int SuMo::scope_AC( int trig_mode, bool output_mode, int AC_adr){
 	      pdat[24][asic_baseline[4][i]],pdat[25][asic_baseline[4][i]],pdat[26][asic_baseline[4][i]],
 	      pdat[27][asic_baseline[4][i]],pdat[28][asic_baseline[4][i]],pdat[29][asic_baseline[4][i]]);
     
-    fclose(foutdata);
-    usleep(30000);
-    
+    fclose(foutdata);   
     //set_usb_read_mode(111);
     //mypipe.plot();
     
@@ -110,7 +105,6 @@ int SuMo::scope_AC( int trig_mode, bool output_mode, int AC_adr){
       
     }
     
-    usleep(30000); 
     //manage_cc_fifo(1);
     //if(trig_mode) set_usb_read_mode(7);
     manage_cc_fifo(1);

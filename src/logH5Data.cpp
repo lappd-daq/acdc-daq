@@ -156,24 +156,24 @@ int SuMo::log_data_hd5(const char* log_filename, unsigned int NUM_READS,
 	status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
 				     dims, NULL);  
 
-	get_AC_info(false);
+	get_AC_info(false, targetAC);
 	// /*
 	pdat[0][30] = k;
 	pdat[1][30] = CC_EVENT_NO;
 	pdat[2][30] = CC_BIN_COUNT; 
 	pdat[3][30] = WRAP_CONSTANT; 
-	pdat[4][30] = RO_CNT[0]; 
-	pdat[5][30] = RO_CNT[1];
-	pdat[6][30] = RO_CNT[2];
-	pdat[7][30] = RO_CNT[3];
-	pdat[8][30] = RO_CNT[4];
-	pdat[9][30] = RO_CNT[5];
-	pdat[10][30] = VBIAS[0]; 
-	pdat[11][30] = VBIAS[1];
-	pdat[12][30] = VBIAS[2];
-	pdat[13][30] = VBIAS[3];
-	pdat[14][30] = VBIAS[4];
-	pdat[15][30] = VBIAS[5];
+	pdat[4][30] = acdcData[targetAC].RO_CNT[0]; 
+	pdat[5][30] = acdcData[targetAC].RO_CNT[1];
+	pdat[6][30] = acdcData[targetAC].RO_CNT[2];
+	pdat[7][30] = acdcData[targetAC].RO_CNT[3];
+	pdat[8][30] = acdcData[targetAC].RO_CNT[4];
+	pdat[9][30] = acdcData[targetAC].RO_CNT[5];
+	pdat[10][30] = acdcData[targetAC].VBIAS[0]; 
+	pdat[11][30] = acdcData[targetAC].VBIAS[1];
+	pdat[12][30] = acdcData[targetAC].VBIAS[2];
+	pdat[13][30] = acdcData[targetAC].VBIAS[3];
+	pdat[14][30] = acdcData[targetAC].VBIAS[4];
+	pdat[15][30] = acdcData[targetAC].VBIAS[5];
  
 	// */
 
@@ -191,7 +191,7 @@ int SuMo::log_data_hd5(const char* log_filename, unsigned int NUM_READS,
 	  if(i>0 && i % 6 == 0) psec_cnt ++;
 
 	  for(int j = 0; j < 256; j++){
-	    sample = (int) AC_RAW_DATA[psec_cnt][i%6*256+j];
+	    sample = (int) acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
 	    sample -=  PED_DATA[targetAC][i][j];
 	    pdat[j][i] = sample;
 	    //saveData.pdata[j][i] = sample;

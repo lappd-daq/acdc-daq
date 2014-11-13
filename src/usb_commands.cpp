@@ -52,7 +52,7 @@ void SuMo::set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, bool RATE_ON
 {
     const unsigned int hi_cmd = 0x00070000;   
     unsigned int send_word = hi_cmd | TRIG_SIGN << 3 | RATE_ONLY << 2 | SYS_TRIG_OPTION << 1 | ENABLE_TRIG;
-    printf("%i\n", send_word);
+    //printf("%i\n", send_word);
     usb.createHandles();
     usb.sendData((unsigned int)send_word);
     usb.freeHandles();
@@ -60,34 +60,35 @@ void SuMo::set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, bool RATE_ON
 /*
  *
  */
- void SuMo::set_self_trigger_mask(int mask)
+void SuMo::set_self_trigger_mask(int mask, bool HiLo)
 {
-    const unsigned int hi_cmd = 0x00060000; 
-    unsigned int send_word = hi_cmd | mask;
-    usb.createHandles();
-    usb.sendData((unsigned int)send_word);
-    usb.freeHandles();
+  unsigned int hi_cmd;
+  if(HiLo)
+    hi_cmd = 0x00068000; 
+  else
+    hi_cmd = 0x00060000; 
+  
+  unsigned int send_word = hi_cmd | mask;
+  usb.createHandles();
+  usb.sendData((unsigned int)send_word);
+  usb.freeHandles();
 }
 /*
  *
  */
- void SuMo::toggle_LED (bool EN)
+ void SuMo::toggle_LED(bool EN)
 {
     usb.createHandles();
     if(EN != false)
-    {
-        usb.sendData((unsigned int)0x000A0001);
-    }
+      usb.sendData((unsigned int)0x000A0001);
     else
-    {
-        usb.sendData((unsigned int)0x000A0000);
-    }
+      usb.sendData((unsigned int)0x000A0000);
     usb.freeHandles();
 }
 /*
  *
  */
-void SuMo::toggle_CAL (bool EN)
+void SuMo::toggle_CAL(bool EN)
 {
   usb.createHandles();
   if(EN != false)
@@ -155,22 +156,32 @@ void SuMo::set_ro_target_count(unsigned int TARGET_RO_COUNT)
 /*
  *
  */
+/* various reset commands over USB */
 void SuMo::reset_dll()
 {
     usb.createHandles();
-    const unsigned int hi_cmd = 0x00040000;  
+    const unsigned int hi_cmd = 0x00041000;  
     const unsigned int mask = 31;
     unsigned int send_word = hi_cmd |  mask << 23;
     usb.sendData(send_word); //dll reset pulse
     usb.freeHandles();
 }
-/*
- *
- */
 void SuMo::reset_self_trigger()
 {
     usb.createHandles();
-    usb.sendData((unsigned int)0x00050000);
+    usb.sendData((unsigned int)0x00042000);
+    usb.freeHandles();
+}
+void SuMo::reset_time_stamp()
+{
+    usb.createHandles();
+    usb.sendData((unsigned int)0x00043000);
+    usb.freeHandles();
+}
+void SuMo::reset_acdc()
+{
+    usb.createHandles();
+    usb.sendData((unsigned int)0x0004F000);
     usb.freeHandles();
 }
 /*

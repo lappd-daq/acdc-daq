@@ -50,17 +50,21 @@ int main(int argc, char* argv[]){
 
     if(Sumo.check_active_boards(num_checks)) return 1;
 
-    setDefaultValues();
-
     if(argc == 2){
       strcpy(paramsFile, argv[1]);
       parseTrigParams(paramsFile);
     }
-    Sumo.reset_self_trigger();
-    Sumo.set_self_trigger_mask(0x00FF||trig_mask[0], 0);
-    Sumo.set_self_trigger_mask(0xFF00||trig_mask[0], 1);
+    else  
+      setDefaultValues();
+
+    //Sumo.reset_self_trigger();
+    /* send trig mask to boards in 2 sets of 16 bit words */
+    Sumo.set_self_trigger_mask(0x00007FFF&trig_mask[0], 0);
+    Sumo.set_self_trigger_mask(0x3FFF8000&trig_mask[0], 1);
+    /* push trigger settings, can check by reading back ACDC settings */
     Sumo.set_self_trigger(trig_enable[0], wait_for_sys, rate_only, trig_sign);
 
+    //Sumo.dump_data();
     return 0;
   }
 }
@@ -68,16 +72,16 @@ int main(int argc, char* argv[]){
 /* default trig settings (OFF) */
 void setDefaultValues(){
   for(int i=0; i<numFrontBoards; i++){
-    trig_mask[i]   = 0x00000000;       // 32 bit
+    trig_mask[i]   = 0x00000000;  // 32 bit
     trig_enable[i] = false;
   }
-  trig_sign   = 1;          // (-) pulses
+  trig_sign   = 1;   // 1 = (-polarity), 0 = (+) 
   wait_for_sys= false;
   rate_only   = false;
   hrdw_trig   = false;
   cout << "self-trigger disabled" << endl;
 }
-
+/* parse parameter file */
 int parseTrigParams(const char* file){
 
   ifstream in;
@@ -87,16 +91,14 @@ int parseTrigParams(const char* file){
   unsigned int tmp1, tmp2, tmp3;
   
   while(getline(in,line)){
-    if(line.at(0)=='#')
-      continue;
-    
     stringstream linestream(line);
     getline(linestream, data, '\t');
 
     if(data.find("trig_mask")==0){
-      linestream >> tmp1 >> std::hex >> tmp2;
+      linestream >> tmp1 >> hex >> tmp2;
       trig_mask[(int)tmp1] = tmp2;
-      cout << data << " on board " << tmp1 << " set to " << tmp2 << endl;
+      cout << data << " on board " << tmp1 << " set to 0x" 
+	   << hex << tmp2 << endl;
     }      
     else if(data.find("trig_enable")==0){
       linestream >> tmp1 >> tmp2;
@@ -124,4 +126,5 @@ int parseTrigParams(const char* file){
       cout << data << " set to " << tmp1 << endl;
     } 
   }
+  return 0;
 }  

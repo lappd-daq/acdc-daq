@@ -119,23 +119,23 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       //if successful:
       if(1){
       //else{
-	get_AC_info(false);
+	get_AC_info(false, targetAC);
 	pinfo[0] = k;
 	pinfo[1] = CC_EVENT_NO;
 	pinfo[2] = CC_BIN_COUNT; 
 	pinfo[3] = WRAP_CONSTANT; 
-	pinfo[4] = RO_CNT[0]; 
-	pinfo[5] = RO_CNT[1];
-	pinfo[6] = RO_CNT[2];
-	pinfo[7] = RO_CNT[3];
-	pinfo[8] = RO_CNT[4];
-	pinfo[9] = RO_CNT[5];
-	pinfo[10] = VBIAS[0]; 
-	pinfo[11] = VBIAS[1];
-	pinfo[12] = VBIAS[2];
-	pinfo[13] = VBIAS[3];
-	pinfo[14] = VBIAS[4];
-	pinfo[15] = VBIAS[5];
+	pinfo[4] = acdcData[targetAC].RO_CNT[0]; 
+	pinfo[5] = acdcData[targetAC].RO_CNT[1];
+	pinfo[6] = acdcData[targetAC].RO_CNT[2];
+	pinfo[7] = acdcData[targetAC].RO_CNT[3];
+	pinfo[8] = acdcData[targetAC].RO_CNT[4];
+	pinfo[9] = acdcData[targetAC].RO_CNT[5];
+	pinfo[10] = acdcData[targetAC].VBIAS[0]; 
+	pinfo[11] = acdcData[targetAC].VBIAS[1];
+	pinfo[12] = acdcData[targetAC].VBIAS[2];
+	pinfo[13] = acdcData[targetAC].VBIAS[3];
+	pinfo[14] = acdcData[targetAC].VBIAS[4];
+	pinfo[15] = acdcData[targetAC].VBIAS[5];
 	check_event = 0;
 	//printf("#%d\n", k);
 	for(int i = 0; i < AC_CHANNELS; i++){
@@ -147,7 +147,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	      //sample -= LUT[(int)PED_DATA[targetAC][i][j]][i]*1000;
 	    }
 	    else{
-	      sample = (float) AC_RAW_DATA[psec_cnt][i%6*256+j];
+	      sample = (float) acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
 	      sample -= (float) PED_DATA[targetAC][i][j];
 	    }
 	    pdat[i][j] = sample;
