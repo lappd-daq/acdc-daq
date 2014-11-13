@@ -12,8 +12,8 @@
 
 /* specific to file */
 const int NUM_ARGS =      1;
-const char* filename =     "readCC";
-const char* description =  "show central card status";
+const char* filename =     "dumpData";
+const char* description =  "pull";
 
 using namespace std;
 
@@ -34,10 +34,11 @@ int main(int argc, char* argv[]){
     SuMo Sumo;
     int num_checks = 10;
     
-    if(Sumo.check_active_boards(num_checks))
-      return 1;
+    Sumo.set_usb_read_mode(16); 
+    Sumo.read_CC(false, false);
+    Sumo.read_CC(false, false);
+    Sumo.dump_data();
 
-    Sumo.read_CC(true, false);
     return 0;
     
   }

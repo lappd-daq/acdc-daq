@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
     Sumo.set_self_trigger_mask(0x3FFF8000&trig_mask[0], 1);
     /* push trigger settings, can check by reading back ACDC settings */
     Sumo.set_self_trigger(trig_enable[0], wait_for_sys, rate_only, trig_sign);
-
+   
     //Sumo.dump_data();
     return 0;
   }
@@ -93,6 +93,9 @@ int parseTrigParams(const char* file){
   while(getline(in,line)){
     stringstream linestream(line);
     getline(linestream, data, '\t');
+
+    if(data.find("#")==0)
+      continue;
 
     if(data.find("trig_mask")==0){
       linestream >> tmp1 >> hex >> tmp2;
