@@ -1,0 +1,27 @@
+####### trigger params file ACDC
+#######
+#
+trig_mask	0	0xFFFFFFFF
+trig_mask	1	0xFFFFFFFF					
+trig_mask	2	0xFFFFFFFF
+trig_mask	3	0xFFFFFFFF
+#
+trig_enable	0	0
+trig_enable	1	0
+trig_enable	2	0
+trig_enable	3	0
+#
+trig_sign	1
+wait_for_sys	0
+rate_only	0
+hrdw_trig	0
+#
+pedestal	0	2048
+pedestal	1	2048
+pedestal	2	2048
+pedestal	3	2048
+#
+thresh		0	0
+thresh		1	0
+thresh		2	0
+thresh		3	0
