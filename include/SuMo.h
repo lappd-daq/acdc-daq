@@ -26,6 +26,12 @@ author: eric oberla
 #define WRAP_CONSTANT         90
 #define numFrontBoards        4
 
+#define usbPacketStart        0x1234
+#define usbPacketEnd          0x4321 
+#define dataPacketStart       0xF005
+#define adcPacketEnd          0xBA11
+#define dataPacketEnd         0xFACE
+
 class SuMo{
 
  public:
@@ -36,9 +42,11 @@ class SuMo{
   void software_trigger(unsigned int SOFT_TRIG_MASK);
   void reset_dll();
   void reset_self_trigger();
+  void reset_time_stamp();
+  void reset_acdc();
   void align_lvds();
   void set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, bool RATE_ONLY, bool TRIG_SIGN);
-  void set_self_trigger_mask(int mask);
+  void set_self_trigger_mask(int mask, bool HILO);
   void set_pedestal_value(unsigned int PED_VALUE);
   void set_dll_vdd(unsigned int VALUE);
   void set_trig_threshold(unsigned int TRIG_VALUE);
@@ -59,15 +67,48 @@ class SuMo{
   int make_count_to_voltage(void);
   int load_lut();
   int load_ped();
-  int scope_AC(int trig_mode, bool output_mode, int AC_adr);
+  int oscilloscope(int trig_mode, int numFrames, int AC_adr, int range[2]);
   int log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate);
   int log_data_hd5(const char* log_filename, unsigned int NUM_READS, int trig_mode, 
 		   int acq_rate);
 
   int check_active_boards(void);
   int check_active_boards(int NUM);
+  bool           DC_ACTIVE[numFrontBoards];
 
   stdUSB usb;
+ 
+  /* waveform and meta-data arrays from ADC boards */
+  struct data_t{
+    unsigned int           LAST_AC_INSTRUCT;
+    unsigned int           LAST_LAST_AC_INSTRUCT;
+    unsigned int           EVENT_COUNT;
+    unsigned int           TIMESTAMP_HI;
+    unsigned int           TIMESTAMP_LO;
+    float                  VBIAS[numChipsOnBoard];
+    float                  RO_CNT[numChipsOnBoard];
+    float                  RO_TARGET_CNT[numChipsOnBoard];
+    float                  RO_DAC_VALUE[numChipsOnBoard];
+    int                    LAST_SAMPLING_BIN[numChipsOnBoard];
+    float                  TRIGGER_THRESHOLD[numChipsOnBoard];
+    bool                   TRIG_SIGN;
+    bool                   TRIG_RATE_ONLY;
+    bool                   TRIG_WAIT_FOR_SYS;
+    bool                   TRIG_EN;
+    unsigned int           BIN_COUNT_RISE;
+    unsigned int           BIN_COUNT_FALL;
+    unsigned int           SELF_TRIG_SETTINGS;
+    unsigned int           REG_SELF_TRIG[4];
+    unsigned int           SELF_TRIG_MASK;
+    unsigned int           SELF_TRIG_RATE_COUNT[AC_CHANNELS];
+
+    unsigned int           USB_HEADER[numChipsOnBoard];
+    unsigned int           ADC_PKT_END[numChipsOnBoard];
+    unsigned int           DATA_PKT_END[numChipsOnBoard];
+    /* raw data saved here */
+    unsigned short         AC_RAW_DATA[numChipsOnBoard][psec_buffersize];
+    unsigned short         AC_INFO[numChipsOnBoard][infoBuffersize];
+  } acdcData [numFrontBoards];
  
  private:
   static int compare ( const void * a, const void * b){
@@ -78,41 +119,17 @@ class SuMo{
 
   /* metadata from CC */
   unsigned int   CC_INFO[cc_buffersize];  
-  unsigned int LAST_CC_INSTRUCT;
+  unsigned int   LAST_CC_INSTRUCT;
   unsigned long long CC_TIMESTAMP;
-  unsigned int CC_EVENT_COUNT;
-  unsigned int CC_BIN_COUNT;
-  unsigned int CC_EVENT_NO;
-  bool DC_ACTIVE[numFrontBoards];
+  unsigned int   CC_EVENT_COUNT;
+  unsigned int   CC_BIN_COUNT;
+  unsigned int   CC_EVENT_NO;
   
   /* calibration arrays */
   unsigned int PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
   float PED_STDEV[numFrontBoards][AC_CHANNELS][psecSampleCells];
   float LUT[numFrontBoards][4096][AC_CHANNELS];
-  float oldLUT[numFrontBoards][4096][AC_CHANNELS];
-   
-  /* waveform and meta-data arrays from ADC boards */
-  struct data_t{
-    unsigned int LAST_AC_INSTRUCT;
-    unsigned int LAST_LAST_AC_INSTRUCT;
-    unsigned int EVENT_COUNT;
-    unsigned long long int TIMESTAMP;
-    float VBIAS[numChipsOnBoard];
-    float RO_CNT[numChipsOnBoard];
-    float RO_TARGET_CNT[numChipsOnBoard];
-    float RO_DAC_VALUE[numChipsOnBoard];
-    int   LAST_SAMPLING_BIN[numChipsOnBoard];
-    float TRIGGER_THRESHOLD[numChipsOnBoard];
-    bool  SELF_TRIG_MODE[numChipsOnBoard];
-    bool  TRIG_SIGN[numChipsOnBoard];
-    bool  SAMPLING_SPEED[numChipsOnBoard];
-    int trigMode;
-    int trigSign;
-    
-    /* raw data saved here */
-    unsigned short AC_RAW_DATA[numChipsOnBoard][psec_buffersize];
-    unsigned short AC_INFO[numChipsOnBoard][infoBuffersize];
-  } acdcData [numFrontBoards];
+  float oldLUT[numFrontBoards][4096][AC_CHANNELS]; 
   
 };       
 #endif

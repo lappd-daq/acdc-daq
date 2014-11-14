@@ -7,12 +7,8 @@
 #include <math.h>
 #include <unistd.h>
 #include "SuMo.h"
-
-
-//associated .cpp files:
+/* associated .cpp files: */
 #include "makePedandLin.cpp"
-#include "oscilloscope.cpp"
-//#define WRAP_CONSTANT 90
 
 using namespace std;
 
@@ -24,7 +20,7 @@ SuMo::SuMo()
 
 SuMo::~SuMo()
 {
-  //dump_data();
+  dump_data();
   usb.freeHandles();
 
 }
@@ -82,7 +78,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS){
       fprintf(stderr, "Please connect the board. [DEFAULT exception] \n");
       return 1;
     }
-    if(SHOW_CC_STATUS){
+    if(SHOW_CC_STATUS){  
       printf(" CC BIN COUNT: %d\n", CC_BIN_COUNT);
       printf( "Central Card USB connection status: ");
     
@@ -164,10 +160,10 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS){
 int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
   sync_usb(0);
 
-  if(DC_ACTIVE[AC_adr] == false){
-    printf("no AC detected at specified address\n");
-    return 2;
-  }
+  //if(DC_ACTIVE[AC_adr] == false){
+  //  printf("no AC detected at specified address\n");
+  //  return 2;
+  //}
   set_usb_read_mode(AC_adr);
   if(!trig_mode) software_trigger(1 << AC_adr);
   int samples;
@@ -224,7 +220,7 @@ int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
       }
 
       if(usb_read_offset_flag < 0){
-	printf("USB read header word not found\n");
+	//printf("USB read header word not found\n");
 	return -1;
       }
       /* 'real' data starts here: */
@@ -255,13 +251,14 @@ int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
 }
 
 int SuMo::dump_data(){
+  
   for(int i = 0; i < 4; i++){
-    if(DC_ACTIVE[i] == false){
-      continue;
-    }
-    else{
-      read_AC(false, 0,i);
-    }
+    //  if(DC_ACTIVE[i] == false){
+    //  continue;
+    //}
+    //else{ */
+      read_AC(false, 1,i);
+      //}
   }
   manage_cc_fifo(1);
   return 0;
@@ -302,7 +299,7 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
   acdcData[aa].TRIG_EN =              acdcData[aa].SELF_TRIG_SETTINGS & 0x1;
   acdcData[aa].TRIG_WAIT_FOR_SYS =    acdcData[aa].SELF_TRIG_SETTINGS & 0x2;
   acdcData[aa].TRIG_RATE_ONLY =       acdcData[aa].SELF_TRIG_SETTINGS & 0x4;
-  acdcData[aa].TRIG_SIGN =            acdcData[aa].SELF_TRIG_SETTINGS & 0x6;
+  acdcData[aa].TRIG_SIGN =            acdcData[aa].SELF_TRIG_SETTINGS & 0x8;
   
   //for (int i =0; i<AC_CHANNELS; i++){
   //  acdcData[aa].SELF_TRIG_RATE_COUNT;

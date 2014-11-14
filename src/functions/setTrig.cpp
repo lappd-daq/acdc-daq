@@ -22,6 +22,8 @@ const char* description=   "setup trigger, parse trigger parms file (argv[1])";
 
 unsigned int trig_mask[numFrontBoards];
 bool         trig_enable[numFrontBoards];
+unsigned int pedestal[numFrontBoards];
+unsigned int threshold[numFrontBoards];
 bool         trig_sign;             // (-) pulses
 bool         wait_for_sys;
 bool         rate_only;   
@@ -29,6 +31,7 @@ bool         hrdw_trig;
 /* running this function without paramsFile, turns off all board-level triggers */
 
 void setDefaultValues();
+int readParamsFromBoard(SuMo&);
 int parseTrigParams(const char* file);
 
 int main(int argc, char* argv[]){
@@ -49,6 +52,7 @@ int main(int argc, char* argv[]){
     char paramsFile[200];
 
     if(Sumo.check_active_boards(num_checks)) return 1;
+    readParamsFromBoard(Sumo);
 
     if(argc == 2){
       strcpy(paramsFile, argv[1]);
@@ -63,7 +67,8 @@ int main(int argc, char* argv[]){
     Sumo.set_self_trigger_mask(0x3FFF8000&trig_mask[0], 1);
     /* push trigger settings, can check by reading back ACDC settings */
     Sumo.set_self_trigger(trig_enable[0], wait_for_sys, rate_only, trig_sign);
-   
+    Sumo.set_pedestal_value(pedestal[0]);
+    Sumo.set_trig_threshold(threshold[0]);
     //Sumo.dump_data();
     return 0;
   }
@@ -74,6 +79,9 @@ void setDefaultValues(){
   for(int i=0; i<numFrontBoards; i++){
     trig_mask[i]   = 0x00000000;  // 32 bit
     trig_enable[i] = false;
+    pedestal[i]    = 0x800;
+    threshold[i]   = 0x000;
+
   }
   trig_sign   = 1;   // 1 = (-polarity), 0 = (+) 
   wait_for_sys= false;
@@ -81,6 +89,21 @@ void setDefaultValues(){
   hrdw_trig   = false;
   cout << "self-trigger disabled" << endl;
 }
+/* default trig settings (OFF) */
+int readParamsFromBoard(SuMo& acdc){
+  acdc.read_CC(false, false);
+  for(int i=0; i<numFrontBoards; i++){
+    if(acdc.DC_ACTIVE[i] == 1){
+      acdc.get_AC_info(false,i);
+      pedestal[i]    =acdc.acdcData[i].VBIAS[0];
+      threshold[i]   =acdc.acdcData[i].TRIGGER_THRESHOLD[0];
+      trig_mask[i]   =acdc.acdcData[i].SELF_TRIG_MASK;
+      //trig_enable[i] =acdc.acdcData[i].TRIG_EN[i];
+    }
+  }
+  return 0;
+}
+  
 /* parse parameter file */
 int parseTrigParams(const char* file){
 
@@ -128,6 +151,19 @@ int parseTrigParams(const char* file){
       hrdw_trig= (bool)tmp1;
       cout << data << " set to " << tmp1 << endl;
     } 
+    else if(data.find("pedestal")==0){
+      linestream >> tmp1 >> tmp2;
+      pedestal[(int)tmp1]= tmp2;
+      cout << data << " on board " << tmp1 << " set to 0x" 
+	   << hex << tmp2 << endl;
+    }
+    else if(data.find("thresh")==0){
+      linestream >> tmp1 >> tmp2;
+      pedestal[(int)tmp1]= tmp2;
+      cout << data << " on board " << tmp1 << " set to 0x" 
+	   << hex << tmp2 << endl;
+    }
+
   }
   return 0;
 }  

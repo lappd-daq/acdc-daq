@@ -28,7 +28,7 @@ int main(int argc, char* argv[]){
     cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
     return 1; 
   }
-  else if(argc != NUM_ARGS){
+  else if(argc < NUM_ARGS  || argc > NUM_ARGS+1){
     cout << "error: wrong number of arguments" << endl;
     return -1;
   }
@@ -40,17 +40,24 @@ int main(int argc, char* argv[]){
     int acdcNum    = atoi(argv[1]);
     int numFrames  = atoi(argv[2]);
     int trigMode   = atoi(argv[3]);
+    int plotRange[]= {0, AC_CHANNELS};
     
+    if(argc == NUM_ARGS+1){
+      plotRange[0] = atoi(argv[4]);
+      if(plotRange[0] > 25) plotRange[0] = 25;
+      plotRange[1] = plotRange[0]+5;
+    }    
+      
     if(Sumo.check_active_boards(num_checks))
       return 1;
     
-    Sumo.oscilloscope(trigMode, numFrames, acdcNum);
+    Sumo.oscilloscope(trigMode, numFrames, acdcNum, plotRange);
  
     return 0;
   }
 } 
 
-int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr){
+int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] ){
   bool convert_to_voltage = false;
   int check_event, count = 0, psec_cnt = 0;
   float pdat[AC_CHANNELS][psecSampleCells];
@@ -63,8 +70,12 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr){
   string sendWord;
 
   if(myPipe.init()) return 1;
-
+  
   //myPipe.send_cmd("set zrange [-1000:1000]");
+  myPipe.send_cmd("set grid x z back");
+  myPipe.send_cmd("set xyplane 0");
+  myPipe.send_cmd("set view 14, 100, 1, 1.5");
+  myPipe.send_cmd("set yrange [0:256]");
 
   if(DC_ACTIVE[AC_adr] == false){
     printf("no AC detected at specified address. cannot perform oscilloscope function!\n");
@@ -109,14 +120,14 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr){
       asic_baseline[j] = baseline[j];
       }
      
-    for(int i=0; i < AC_CHANNELS; i++){	  
-      if(i==0) myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with lines, \\");
-      else if(i==AC_CHANNELS-1) myPipe.send_cmd("\'-\' using 1:2:3 notitle with lines");
+    for(int i=range[0]; i < range[1]; i++){	  
+      if(i==range[0]) myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with lines, \\");
+      else if(i==range[1]-1) myPipe.send_cmd("\'-\' using 1:2:3 notitle with lines");
       else
 	myPipe.send_cmd("\'-\' using 1:2:3 notitle with lines, \\");
     }
 	
-    for(int i=0; i < AC_CHANNELS; i++){	  
+    for(int i=range[0]; i < range[1]; i++){	  
       for(int j=0; j < psecSampleCells; j++){
 	char sendWord[100];
 	sprintf(sendWord, "%d %d %f", i, j, pdat[i][asic_baseline[j]]);
@@ -125,9 +136,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr){
       myPipe.send_cmd("eof");	        
     }
 
-    usleep(100);
     frameCount++;
-    //manage_cc_fifo(1);
     //if(trig_mode) set_usb_read_mode(7);
     manage_cc_fifo(1);
   }

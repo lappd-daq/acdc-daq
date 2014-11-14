@@ -47,13 +47,13 @@ int ScopePipe::init()
     std::cout << "opening gnuplot..." << std::endl;
   }
   //time to let gnuplot window open
-  usleep(1000000);
+  usleep(100000);
 
   //set up the  graph
   //send_cmd("set terminal x11");
   send_cmd("set timestamp");
-  //send_cmd("set object 1 rect from screen 0, screen 0 to screen 1, screen 1 behind");
-  //send_cmd("set object 1 rect fc rgb \'black\'");
+  send_cmd("set object 1 rect from screen 0, screen 0 to screen 1, screen 1 behind");
+  send_cmd("set object 1 rect fc rgb \'black\'");
   send_cmd("set pointsize .2");
 
   send_cmd("set autoscale y");
@@ -67,12 +67,10 @@ int ScopePipe::init()
   send_cmd("set style line 5 lt 1 lw 1 pt 1 linecolor rgb \'magenta\' ");
   send_cmd("set style line 6 lt 1 lw 1 pt 2 linecolor rgb \'green\' ");
   send_cmd("set style line 7 lt 1 lw 1 pt 1 linecolor rgb \'coral\' ");
-  
-  //send_cmd("set grid ls 1");
-  //send_cmd("set border ls 10");
-  //send_cmd("set key tc rgb \'white\'");
-  send_cmd("set term wxt size 1000, 700");
-
+ 
+  send_cmd("set grid ls 1");
+  send_cmd("set border ls 10");
+  send_cmd("set key tc rgb \'white\'");
   //send_cmd("set xlabel \'Sample Number\' ");
   //send_cmd("set ylabel \'voltage [mV]\' ");
 
@@ -82,7 +80,7 @@ int ScopePipe::init()
 int ScopePipe::plot_init()
 {
   gp_cmd = popen("gnuplot -background black " 
-		 //	 "-xrm \'gnuplot*borderColor:white\' "
+		 "-xrm \'gnuplot*borderColor:white\' "
 		 , "w"); // open gnuplot
   if(!gp_cmd){
     std::cout << "scope failed to initialize!" << std::endl;
@@ -91,8 +89,6 @@ int ScopePipe::plot_init()
   else{
     std::cout << "opening gnuplot..." << std::endl;
   }
-  usleep(1000000);
-
   send_cmd("set style line 1 lt 0 lw 0.5 pt 1 linecolor rgb \'white\' ");
   send_cmd("set style line 10 lt 1 lw 1.5 pt 1 linecolor rgb \'white\' ");
   send_cmd("set style line 2 lt 1 lw 1 pt 1 linecolor rgb \'red\' ");
@@ -101,8 +97,6 @@ int ScopePipe::plot_init()
   send_cmd("set style line 5 lt 1 lw 1 pt 1 linecolor rgb \'magenta\' ");
   send_cmd("set style line 6 lt 1 lw 1 pt 2 linecolor rgb \'green\' ");
   send_cmd("set style line 7 lt 1 lw 1 pt 1 linecolor rgb \'coral\' ");
-  send_cmd("set term wxt size 700,700");
-
   return(0);
 }
 
@@ -368,13 +362,13 @@ int ScopePipe::send_cmd(const string &plot_cmd)
 {
   ostringstream cmd_stream;
   cmd_stream << plot_cmd << std::endl;
-  //std::cout << cmd_stream.str();
+  //std::cout << cmd_stream.str() << std::endl;
+
   fprintf(gp_cmd, "%s", cmd_stream.str().c_str());   
   fflush(gp_cmd);
   
   return (0);
 }
-
 
 int ScopePipe::finish()
 {
