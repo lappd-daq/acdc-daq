@@ -59,6 +59,8 @@ class SuMo{
   int check_usb();
   int read_CC(bool SHOW_CC_STATUS,bool SHOW_AC_STATUS);
   int read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr);
+  int read_AC(unsigned int trig_mode);
+
   int read_ACS(bool ENABLE_FILESAVE);
 
   int dump_data();
@@ -75,6 +77,7 @@ class SuMo{
   int check_active_boards(void);
   int check_active_boards(int NUM);
   bool           DC_ACTIVE[numFrontBoards];
+  bool           BOARDS_READOUT[numFrontBoards];
 
   stdUSB usb;
  
@@ -107,6 +110,7 @@ class SuMo{
     unsigned int           DATA_PKT_END[numChipsOnBoard];
     /* raw data saved here */
     unsigned short         AC_RAW_DATA[numChipsOnBoard][psec_buffersize];
+    float                  Data[AC_CHANNELS+1][psecSampleCells]; //AC_CHANNELS waveforms + 1 metadata
     unsigned short         AC_INFO[numChipsOnBoard][infoBuffersize];
   } acdcData [numFrontBoards];
  

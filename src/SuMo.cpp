@@ -156,6 +156,98 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS){
   else
     return 1;
 }
+int SuMo::read_AC(unsigned int trig_mode){
+  sync_usb(0);
+  int  numBoardsRead = 0;
+  if(!trig_mode) software_trigger(15);
+
+  for(int boardAddress=0; boardAddress < numFrontBoards; boardAddress++){
+    BOARDS_READOUT[boardAddress] = false;
+    if(DC_ACTIVE[boardAddress] == false){
+      continue;
+    }
+  
+    set_usb_read_mode(boardAddress);
+    int samples;
+    int usb_second_offset_flag;
+    unsigned short buffer[ac_buffersize];
+    memset(buffer, 0x0, (ac_buffersize+2)*sizeof(unsigned short));
+  
+    if(usb.createHandles() == stdUSB::SUCCEED){
+      try{
+	usb.readData(buffer, ac_buffersize+2, &samples);
+	
+	/*
+	ofstream raw_data_file;
+	char raw_read_filename[200];
+	sprintf(raw_read_filename, "AC_raw_read_%i.txt", boardAddress);
+	raw_data_file.open(raw_read_filename, ios::trunc);
+
+	for(int i = 0; i <ac_buffersize; i++){
+	  raw_data_file << buffer[i] << "\n";  
+	}
+	raw_data_file.close();     
+	*/
+	int usb_read_offset_flag = -1;
+	for(int i = 0; i < 100; i++){
+	  if(buffer[i] == 0xF005 ){
+	    //printf("AC=%d samples=%d i=%d %d %d %d %X, %X, %d %d %d\n", 
+	    //	 AC_adr,samples,i, buffer[i-4],buffer[i-3],buffer[i-2],buffer[i-1],buffer[i],
+	    //	 buffer[i+1], buffer[i+2], buffer[i+3]);
+	    usb_read_offset_flag = i;
+	    if(usb_read_offset_flag==6){
+	      CC_BIN_COUNT = (buffer[i-5]& 0x18) >> 3;
+	      CC_EVENT_NO = buffer[i-4];
+	    }
+	    else if(usb_read_offset_flag==5){
+	      CC_BIN_COUNT = (buffer[i-4]& 0x18) >> 3;
+	      CC_EVENT_NO = buffer[i-3];
+	    }
+	    //printf("usb offset = %d\n", usb_read_offset_flag);
+	    break;
+	  }
+	}
+	for(int i = 1400; i < 1600; i++){
+	  if(buffer[i] == 0xBA11 ){
+	    usb_second_offset_flag = i;
+	    //printf("usb 2 offset = %d\n", usb_second_offset_flag);
+	    break;
+	  }
+	}
+	
+	if(usb_read_offset_flag < 0){
+	  //printf("USB read header word not found\n");
+	  //return -1;
+	  continue;
+	}
+	/* 'real' data starts here: */
+	usb_read_offset_flag = usb_read_offset_flag + 2; 
+	
+	for(int i = 0; i < numChipsOnBoard; i++){
+	  for(int j = 0; j < psec_buffersize; j++){
+	    
+	    acdcData[boardAddress].AC_RAW_DATA[i][j] = buffer[usb_read_offset_flag +
+							(psec_buffersize+infoBuffersize)*i+j];	
+	  }
+	  for(int k = 0; k < infoBuffersize; k++){
+	    acdcData[boardAddress].AC_INFO[i][k] = buffer[usb_read_offset_flag + 
+						    (i+1)*psec_buffersize
+						    +  (i*infoBuffersize) + k];
+	  }
+	}  
+	BOARDS_READOUT[boardAddress] = true;
+	numBoardsRead++;
+      }
+      
+      catch(...){
+	fprintf(stderr, "Please connect the board. [DEFAULT exception]\n");
+	return 1;
+      }
+    }
+  }    
+return numBoardsRead;
+    
+}
 
 int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
   sync_usb(0);
@@ -184,13 +276,16 @@ int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
 	raw_data_file.open(raw_read_filename, ios::trunc);
 
 	for(int i = 0; i <ac_buffersize; i++){
-	  raw_data_file << buffer[i] << "\n";
-	  //if(buffer[i] ==0 && i<1000)	  
-	    //printf("%i:%x, ", i,buffer[i]);
+	  raw_data_file << buffer[i] << "\n";  
 	}
 	//printf("\n");
 	raw_data_file.close();     
       }
+      
+      /*for(int i = 0; i <ac_buffersize; i++){
+	if(buffer[i] == dataPacketStart)
+	  cout << std::dec << i << endl;
+	  }*/
 
       int usb_read_offset_flag = -1;
       for(int i = 0; i < 100; i++){
@@ -228,6 +323,7 @@ int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
       
       for(int i = 0; i < numChipsOnBoard; i++){
 	for(int j = 0; j < psec_buffersize; j++){
+
 	  acdcData[AC_adr].AC_RAW_DATA[i][j] = buffer[usb_read_offset_flag +
 			      (psec_buffersize+infoBuffersize)*i+j];	
 	  //printf("%d: %d, ",i*j+j, AC_RAW_DATA[i][j]);
@@ -264,7 +360,6 @@ int SuMo::dump_data(){
   return 0;
 }
    
-
 int SuMo::get_AC_info(bool PRINT, int frontEnd){
   int aa = frontEnd;
   unsigned short AC_INFO[numChipsOnBoard][infoBuffersize];
@@ -275,7 +370,6 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
   }
   unsigned short ref_volt_mv  = 1200;
   unsigned short num_bits     = 4096;
-
   for (int i = 0; i < 5; i++){
     acdcData[aa].RO_CNT[i] =          (float) AC_INFO[i][4] * 10 * pow(2,11)/ (pow(10,6));
     acdcData[aa].RO_TARGET_CNT[i] =   (float) AC_INFO[i][5] * 10 * pow(2,11)/(pow(10,6));
@@ -295,16 +389,11 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
   acdcData[aa].SELF_TRIG_MASK =       AC_INFO[3][11] | AC_INFO[4][11] << 16;
   acdcData[aa].LAST_AC_INSTRUCT =     AC_INFO[0][12] | AC_INFO[1][12] << 16;
   acdcData[aa].LAST_LAST_AC_INSTRUCT= AC_INFO[2][12] | AC_INFO[3][12] << 16;
-
   acdcData[aa].TRIG_EN =              acdcData[aa].SELF_TRIG_SETTINGS & 0x1;
   acdcData[aa].TRIG_WAIT_FOR_SYS =    acdcData[aa].SELF_TRIG_SETTINGS & 0x2;
   acdcData[aa].TRIG_RATE_ONLY =       acdcData[aa].SELF_TRIG_SETTINGS & 0x4;
   acdcData[aa].TRIG_SIGN =            acdcData[aa].SELF_TRIG_SETTINGS & 0x8;
   
-  //for (int i =0; i<AC_CHANNELS; i++){
-  //  acdcData[aa].SELF_TRIG_RATE_COUNT;
-  //}
-
   if(PRINT){
     cout << std::fixed;
     cout << std::setprecision(2);
@@ -319,32 +408,30 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
 	 <<", 0x"                           << hex << acdcData[aa].REG_SELF_TRIG[2]
          <<", 0x"                           << hex << acdcData[aa].REG_SELF_TRIG[3] 
 	 << endl;
-    cout << "self-trig mask: 0x" << hex << acdcData[aa].SELF_TRIG_MASK << endl;
+    cout << "self-trig mask: 0x"     << hex << acdcData[aa].SELF_TRIG_MASK << endl;
     cout << "self-trig settings: 0x" << hex << acdcData[aa].SELF_TRIG_SETTINGS << endl;  
-    cout << "trig_sign: " << acdcData[aa].TRIG_SIGN 
-	 << ", wait_for_sys: " << acdcData[aa].TRIG_WAIT_FOR_SYS
-	 << ", rate_only: " << acdcData[aa].TRIG_RATE_ONLY
-	 << ", EN: " << acdcData[aa].TRIG_EN 
+    cout << "trig_sign: "            << acdcData[aa].TRIG_SIGN 
+	 << ", wait_for_sys: "       << acdcData[aa].TRIG_WAIT_FOR_SYS
+	 << ", rate_only: "          << acdcData[aa].TRIG_RATE_ONLY
+	 << ", EN: "                 << acdcData[aa].TRIG_EN 
 	 << endl;
-    cout << "bin count rise edge: " << acdcData[aa].BIN_COUNT_RISE 
-	 << ", bin count fall edge: " << acdcData[aa].BIN_COUNT_FALL
+    cout << "bin count rise edge: "  << acdcData[aa].BIN_COUNT_RISE 
+	 << ", bin count fall edge: "<< acdcData[aa].BIN_COUNT_FALL
          << endl;
 
     for (int i = 0; i < 5; i++){
       cout << "PSEC:" << i;
-      cout << "|ADC clock/trgt:" << acdcData[aa].RO_CNT[i];
-      cout << "/" << acdcData[aa].RO_TARGET_CNT[i] << "MHz";
-      cout << ",bias:" <<  acdcData[aa].RO_DAC_VALUE[i] <<"mV";
-      cout << "|Ped:"<<  acdcData[aa].VBIAS[i] << "mV";
-      cout << "|Trig:"<< acdcData[aa].TRIGGER_THRESHOLD[i] << "mV";
+      cout << "|ADC clock/trgt:"     << acdcData[aa].RO_CNT[i];
+      cout << "/"                    << acdcData[aa].RO_TARGET_CNT[i] << "MHz";
+      cout << ",bias:"               << acdcData[aa].RO_DAC_VALUE[i] <<"mV";
+      cout << "|Ped:"                << acdcData[aa].VBIAS[i] << "mV";
+      cout << "|Trig:"               << acdcData[aa].TRIGGER_THRESHOLD[i] << "mV";
       cout << endl;
     }
     cout << endl;
   } 
   return 0;
 }
-
-
 
 //unwrap locally on AC/DC
 /*
@@ -370,7 +457,6 @@ int SuMo::unwrap(int ASIC){
   for(int k=0; k<4; k++){
     BIN_40[k] = (int)256/4*k;
   }
-
   return BIN_40[last_sampling_bin];
 }
 
@@ -388,7 +474,6 @@ void SuMo::unwrap_baseline(int *baseline, int ASIC){
     wraparound = wraparound+WRAP_CONSTANT-256;
 
   //printf("%d", wraparound);
-
   for(int i = 0; i < 256; i++){
     baseline[i] = start_baseline[ (wraparound + i) % 256];
   }

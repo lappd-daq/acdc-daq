@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sstream>
+#include <sys/stat.h>
+
 #include "SuMo.h"
 
 /* specific to file */
@@ -11,6 +13,8 @@ const int NUM_ARGS = 4;
 const char* filename = "logData";
 const char* description = "log data from DAQ";
 using namespace std;
+
+bool fileExists(const std::string& filename);
 
 int main(int argc, char* argv[]){
   if(argc == 2 && std::string(argv[1]) == "-h"){
@@ -48,26 +52,23 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 
   bool convert_to_voltage;
   int check_event, count = 0, psec_cnt = 0;
-  float pdat[AC_CHANNELS][256];
   float sample;
-  char log_data_filename[512];
-  int asic_baseline[256];
-  FILE* fdatout[4]; 
-  
-  int pinfo[256];
-  
-  for (int i = 0; i < 256; i++){
-      pinfo[i] = 0;
-    }
+  char logDataFilename[300];
+  int asic_baseline[psecSampleCells];
+  int LIMIT_READOUT_RATE = 10000;
 
-  for(int targetAC = 0; targetAC < 4; targetAC++){
-    if(DC_ACTIVE[targetAC] == true){
-      printf("logging data for board %d\n", targetAC);
-      sprintf(log_data_filename, "%s_board%d.txt", log_filename, targetAC);
-      fdatout[targetAC] = fopen(log_data_filename, "w");
-    }
-  } 
-  
+  /* handle filename */
+  sprintf(logDataFilename, "%s.txt", log_filename);
+  string temp;
+  while(fileExists(logDataFilename)){
+    cout << "file already exists, try new filename: (or enter to overwrite): ";
+    getline(cin, temp);
+    if(temp.empty()) break;
+    sprintf(logDataFilename, "%s.txt", temp.c_str());
+  }
+  ofstream ofs;
+  ofs.open(logDataFilename, ios::trunc);
+
   convert_to_voltage = false;
   /*if(load_lut() != 0) convert_to_voltage = false;
    *else
@@ -75,6 +76,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
    */
   //setup
   dump_data();
+  
   if(trig_mode){
     set_usb_read_mode(24);
   }
@@ -86,62 +88,57 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   load_ped();
 
   for(int k=0;k<NUM_READS; k++){
-
-    //reset_self_trigger();
+    /*set read mode to NULL */
+    set_usb_read_mode(16);
+    /*reset last event on firmware */
     manage_cc_fifo(1);
+    /*send trigger over software if not looking externally */
     if(trig_mode){ 
       set_usb_read_mode(7);
-      usleep(acq_rate);
+      usleep(acq_rate+LIMIT_READOUT_RATE);
     }
     else{
       software_trigger((unsigned int)15);
+      usleep(LIMIT_READOUT_RATE); /* somewhat arbitrary hard-coded rate limitation */
     }
 
+    /* show event number at terminal */
     if((k+1) % 2 == 0){
       cout << "Readout:  " << k+1 << " of " << NUM_READS << "      \r";
       cout.flush();
     }
-	
-    for(int targetAC = 0; targetAC < 4; targetAC++){
-      //if(targetAC == 0 && trig_mode == 1){
-      //manage_cc_fifo(1);
-      //}
-      if(DC_ACTIVE[targetAC] == false){		  
-	continue;
-      }
-      psec_cnt = 0;
-      //try readout:
-      read_AC(true, 1, targetAC);
-	      //if(read_AC(true, 1, targetAC) == -1) {
-	      //	printf("no data on board %d\n", targetAC);
-	      	      //	break; // go back to NUM_READS loop if no data to read
-	      // }
-      //if successful:
-      if(1){
-      //else{
+    /*Do bulk read on all front-end cards */
+    int numBoards = read_AC(1);
+    if(numBoards == 0) continue; 
+
+    /* form data for filesave */
+    for(int targetAC = 0; targetAC < 4; targetAC++){ 
+      if(BOARDS_READOUT[targetAC] && numBoards > 0){
+	psec_cnt = 0;
+	/*assign meta data */
 	get_AC_info(false, targetAC);
-	pinfo[0] = k;
-	pinfo[1] = CC_EVENT_NO;
-	pinfo[2] = CC_BIN_COUNT; 
-	pinfo[3] = WRAP_CONSTANT; 
-	pinfo[4] = acdcData[targetAC].RO_CNT[0]; 
-	pinfo[5] = acdcData[targetAC].RO_CNT[1];
-	pinfo[6] = acdcData[targetAC].RO_CNT[2];
-	pinfo[7] = acdcData[targetAC].RO_CNT[3];
-	pinfo[8] = acdcData[targetAC].RO_CNT[4];
-	pinfo[9] = acdcData[targetAC].RO_CNT[5];
-	pinfo[10] = acdcData[targetAC].VBIAS[0]; 
-	pinfo[11] = acdcData[targetAC].VBIAS[1];
-	pinfo[12] = acdcData[targetAC].VBIAS[2];
-	pinfo[13] = acdcData[targetAC].VBIAS[3];
-	pinfo[14] = acdcData[targetAC].VBIAS[4];
-	pinfo[15] = acdcData[targetAC].VBIAS[5];
+	acdcData[targetAC].Data[AC_CHANNELS][0] = k;
+	acdcData[targetAC].Data[AC_CHANNELS][1] = CC_EVENT_NO;
+	acdcData[targetAC].Data[AC_CHANNELS][2] = CC_BIN_COUNT; 
+	acdcData[targetAC].Data[AC_CHANNELS][3] = WRAP_CONSTANT; 
+	acdcData[targetAC].Data[AC_CHANNELS][4] = acdcData[targetAC].RO_CNT[0]; 
+	acdcData[targetAC].Data[AC_CHANNELS][5] = acdcData[targetAC].RO_CNT[1];
+	acdcData[targetAC].Data[AC_CHANNELS][6] = acdcData[targetAC].RO_CNT[2];
+	acdcData[targetAC].Data[AC_CHANNELS][7] = acdcData[targetAC].RO_CNT[3];
+	acdcData[targetAC].Data[AC_CHANNELS][8] = acdcData[targetAC].RO_CNT[4];
+	acdcData[targetAC].Data[AC_CHANNELS][9] = acdcData[targetAC].RO_CNT[5];
+	acdcData[targetAC].Data[AC_CHANNELS][10] = acdcData[targetAC].VBIAS[0]; 
+	acdcData[targetAC].Data[AC_CHANNELS][11] = acdcData[targetAC].VBIAS[1];
+	acdcData[targetAC].Data[AC_CHANNELS][12] = acdcData[targetAC].VBIAS[2];
+	acdcData[targetAC].Data[AC_CHANNELS][13] = acdcData[targetAC].VBIAS[3];
+	acdcData[targetAC].Data[AC_CHANNELS][14] = acdcData[targetAC].VBIAS[4];
+	acdcData[targetAC].Data[AC_CHANNELS][15] = acdcData[targetAC].VBIAS[5];
 	check_event = 0;
 	//printf("#%d\n", k);
 	for(int i = 0; i < AC_CHANNELS; i++){
 	  if(i>0 && i % 6 == 0) psec_cnt ++;
 
-	  for(int j = 0; j < 256; j++){
+	  for(int j = 0; j < psecSampleCells; j++){
 	    if(convert_to_voltage){
 	      //sample =  LUT[(int)AC_RAW_DATA[psec_cnt][i%6*256+j]][i]*1000;
 	      //sample -= LUT[(int)PED_DATA[targetAC][i][j]][i]*1000;
@@ -150,64 +147,52 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	      sample = (float) acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
 	      sample -= (float) PED_DATA[targetAC][i][j];
 	    }
-	    pdat[i][j] = sample;
+	    acdcData[targetAC].Data[i][j] = sample;
 	  }
 	}  
-	//wraparound_correction, if desired:
+	/* wraparound_correction, if desired: */
 	int baseline[256];
 	unwrap_baseline(baseline, 2); 
-	for (int j = 0; j < 256; j++){
+	for (int j = 0; j < psecSampleCells; j++){
 	  asic_baseline[j] = baseline[j];
 	}
-	for(int i=0; i < 256; i++){
-	  /*
-	  fprintf(fdatout[targetAC], 
-		  "%4.1d\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%d\t\n",    
-		  i,pdat[0][i],pdat[1][i],pdat[2][i],
-		  pdat[3][i],pdat[4][i],pdat[5][i],
-		  pdat[6][i],pdat[7][i],pdat[8][i],
-		  pdat[9][i],pdat[10][i],pdat[11][i],
-		  pdat[12][i],pdat[13][i],pdat[14][i],
-		  pdat[15][i],pdat[16][i],pdat[17][i],
-		  pdat[18][i],pdat[19][i],pdat[20][i],
-		  pdat[21][i],pdat[22][i],pdat[23][i],
-		  pdat[24][i],pdat[25][i],pdat[26][i],
-		  pdat[27][i],pdat[28][i],pdat[29][i],
-		  pinfo[i]);
-	  */
-	  fprintf(fdatout[targetAC], 
-		  "%4.1d\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%4.1f\t%d\t\n",    
-		  i,pdat[0][asic_baseline[i]],pdat[1][asic_baseline[i]],pdat[2][asic_baseline[i]],
-		  pdat[3][asic_baseline[i]],pdat[4][asic_baseline[i]],pdat[5][asic_baseline[i]],
-		  pdat[6][asic_baseline[i]],pdat[7][asic_baseline[i]],pdat[8][asic_baseline[i]],
-		  pdat[9][asic_baseline[i]],pdat[10][asic_baseline[i]],pdat[11][asic_baseline[i]],
-		  pdat[12][asic_baseline[i]],pdat[13][asic_baseline[i]],pdat[14][asic_baseline[i]],
-		  pdat[15][asic_baseline[i]],pdat[16][asic_baseline[i]],pdat[17][asic_baseline[i]],
-		  pdat[18][asic_baseline[i]],pdat[19][asic_baseline[i]],pdat[20][asic_baseline[i]],
-		  pdat[21][asic_baseline[i]],pdat[22][asic_baseline[i]],pdat[23][asic_baseline[i]],
-		  pdat[24][asic_baseline[i]],pdat[25][asic_baseline[i]],pdat[26][asic_baseline[i]],
-		  pdat[27][asic_baseline[i]],pdat[28][asic_baseline[i]],pdat[29][asic_baseline[i]],
-		  pinfo[i]);
-	  
-	}
-      }      
+      }
     }
+	
+    for(int i=0; i < psecSampleCells; i++){
+
+      ofs << i << " " << asic_baseline[i] << " ";
+      for(int board=0; board<numFrontBoards; board++){
+	if(BOARDS_READOUT[board]){
+	  for(int channel=0; channel < AC_CHANNELS+1; channel++){	    
+	    ofs << std::dec << acdcData[board].Data[channel][i] << " ";
+	  }
+	}
+      }
+      ofs <<endl;
+    } 
   }
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << "...Finished Data Run...      \r";
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << "  .....Finished Data Run......      \r";
   cout << endl;
 
   manage_cc_fifo(1);
   //set_usb_read_mode(7);
-  
-  for(int targetAC = 0; targetAC < 4; targetAC++){
-    if(DC_ACTIVE[targetAC] == true){
-      int file_close_retval = fclose(fdatout[targetAC]);
-      //printf("%d,\n", file_close_retval);
-    }
-  }
+  ofs <<endl<<endl;
+  ofs.close();
+
   set_usb_read_mode(16);  //turn off trigger, if on
   dump_data();
   
-  printf("Data saved in file: %s_boardX\n", log_filename);
+  cout << "Data saved in file: " << logDataFilename << endl;
   return 0;
+}
+
+bool fileExists(const string& filename)
+{
+    struct stat buf;
+    if (stat(filename.c_str(), &buf) != -1)
+    {
+        return true;
+    }
+    return false;
 }

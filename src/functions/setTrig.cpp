@@ -122,44 +122,44 @@ int parseTrigParams(const char* file){
 
     if(data.find("trig_mask")==0){
       linestream >> tmp1 >> hex >> tmp2;
-      trig_mask[(int)tmp1] = tmp2;
+      trig_mask[tmp1] = tmp2;
       cout << data << " on board " << tmp1 << " set to 0x" 
 	   << hex << tmp2 << endl;
     }      
     else if(data.find("trig_enable")==0){
       linestream >> tmp1 >> tmp2;
-      trig_enable[(int)tmp1] = (bool)tmp2;
+      trig_enable[tmp1] = tmp2;
       cout << data << " on board " << tmp1 << " set to " << tmp2 << endl;
     } 
     else if(data.find("trig_sign")==0){
       linestream >> tmp1;
-      trig_sign = (bool)tmp1;  
+      trig_sign = tmp1;  
       cout << data << " set to " << tmp1 << endl;
     } 
     else if(data.find("wait_for_sys")==0){
       linestream >> tmp1;
-      wait_for_sys = (bool)tmp1;
+      wait_for_sys = tmp1;
       cout << data << " set to " << tmp1 << endl;
     } 
     else if(data.find("rate_only")==0){
       linestream >> tmp1;
-      rate_only = (bool)tmp1;
+      rate_only = tmp1;
       cout << data << " set to " << tmp1 << endl;
     } 
     else if(data.find("hrdw_trig")==0){
       linestream >> tmp1;
-      hrdw_trig= (bool)tmp1;
+      hrdw_trig= tmp1;
       cout << data << " set to " << tmp1 << endl;
     } 
     else if(data.find("pedestal")==0){
       linestream >> tmp1 >> tmp2;
-      pedestal[(int)tmp1]= tmp2;
+      pedestal[tmp1]= tmp2;
       cout << data << " on board " << tmp1 << " set to 0x" 
-	   << hex << tmp2 << endl;
+	   << tmp2 << endl;
     }
     else if(data.find("thresh")==0){
       linestream >> tmp1 >> tmp2;
-      pedestal[(int)tmp1]= tmp2;
+      threshold[tmp1]= tmp2;
       cout << data << " on board " << tmp1 << " set to 0x" 
 	   << hex << tmp2 << endl;
     }
