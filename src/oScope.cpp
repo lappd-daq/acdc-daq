@@ -16,7 +16,7 @@ const int NUM_ARGS =      4;
 const char* filename =     "oScope";
 const char* description =  "pipe data to gnuplot window.";
 
-const int scopeRefresh = 800000;
+static int scopeRefresh = 800000;
 
 using namespace std;
 

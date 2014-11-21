@@ -18,7 +18,7 @@ author: eric oberla
 #define all_ac_buffersize     24400
 #define AC_CHANNELS           30
 #define psec_buffersize       1536
-#define infoBuffersize        16
+#define infoBuffersize        17
 #define USB_READ_OFFSET       13
 #define psecSampleCells       256
 #define numChipsOnBoard       5
@@ -58,10 +58,9 @@ class SuMo{
   
   int check_usb();
   int read_CC(bool SHOW_CC_STATUS,bool SHOW_AC_STATUS);
-  int read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr);
-  int read_AC(unsigned int trig_mode);
-
-  int read_ACS(bool ENABLE_FILESAVE);
+  int read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr); /*deprecated, phase this one out */
+  /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for additional retval handling: */
+  int read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE);  /* use this bulk read function instead */
 
   int dump_data();
   int get_AC_info(bool PRINT, int AC_adr);
@@ -73,21 +72,24 @@ class SuMo{
   int log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate);
   int log_data_hd5(const char* log_filename, unsigned int NUM_READS, int trig_mode, 
 		   int acq_rate);
+  void form_meta_data(int Address, int count);
 
-  int check_active_boards(void);
-  int check_active_boards(int NUM);
+  int            check_active_boards(void);
+  int            check_active_boards(int NUM);
   bool           DC_ACTIVE[numFrontBoards];
   bool           BOARDS_READOUT[numFrontBoards];
+  bool           BOARDS_TIMEOUT[numFrontBoards];
 
   stdUSB usb;
- 
+
   /* waveform and meta-data arrays from ADC boards */
   struct data_t{
     unsigned int           LAST_AC_INSTRUCT;
     unsigned int           LAST_LAST_AC_INSTRUCT;
     unsigned int           EVENT_COUNT;
-    unsigned int           TIMESTAMP_HI;
-    unsigned int           TIMESTAMP_LO;
+    unsigned int           TIMESTAMP_HI; /* 16 bits */
+    unsigned int           TIMESTAMP_MID;/* 16 bits */
+    unsigned int           TIMESTAMP_LO; /* 16 bits */
     float                  VBIAS[numChipsOnBoard];
     float                  RO_CNT[numChipsOnBoard];
     float                  RO_TARGET_CNT[numChipsOnBoard];
@@ -103,14 +105,17 @@ class SuMo{
     unsigned int           SELF_TRIG_SETTINGS;
     unsigned int           REG_SELF_TRIG[4];
     unsigned int           SELF_TRIG_MASK;
-    unsigned int           SELF_TRIG_RATE_COUNT[AC_CHANNELS];
+    unsigned int           SELF_TRIG_SCALER[AC_CHANNELS];  
 
-    unsigned int           USB_HEADER[numChipsOnBoard];
-    unsigned int           ADC_PKT_END[numChipsOnBoard];
-    unsigned int           DATA_PKT_END[numChipsOnBoard];
+    unsigned int           PKT_HEADER;
+    unsigned int           PKT_FOOTER;
+    
+    unsigned int           DATA_HEADER[numChipsOnBoard];
+    unsigned int           DATA_ADC_END[numChipsOnBoard];
+    unsigned int           DATA_FOOTER[numChipsOnBoard];
     /* raw data saved here */
     unsigned short         AC_RAW_DATA[numChipsOnBoard][psec_buffersize];
-    float                  Data[AC_CHANNELS+1][psecSampleCells]; //AC_CHANNELS waveforms + 1 metadata
+    float                  Data[AC_CHANNELS+1][psecSampleCells]; /* AC_CHANNELS waveforms + 1 metadata */
     unsigned short         AC_INFO[numChipsOnBoard][infoBuffersize];
   } acdcData [numFrontBoards];
  
@@ -122,18 +127,18 @@ class SuMo{
   void unwrap_baseline(int *baseline, int ASIC);
 
   /* metadata from CC */
-  unsigned int   CC_INFO[cc_buffersize];  
-  unsigned int   LAST_CC_INSTRUCT;
+  unsigned int       CC_INFO[cc_buffersize];  
+  unsigned int       LAST_CC_INSTRUCT;
   unsigned long long CC_TIMESTAMP;
-  unsigned int   CC_EVENT_COUNT;
-  unsigned int   CC_BIN_COUNT;
-  unsigned int   CC_EVENT_NO;
+  unsigned int       CC_EVENT_COUNT;
+  unsigned int       CC_BIN_COUNT;
+  unsigned int       CC_EVENT_NO;
   
   /* calibration arrays */
   unsigned int PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
-  float PED_STDEV[numFrontBoards][AC_CHANNELS][psecSampleCells];
-  float LUT[numFrontBoards][4096][AC_CHANNELS];
-  float oldLUT[numFrontBoards][4096][AC_CHANNELS]; 
+  float        PED_STDEV[numFrontBoards][AC_CHANNELS][psecSampleCells];
+  float        LUT[numFrontBoards][4096][AC_CHANNELS];
+  float        oldLUT[numFrontBoards][4096][AC_CHANNELS]; 
   
 };       
 #endif

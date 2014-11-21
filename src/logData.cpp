@@ -69,6 +69,10 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   ofstream ofs;
   ofs.open(logDataFilename, ios::trunc);
 
+  /* read all front end cards */
+  bool all[numFrontBoards];
+  for(int i=0;i<numFrontBoards; i++) all[i] = true;
+  
   convert_to_voltage = false;
   /*if(load_lut() != 0) convert_to_voltage = false;
    *else
@@ -108,7 +112,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       cout.flush();
     }
     /*Do bulk read on all front-end cards */
-    int numBoards = read_AC(1);
+    int numBoards = read_AC(1, all, false);
     if(numBoards == 0) continue; 
 
     /* form data for filesave */
@@ -117,24 +121,10 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	psec_cnt = 0;
 	/*assign meta data */
 	get_AC_info(false, targetAC);
-	acdcData[targetAC].Data[AC_CHANNELS][0] = k;
-	acdcData[targetAC].Data[AC_CHANNELS][1] = CC_EVENT_NO;
-	acdcData[targetAC].Data[AC_CHANNELS][2] = CC_BIN_COUNT; 
-	acdcData[targetAC].Data[AC_CHANNELS][3] = WRAP_CONSTANT; 
-	acdcData[targetAC].Data[AC_CHANNELS][4] = acdcData[targetAC].RO_CNT[0]; 
-	acdcData[targetAC].Data[AC_CHANNELS][5] = acdcData[targetAC].RO_CNT[1];
-	acdcData[targetAC].Data[AC_CHANNELS][6] = acdcData[targetAC].RO_CNT[2];
-	acdcData[targetAC].Data[AC_CHANNELS][7] = acdcData[targetAC].RO_CNT[3];
-	acdcData[targetAC].Data[AC_CHANNELS][8] = acdcData[targetAC].RO_CNT[4];
-	acdcData[targetAC].Data[AC_CHANNELS][9] = acdcData[targetAC].RO_CNT[5];
-	acdcData[targetAC].Data[AC_CHANNELS][10] = acdcData[targetAC].VBIAS[0]; 
-	acdcData[targetAC].Data[AC_CHANNELS][11] = acdcData[targetAC].VBIAS[1];
-	acdcData[targetAC].Data[AC_CHANNELS][12] = acdcData[targetAC].VBIAS[2];
-	acdcData[targetAC].Data[AC_CHANNELS][13] = acdcData[targetAC].VBIAS[3];
-	acdcData[targetAC].Data[AC_CHANNELS][14] = acdcData[targetAC].VBIAS[4];
-	acdcData[targetAC].Data[AC_CHANNELS][15] = acdcData[targetAC].VBIAS[5];
+	form_meta_data(targetAC, k);
+
 	check_event = 0;
-	//printf("#%d\n", k);
+
 	for(int i = 0; i < AC_CHANNELS; i++){
 	  if(i>0 && i % 6 == 0) psec_cnt ++;
 
@@ -196,3 +186,47 @@ bool fileExists(const string& filename)
     }
     return false;
 }
+
+void SuMo::form_meta_data(int Address, int count)
+{
+  int i = Address;
+  acdcData[i].Data[AC_CHANNELS][0] = count;
+  acdcData[i].Data[AC_CHANNELS][1] = CC_EVENT_NO;
+  acdcData[i].Data[AC_CHANNELS][2] = CC_BIN_COUNT; 
+  acdcData[i].Data[AC_CHANNELS][3] = WRAP_CONSTANT; 
+  acdcData[i].Data[AC_CHANNELS][4] = acdcData[i].EVENT_COUNT;
+  acdcData[i].Data[AC_CHANNELS][5] = acdcData[i].TIMESTAMP_HI;
+  acdcData[i].Data[AC_CHANNELS][6] = acdcData[i].TIMESTAMP_MID;
+  acdcData[i].Data[AC_CHANNELS][7] = acdcData[i].TIMESTAMP_LO;
+
+  acdcData[i].Data[AC_CHANNELS][10] = acdcData[i].BIN_COUNT_RISE;
+  acdcData[i].Data[AC_CHANNELS][11] = acdcData[i].BIN_COUNT_FALL;
+  acdcData[i].Data[AC_CHANNELS][12] = acdcData[i].SELF_TRIG_SETTINGS; 
+  acdcData[i].Data[AC_CHANNELS][13] = acdcData[i].EVENT_COUNT ;
+  acdcData[i].Data[AC_CHANNELS][14] = acdcData[i].REG_SELF_TRIG[0];
+  acdcData[i].Data[AC_CHANNELS][15] = acdcData[i].REG_SELF_TRIG[1]; 
+  acdcData[i].Data[AC_CHANNELS][16] = acdcData[i].REG_SELF_TRIG[2];
+  acdcData[i].Data[AC_CHANNELS][17] = acdcData[i].REG_SELF_TRIG[3]; 
+  acdcData[i].Data[AC_CHANNELS][18] = acdcData[i].SELF_TRIG_MASK; 
+  acdcData[i].Data[AC_CHANNELS][19] = acdcData[i].LAST_AC_INSTRUCT; 
+  acdcData[i].Data[AC_CHANNELS][20] = acdcData[i].LAST_LAST_AC_INSTRUCT;
+  acdcData[i].Data[AC_CHANNELS][21] = acdcData[i].TRIG_EN; 
+  acdcData[i].Data[AC_CHANNELS][22] = acdcData[i].TRIG_WAIT_FOR_SYS; 
+  acdcData[i].Data[AC_CHANNELS][23] = acdcData[i].TRIG_RATE_ONLY; 
+  acdcData[i].Data[AC_CHANNELS][24] = acdcData[i].TRIG_SIGN; 
+
+  /*fill slots 25-39 */
+  for(int j=0; j<numChipsOnBoard; j++){
+    acdcData[i].Data[AC_CHANNELS][j+25] = acdcData[i].RO_CNT[j]; 
+    acdcData[i].Data[AC_CHANNELS][j+25+numChipsOnBoard] = acdcData[i].VBIAS[j]; 
+    acdcData[i].Data[AC_CHANNELS][j+25+2*numChipsOnBoard] = acdcData[i].TRIGGER_THRESHOLD[j]; 
+  }
+  /*fill slots 40-69 */
+  for(int j=0; j<AC_CHANNELS; j++){
+    acdcData[i].Data[AC_CHANNELS][j+40] = acdcData[i].SELF_TRIG_SCALER[j];
+  }
+
+}
+
+
+
