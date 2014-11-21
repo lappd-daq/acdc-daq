@@ -16,7 +16,7 @@ const int NUM_ARGS =      4;
 const char* filename =     "oScope";
 const char* description =  "pipe data to gnuplot window.";
 
-static int scopeRefresh = 800000;
+static int scopeRefresh = 600000;
 
 using namespace std;
 
@@ -58,11 +58,15 @@ int main(int argc, char* argv[]){
 } 
 
 int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] ){
+  
+  bool scopeBoard[numFrontBoards];
+  for(int i=0; i<numFrontBoards; i++) scopeBoard[i] = false;
+  scopeBoard[AC_adr] = true;
+
   bool convert_to_voltage = false;
   int check_event, count = 0, psec_cnt = 0;
   float pdat[AC_CHANNELS][psecSampleCells];
   int asic_baseline[psecSampleCells];
-  int targetAC = 0;
   int frameCount = 0;
 
   float sample;
@@ -89,11 +93,11 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     manage_cc_fifo(1);
     if(trig_mode) set_usb_read_mode(7);
     if(!trig_mode){ 
-      set_usb_read_mode(AC_adr);
-      software_trigger((unsigned int)15);
+      set_usb_read_mode(16);
+      software_trigger(1 << AC_adr);
     }
     
-    read_AC(true, 1, AC_adr); 
+    read_AC(1, scopeBoard, false); 
     check_event = 0;
     get_AC_info(false, AC_adr);
     
@@ -137,8 +141,6 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     }
 
     frameCount++;
-    //if(trig_mode) set_usb_read_mode(7);
-    manage_cc_fifo(1);
   }
   /*hold window*/
   int temp;

@@ -59,10 +59,10 @@ bin/usbResetDevice:
 	g++ -o bin/usbResetDevice src/usb/usbResetDevice.C
 #############################################################################
 clean:
-	@ rm -f $(OBJS) *~ *.o src/*~ src/functions/*~ -rf obj/
+	@ rm -f $(OBJS) *~ *.o src/*~ include/*~ src/functions/*~ -rf obj/
 
 cleanall:
-	@ rm -f $(OBJS) *~ *.o src/*~ src/functions/*~ -rf bin/ obj/
+	@ rm -f $(OBJS) *~ *.o src/*~ include/*~ src/functions/*~ -rf bin/ obj/
 
 .PHONY: clean
 #############################################################################

@@ -62,7 +62,11 @@ class SuMo{
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for additional retval handling: */
   int read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE);  /* use this bulk read function instead */
 
-  int dump_data();
+  void dump_data(){
+    bool all[numFrontBoards] = {1,1,1,1};
+    read_AC(1, all,false);
+    manage_cc_fifo(1);
+  }
   int get_AC_info(bool PRINT, int AC_adr);
   int generate_ped(bool ENABLE_FILESAVE);
   int make_count_to_voltage(void);
@@ -72,7 +76,7 @@ class SuMo{
   int log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate);
   int log_data_hd5(const char* log_filename, unsigned int NUM_READS, int trig_mode, 
 		   int acq_rate);
-  void form_meta_data(int Address, int count);
+  void form_meta_data(int Address, int count, double time);
 
   int            check_active_boards(void);
   int            check_active_boards(int NUM);

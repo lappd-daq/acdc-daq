@@ -5,14 +5,20 @@
 #include <stdio.h>
 #include <sstream>
 #include <sys/stat.h>
+#include <time.h>
 
 #include "SuMo.h"
+#include "Timer.h"
 
 /* specific to file */
 const int NUM_ARGS = 4;
 const char* filename = "logData";
 const char* description = "log data from DAQ";
 using namespace std;
+  
+static int LIMIT_READOUT_RATE = 10000;
+static int NUM_SEQ_TIMEOUTS = 100;
+/* note: usb timeout defined in include/stdUSB.h */
 
 bool fileExists(const std::string& filename);
 
@@ -49,13 +55,12 @@ int main(int argc, char* argv[]){
 }
 
 int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate){
-
   bool convert_to_voltage;
-  int check_event, count = 0, psec_cnt = 0;
-  float sample;
+  int check_event, asic_baseline[psecSampleCells], count = 0, psec_cnt = 0, numTimeouts = 0;
+  float sample, t = 0.;
   char logDataFilename[300];
-  int asic_baseline[psecSampleCells];
-  int LIMIT_READOUT_RATE = 10000;
+  Timer timer = Timer(); 
+  //time_t t0, now;
 
   /* handle filename */
   sprintf(logDataFilename, "%s.txt", log_filename);
@@ -73,29 +78,32 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   bool all[numFrontBoards];
   for(int i=0;i<numFrontBoards; i++) all[i] = true;
   
+  /* need to add voltage LUT stuff here, eventually */
   convert_to_voltage = false;
   /*if(load_lut() != 0) convert_to_voltage = false;
    *else
    *  convert_to_voltage = output_mode;
    */
-  //setup
-  dump_data();
-  
-  if(trig_mode){
-    set_usb_read_mode(24);
-  }
-  else{
-    set_usb_read_mode(16);
-    dump_data();
-  }
 
+  /* setup some things */
+  if(trig_mode) set_usb_read_mode(24);
+  else set_usb_read_mode(16), dump_data();
+  
   load_ped();
+  /* cpu time zero */
+  //t0 = time(NULL);
+  timer.start();
 
   for(int k=0;k<NUM_READS; k++){
+    /* rough cpu timing in seconds since readout start time*/
+    //time(&now);
+    t = timer.stop();    
+
     /*set read mode to NULL */
     set_usb_read_mode(16);
     /*reset last event on firmware */
     manage_cc_fifo(1);
+    
     /*send trigger over software if not looking externally */
     if(trig_mode){ 
       set_usb_read_mode(7);
@@ -107,21 +115,37 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     }
 
     /* show event number at terminal */
-    if((k+1) % 2 == 0){
-      cout << "Readout:  " << k+1 << " of " << NUM_READS << "      \r";
+    if((k+1) % 2 == 0 || k==0){
+      cout << "Readout:  " << k+1 << " of " << NUM_READS << " :: @time " << t << " sec         \r";
       cout.flush();
-    }
-    /*Do bulk read on all front-end cards */
+    }       
+    /**************************************/
+    /*Do bulk read on all front-end cards */  
     int numBoards = read_AC(1, all, false);
-    if(numBoards == 0) continue; 
+    /**************************************/
+    /* handle timeouts or lack of data */
+    int numBoardsTimedout = 0;
+    for(int i=0; i<numFrontBoards; i++) numBoardsTimedout = numBoardsTimedout + (int)BOARDS_TIMEOUT[i];
+    if(numBoards == 0 || numBoardsTimedout > 0){
+      /* check for number of timeouts in a row */
+      numTimeouts++; 
+      /* handle if too many timeouts: */
+      if(numTimeouts > NUM_SEQ_TIMEOUTS){
+	cout << endl << "error: too many timeouts in a row" << endl; 
+	return -1;
+      }
+      k = k-1;
+      continue; 
+    }
+    else numTimeouts = 0;
 
     /* form data for filesave */
-    for(int targetAC = 0; targetAC < 4; targetAC++){ 
+    for(int targetAC = 0; targetAC < numFrontBoards; targetAC++){ 
       if(BOARDS_READOUT[targetAC] && numBoards > 0){
 	psec_cnt = 0;
 	/*assign meta data */
 	get_AC_info(false, targetAC);
-	form_meta_data(targetAC, k);
+	form_meta_data(targetAC, k, t);
 
 	check_event = 0;
 
@@ -141,7 +165,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	  }
 	}  
 	/* wraparound_correction, if desired: */
-	int baseline[256];
+	int baseline[psecSampleCells];
 	unwrap_baseline(baseline, 2); 
 	for (int j = 0; j < psecSampleCells; j++){
 	  asic_baseline[j] = baseline[j];
@@ -152,28 +176,36 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     for(int i=0; i < psecSampleCells; i++){
 
       ofs << i << " " << asic_baseline[i] << " ";
-      for(int board=0; board<numFrontBoards; board++){
-	if(BOARDS_READOUT[board]){
-	  for(int channel=0; channel < AC_CHANNELS+1; channel++){	    
-	    ofs << std::dec << acdcData[board].Data[channel][i] << " ";
-	  }
-	}
-      }
+      for(int board=0; board<numFrontBoards; board++)
+	if(BOARDS_READOUT[board])
+	  for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << acdcData[board].Data[channel][i] << " ";
+  
       ofs <<endl;
     } 
   }
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << "  .....Finished Data Run......      \r";
-  cout << endl;
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec..\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec...\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec....\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.....\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec......\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.......\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec........\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.........\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec..........\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec...........\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec...........finished logging\r",cout.flush();
 
   manage_cc_fifo(1);
-  //set_usb_read_mode(7);
+  /* add whitespace to end of file */
   ofs <<endl<<endl;
   ofs.close();
 
   set_usb_read_mode(16);  //turn off trigger, if on
   dump_data();
   
-  cout << "Data saved in file: " << logDataFilename << endl;
+  cout << endl;
+  cout << "Data saved in file: " << logDataFilename << endl << "*****" << endl;
   return 0;
 }
 
@@ -187,7 +219,7 @@ bool fileExists(const string& filename)
     return false;
 }
 
-void SuMo::form_meta_data(int Address, int count)
+void SuMo::form_meta_data(int Address, int count, double cpuTime)
 {
   int i = Address;
   acdcData[i].Data[AC_CHANNELS][0] = count;
@@ -198,6 +230,7 @@ void SuMo::form_meta_data(int Address, int count)
   acdcData[i].Data[AC_CHANNELS][5] = acdcData[i].TIMESTAMP_HI;
   acdcData[i].Data[AC_CHANNELS][6] = acdcData[i].TIMESTAMP_MID;
   acdcData[i].Data[AC_CHANNELS][7] = acdcData[i].TIMESTAMP_LO;
+  acdcData[i].Data[AC_CHANNELS][8] = cpuTime;
 
   acdcData[i].Data[AC_CHANNELS][10] = acdcData[i].BIN_COUNT_RISE;
   acdcData[i].Data[AC_CHANNELS][11] = acdcData[i].BIN_COUNT_FALL;

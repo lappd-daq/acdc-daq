@@ -241,6 +241,8 @@ return numBoardsRead;
     
 }
 
+/* this is overloaded in previous declaration */
+/* deprecated, to be phased out */
 int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
   sync_usb(0);
   set_usb_read_mode(AC_adr);
@@ -330,12 +332,6 @@ int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
 
     return 0;
   }
-}
-
-int SuMo::dump_data(){ 
-  for(int i = 0; i < numFrontBoards; i++) read_AC(false, 1,i);
-  manage_cc_fifo(1);
-  return 0;
 }
    
 int SuMo::get_AC_info(bool PRINT, int frontEnd){
