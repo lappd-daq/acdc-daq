@@ -35,8 +35,7 @@ int main(int argc, char* argv[]){
     int num_checks = 10;
     
     //Sumo.set_usb_read_mode(16); 
-    if(Sumo.check_active_boards(num_checks))
-      return 1;
+    if(Sumo.check_active_boards(num_checks)) return 1;
     
     //Sumo.software_trigger(15);
     Sumo.read_CC(true, true);

@@ -12,6 +12,7 @@ author: eric oberla
 #include <stdlib.h>
 #include <stdio.h>
 #include "stdUSB.h"
+#include <time.h>
 
 #define cc_buffersize         31
 #define ac_buffersize         8100
@@ -22,6 +23,7 @@ author: eric oberla
 #define USB_READ_OFFSET       13
 #define psecSampleCells       256
 #define numChipsOnBoard       5
+#define num_ped_reads         50
 
 #define WRAP_CONSTANT         90
 #define numFrontBoards        4
@@ -76,7 +78,7 @@ class SuMo{
   int log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate);
   int log_data_hd5(const char* log_filename, unsigned int NUM_READS, int trig_mode, 
 		   int acq_rate);
-  void form_meta_data(int Address, int count, double time);
+  void form_meta_data(int Address, int count, double time, time_t now);
 
   int            check_active_boards(void);
   int            check_active_boards(int NUM);
@@ -110,7 +112,15 @@ class SuMo{
     unsigned int           REG_SELF_TRIG[4];
     unsigned int           SELF_TRIG_MASK;
     unsigned int           SELF_TRIG_SCALER[AC_CHANNELS];  
-
+  
+    unsigned int           CC_HEADER_INFO[cc_buffersize];
+    unsigned int           CC_TIMESTAMP_LO;
+    unsigned int           CC_TIMESTAMP_MID;
+    unsigned int           CC_TIMESTAMP_HI;
+    unsigned int           CC_EVENT_COUNT;
+    unsigned int           CC_BIN_COUNT;
+    bool                   CC_TRIG_MODE;
+    
     unsigned int           PKT_HEADER;
     unsigned int           PKT_FOOTER;
     
@@ -122,27 +132,32 @@ class SuMo{
     float                  Data[AC_CHANNELS+1][psecSampleCells]; /* AC_CHANNELS waveforms + 1 metadata */
     unsigned short         AC_INFO[numChipsOnBoard][infoBuffersize];
   } acdcData [numFrontBoards];
- 
+
+  struct cal_t{
+    unsigned short raw_ped_data_array[AC_CHANNELS][psecSampleCells][num_ped_reads];
+    /* calibration arrays */
+    unsigned int           PED_DATA[AC_CHANNELS][psecSampleCells];
+    float                  PED_RMS[AC_CHANNELS][psecSampleCells]; 
+    bool                   PED_SUCCESS;
+  } calData [numFrontBoards];
+
  private:
   static int compare ( const void * a, const void * b){
     return(*(unsigned short*)a - *(unsigned short*)b);
   }
   int unwrap(int ASIC);
   void unwrap_baseline(int *baseline, int ASIC);
-
+  unsigned int           PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
+  float                  LUT[numFrontBoards][4096][AC_CHANNELS];
+  float                  oldLUT[numFrontBoards][4096][AC_CHANNELS]; 
   /* metadata from CC */
   unsigned int       CC_INFO[cc_buffersize];  
   unsigned int       LAST_CC_INSTRUCT;
-  unsigned long long CC_TIMESTAMP;
+  unsigned int       CC_TIMESTAMP_LO;
+  unsigned int       CC_TIMESTAMP_HI;
   unsigned int       CC_EVENT_COUNT;
   unsigned int       CC_BIN_COUNT;
   unsigned int       CC_EVENT_NO;
-  
-  /* calibration arrays */
-  unsigned int PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
-  float        PED_STDEV[numFrontBoards][AC_CHANNELS][psecSampleCells];
-  float        LUT[numFrontBoards][4096][AC_CHANNELS];
-  float        oldLUT[numFrontBoards][4096][AC_CHANNELS]; 
   
 };       
 #endif

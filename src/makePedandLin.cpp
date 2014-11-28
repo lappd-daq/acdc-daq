@@ -7,113 +7,74 @@ using namespace std;
 
 int SuMo::generate_ped(bool ENABLE_FILESAVE){
   sync_usb(0);
-  //set_usb_read_mode(0);
-  unsigned int num_ped_reads = 50;
+  unsigned int middle = int(num_ped_reads/2);
   unsigned int psec_cnt;
   float temp;
-  
-  unsigned short raw_ped_data_array[AC_CHANNELS][256][num_ped_reads];
-  unsigned int raw_sum_array[AC_CHANNELS][256];
-  
-  for(int targetAC = 0; targetAC < 4; targetAC++){
-    
-    set_usb_read_mode(targetAC);
 
-    for(int k=0; k<AC_CHANNELS; k++){
-      for(int i=0; i<256; i++){
-	raw_sum_array[k][i] = 0;
-      }
-    }
+  for(int k=0; k<num_ped_reads; k++){   
+    /* read data using trigger over software */
+    read_AC(0, DC_ACTIVE, false);
+    /* close trigger */
+    manage_cc_fifo(1);
+    /* make pedestal files for each board */
+    for(int targetAC=0; targetAC < numFrontBoards; targetAC++){    
+      if(!BOARDS_READOUT[targetAC]) continue;
 
-    if(DC_ACTIVE[targetAC] == false){
-      printf("skipping pedestal generation for board #%d\n", targetAC);
-      continue;
-    } 
-
-    for(int k=0; k<num_ped_reads; k++){
+      calData[targetAC].PED_SUCCESS = true;
       psec_cnt = 0;
-      usleep(1000);
-      software_trigger(1 << targetAC);
-      usleep(1000);
-      read_AC(false, 1, targetAC);
-      usleep(1000);
-      manage_cc_fifo(1);
-    
       for(int i=0; i<AC_CHANNELS; i++){
-	if(i>0 && i % 6 == 0)
-	  psec_cnt ++;
-	for(int j=0; j<256; j++){
-	  raw_ped_data_array[i][j][k] = acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
-	  raw_sum_array[i][j] += acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
-	}
+	if(i>0 && i % 6 == 0) psec_cnt ++;
+	/* make raw arrays from incoming data */
+	for(int j=0; j<psecSampleCells; j++)
+	  calData[targetAC].raw_ped_data_array[i][j][k] = acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
       }
-      usleep(100);
-    }
-    //do a median ped generation:: allows for pulses in data during ped run
-    int middle = int(num_ped_reads/2);
-    for(int i = 0; i<AC_CHANNELS; i++){
-      for(int j = 0; j<256; j++){
-	//printf("organizing data %d %d\n", i, j);
-	qsort(raw_ped_data_array[i][j], num_ped_reads, sizeof(unsigned short), compare);
-	PED_DATA[targetAC][i][j] = (int)raw_ped_data_array[i][j][middle];
-	raw_sum_array[i][j] /= num_ped_reads;
-	//printf("%d\n", PED_DATA[i][j]);
-      }
-    }
-    
-    //calc std deviation for cell pedestals **diagnostic**
-    for(int i = 0; i<AC_CHANNELS; i++){
-      for(int j = 0; j<256; j++){
-	temp = 0;
-	for(int k = 0; k<num_ped_reads; k++){
-	  //temp += (raw_ped_data_array[i][j][k]-raw_sum_array[i][j]) * (raw_ped_data_array[i][j][k]-raw_sum_array[i][j]);
-	  temp += (raw_ped_data_array[i][j][k]-PED_DATA[targetAC][i][j]) * (raw_ped_data_array[i][j][k]-PED_DATA[targetAC][i][j]);
-	}
-	PED_STDEV[targetAC][i][j] = sqrt(temp);
-      }
-    }  
-
-    if(ENABLE_FILESAVE != false){
-      char ped_filename[500];
-      sprintf(ped_filename, "calibrations/PED_DATA_%d.txt", targetAC);
-      FILE* fped = fopen(ped_filename, "w");
+    } /* end front-end board loop */
+  } /* end num readouts loop */
+  
+  /* calculate pedestal value median and RMS  */
+  for(int board=0; board < numFrontBoards; board++){   
+    if(calData[board].PED_SUCCESS){
       
-      char ped_STDEV_filename[500];
-      sprintf(ped_STDEV_filename, "calibrations/PED_DATA_STDEV_%d.txt", targetAC);
-      FILE* fped_sd = fopen(ped_STDEV_filename, "w");      
-      
-      for(int i=0; i < 256; i++){
-	//printf("%d\n", i);
-	fprintf(fped, 
-		"%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t\n",
-		i,PED_DATA[targetAC][0][i],PED_DATA[targetAC][1][i],PED_DATA[targetAC][2][i],
-		PED_DATA[targetAC][3][i],PED_DATA[targetAC][4][i],PED_DATA[targetAC][5][i],
-		PED_DATA[targetAC][6][i],PED_DATA[targetAC][7][i],PED_DATA[targetAC][8][i],
-		PED_DATA[targetAC][9][i],PED_DATA[targetAC][10][i],PED_DATA[targetAC][11][i],
-		PED_DATA[targetAC][12][i],PED_DATA[targetAC][13][i],PED_DATA[targetAC][14][i],
-		PED_DATA[targetAC][15][i],PED_DATA[targetAC][16][i],PED_DATA[targetAC][17][i],
-		PED_DATA[targetAC][18][i],PED_DATA[targetAC][19][i],PED_DATA[targetAC][20][i],
-		PED_DATA[targetAC][21][i],PED_DATA[targetAC][22][i],PED_DATA[targetAC][23][i],
-		PED_DATA[targetAC][24][i],PED_DATA[targetAC][25][i],PED_DATA[targetAC][26][i],
-		PED_DATA[targetAC][27][i],PED_DATA[targetAC][28][i],PED_DATA[targetAC][29][i]);
-	fprintf(fped_sd, 
-		"%i\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t\n",
-		i,PED_STDEV[targetAC][0][i],PED_STDEV[targetAC][1][i],PED_STDEV[targetAC][2][i],
-		PED_STDEV[targetAC][3][i],PED_STDEV[targetAC][4][i],PED_STDEV[targetAC][5][i],
-		PED_STDEV[targetAC][6][i],PED_STDEV[targetAC][7][i],PED_STDEV[targetAC][8][i],
-		PED_STDEV[targetAC][9][i],PED_STDEV[targetAC][10][i],PED_STDEV[targetAC][11][i],
-		PED_STDEV[targetAC][12][i],PED_STDEV[targetAC][13][i],PED_STDEV[targetAC][14][i],
-		PED_STDEV[targetAC][15][i],PED_STDEV[targetAC][16][i],PED_STDEV[targetAC][17][i],
-		PED_STDEV[targetAC][18][i],PED_STDEV[targetAC][19][i],PED_STDEV[targetAC][20][i],
-		PED_STDEV[targetAC][21][i],PED_STDEV[targetAC][22][i],PED_STDEV[targetAC][23][i],
-		PED_STDEV[targetAC][24][i],PED_STDEV[targetAC][25][i],PED_STDEV[targetAC][26][i],
-		PED_STDEV[targetAC][27][i],PED_STDEV[targetAC][28][i],PED_STDEV[targetAC][29][i]);
+      for(int i = 0; i<AC_CHANNELS; i++){
+	for(int j = 0; j<psecSampleCells; j++){
+	  /* calc RMS */
+	  qsort(calData[board].raw_ped_data_array[i][j], num_ped_reads, sizeof(unsigned short), compare);
+	  calData[board].PED_DATA[i][j] = (unsigned int)calData[board].raw_ped_data_array[i][j][middle];
+	  temp = 0;
+	  for(int k = 0; k<num_ped_reads; k++) { 
+	    temp += pow((calData[board].raw_ped_data_array[i][j][k]-(unsigned short)calData[board].PED_DATA[i][j]),2);
+	  }
+	  calData[board].PED_RMS[i][j] = sqrt(temp/num_ped_reads);
+	}
+      }    
+      /*done with calculations*/
+      /*save to file, if specified*/
+      if(ENABLE_FILESAVE){
+	char ped_filename[200], ped_rms_filename[200];
+	sprintf(ped_filename, "calibrations/PED_DATA_%d.txt", board);
+	sprintf(ped_rms_filename, "calibrations/PED_DATA_RMS_%d.txt", board);
 
+	ofstream fped, frms;
+	fped.open(ped_filename, ios::trunc);
+	frms.open(ped_rms_filename, ios::trunc);
+      
+	for(int i=0; i < psecSampleCells; i++){
+	  fped << i << "\t";
+	  frms << i << "\t";
+	  for(int channel=0; channel < AC_CHANNELS; channel++){
+	    fped << std::dec << calData[board].PED_DATA[channel][i] << "\t";
+	    frms << std::dec << calData[board].PED_RMS[channel][i] << "\t";
+	  }
+	  fped << endl;
+	  frms << endl;
+	}
+	fped << endl << endl;
+	frms << endl << endl;
+      
+	fped.close();
+	frms.close();
+	cout << "Pedestal values saved to file: " << ped_filename << endl;
       }
-      fclose(fped);
-      fclose(fped_sd);
-      printf("Pedestal values saved to file: %s\n", ped_filename);
-      printf("*******\n");
     }
   }
   return 0;

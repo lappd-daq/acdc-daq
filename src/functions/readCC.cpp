@@ -32,14 +32,10 @@ int main(int argc, char* argv[]){
   /* function defined below */
   else{
     SuMo Sumo;
-    int num_checks = 10;
-    
-    if(Sumo.check_active_boards(num_checks))
-      return 1;
-
+    int num_checks = 3;    
+    if(Sumo.check_active_boards(num_checks)) return 1;
     Sumo.read_CC(true, false);
-    return 0;
-    
+    return 0;   
   }
 } 
             

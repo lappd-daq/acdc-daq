@@ -32,14 +32,13 @@ int SuMo::check_active_boards(void){
     if(DC_ACTIVE[targetAC] == true){
       num_boards_active ++;
     }
-  } 
-  
+  }   
   return num_boards_active;
 }
 
 int SuMo::check_active_boards(int NUM){
   int temp = 0;
-  set_usb_read_mode(16);
+  //set_usb_read_mode(16);
   while(check_active_boards() == 0){
       read_CC(false, false);
       temp++;
@@ -53,17 +52,25 @@ int SuMo::check_active_boards(int NUM){
 
 int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS){
   sync_usb(0);
-  set_usb_read_mode(4);
- 
+  bool print = false; /* print buffer to terminal */
   int samples;
   unsigned short buffer[cc_buffersize];
 
   memset(buffer, 0x0, cc_buffersize*sizeof(unsigned short));
   
+  /* set usb read mode for numFrontBoards+1 (central card only) */
+  set_usb_read_mode(4);
+
   if(usb.createHandles() == stdUSB::SUCCEED){
     try{
-      usb.readData(buffer, cc_buffersize+2, &samples);      
-      for(int i = 0; i < cc_buffersize; i++) CC_INFO[i] = buffer[i];
+      usb.readData(buffer, cc_buffersize+2, &samples); 
+      if(samples < 0) return -1;
+
+      for(int i = 0; i < cc_buffersize; i++){ 
+	CC_INFO[i] = buffer[i];
+	if(print) cout << i << ":" << buffer[i] << " ";
+      }
+      if(print) cout << "samples received: " << samples << endl;
     }
     catch(...){
       fprintf(stderr, "Please connect the board. [DEFAULT exception] \n");
@@ -107,7 +114,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS){
 
 int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
   sync_usb(0);
-  bool print = false;
+  bool print = false; /* switch for dumping info to terminal */
   int  numBoardsRead = 0; /* function returns number of front end cards successfully readout (int) */
   
   /* send trigger over USB from this function, if specified */
@@ -115,7 +122,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
   if(!trig_mode){
     for(int boardAddress=0; boardAddress < numFrontBoards; boardAddress++)
       trig_mask = (mask[boardAddress] << boardAddress) | trig_mask; 
-    if(print) cout << trig_mask << endl;
+    if(print) cout << "trig mask " << trig_mask << endl;
     software_trigger(trig_mask);
   }
 
@@ -127,6 +134,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
     if(DC_ACTIVE[boardAddress] == false || mask[boardAddress] == false){
       continue;
     }
+    if(print) cout << "reading board: " << boardAddress << endl; 
 
     set_usb_read_mode(boardAddress);
     int samples;
@@ -142,7 +150,8 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
     if(usb.createHandles() == stdUSB::SUCCEED){
       try{
 	usb.readData(buffer, ac_buffersize+2, &samples);
-	
+	if(print) cout << "samples received: " << samples << " on board " << boardAddress << endl;
+
 	/* packet flags */
 	int pkt_header = 0;
 	int pkt_footer = 0;
@@ -153,16 +162,20 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
 	  
 	/* check data in packet */
 	int checkpkt = 0;
-	while (checkpkt<10){
+	while (checkpkt<cc_buffersize){
+	  acdcData[boardAddress].CC_HEADER_INFO[checkpkt] = buffer[checkpkt];
+	  if(print) cout << checkpkt << ":" << buffer[checkpkt] << "  ";
+	  
 	  if(buffer[checkpkt]==dataPacketStart ){
 	    usb_read_offset_flag = checkpkt;
 	    break;
 	  }
-	  else checkpkt++;
+	  checkpkt++;
 	}
 	
 	if(usb_read_offset_flag < 0){ 
 	   BOARDS_TIMEOUT[boardAddress] = true;
+	   if(print) cout << "timeout on board " << boardAddress << endl;
 	   continue;
 	}
 
@@ -195,8 +208,8 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
 	if(print){
 	  cout << buffer[0] << "," << buffer[1] << "," << buffer[2] << ","
 	       << buffer[3] << "," << buffer[4] << "," << buffer[5] << "," << endl;
-	  cout << acdcData[boardAddress].PKT_HEADER << endl;
-	  cout << acdcData[boardAddress].DATA_HEADER[0] << ","<<acdcData[boardAddress].DATA_ADC_END[0] << ","
+	  cout << "packet header index " << acdcData[boardAddress].PKT_HEADER << endl;
+	  cout << "packet data indices " << acdcData[boardAddress].DATA_HEADER[0] << ","<<acdcData[boardAddress].DATA_ADC_END[0] << ","
 	       << acdcData[boardAddress].DATA_FOOTER[0] << " "	    
 	       << acdcData[boardAddress].DATA_HEADER[1] << ","<<acdcData[boardAddress].DATA_ADC_END[1] << "," 
 	       << acdcData[boardAddress].DATA_FOOTER[1] << " "	    
@@ -206,7 +219,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
 	       << acdcData[boardAddress].DATA_FOOTER[3] << " "
 	       << acdcData[boardAddress].DATA_HEADER[4] << ","<<acdcData[boardAddress].DATA_ADC_END[4] << "," 
 	       << acdcData[boardAddress].DATA_FOOTER[4] << endl;	  
-	  cout << acdcData[boardAddress].PKT_FOOTER << endl;	    
+	  cout << "packet footer index " << acdcData[boardAddress].PKT_FOOTER << endl;	    
 	}
 	/* real data starts here: */
 	usb_read_offset_flag = usb_read_offset_flag + 2;
@@ -224,7 +237,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
 	}  
 	for(int i=0; i<AC_CHANNELS; i++){
 	  acdcData[boardAddress].SELF_TRIG_SCALER[i] = buffer[acdcData[boardAddress].DATA_FOOTER[numChipsOnBoard-1]+2+i];
-	  if(print) cout << acdcData[boardAddress].SELF_TRIG_SCALER[i] << endl;
+	  //if(print) cout << acdcData[boardAddress].SELF_TRIG_SCALER[i] << endl;
 	}
 	    
 	BOARDS_READOUT[boardAddress] = true;
@@ -241,99 +254,6 @@ return numBoardsRead;
     
 }
 
-/* this is overloaded in previous declaration */
-/* deprecated, to be phased out */
-int SuMo::read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr){
-  sync_usb(0);
-  set_usb_read_mode(AC_adr);
-  if(!trig_mode) software_trigger(1 << AC_adr);
-  int samples;
-  int usb_second_offset_flag;
-  unsigned short buffer[ac_buffersize];
-  memset(buffer, 0x0, (ac_buffersize+2)*sizeof(unsigned short));
-  
-  if(usb.createHandles() == stdUSB::SUCCEED){
-    try{
-      usb.readData(buffer, ac_buffersize+2, &samples);
-      //manage_cc_fifo(1);
-      //if(ENABLE_FILESAVE) printf("received: %d samples\n", samples);
-      
-      if(ENABLE_FILESAVE){
-	ofstream raw_data_file;
-	char raw_read_filename[200];
-	sprintf(raw_read_filename, "AC_raw_read_%i.txt", AC_adr);
-	raw_data_file.open(raw_read_filename, ios::trunc);
-
-	for(int i = 0; i <ac_buffersize; i++){
-	  raw_data_file << buffer[i] << "\n";  
-	}
-	raw_data_file.close();     
-      }
-      
-      /*for(int i = 0; i <ac_buffersize; i++){
-	if(buffer[i] == dataPacketStart)
-	  cout << std::dec << i << endl;
-	  }*/
-
-      int usb_read_offset_flag = -1;
-      for(int i = 0; i < 100; i++){
-	if(buffer[i] == 0xF005 ){
-	  //printf("AC=%d samples=%d i=%d %d %d %d %X, %X, %d %d %d\n", 
-	  //	 AC_adr,samples,i, buffer[i-4],buffer[i-3],buffer[i-2],buffer[i-1],buffer[i],
-	  //	 buffer[i+1], buffer[i+2], buffer[i+3]);
-	  usb_read_offset_flag = i;
-	  if(usb_read_offset_flag==6){
-	    CC_BIN_COUNT = (buffer[i-5]& 0x18) >> 3;
-	    CC_EVENT_NO = buffer[i-4];
-	  }
-	  else if(usb_read_offset_flag==5){
-	    CC_BIN_COUNT = (buffer[i-4]& 0x18) >> 3;
-	    CC_EVENT_NO = buffer[i-3];
-	  }
-	  //printf("usb offset = %d\n", usb_read_offset_flag);
-	  break;
-	}
-      }
-      for(int i = 1400; i < 1600; i++){
-	if(buffer[i] == 0xBA11 ){
-	  usb_second_offset_flag = i;
-	  //printf("usb 2 offset = %d\n", usb_second_offset_flag);
-	  break;
-	}
-      }
-
-      if(usb_read_offset_flag < 0){
-	//printf("USB read header word not found\n");
-	return -1;
-      }
-      /* 'real' data starts here: */
-      usb_read_offset_flag = usb_read_offset_flag + 2; 
-      
-      for(int i = 0; i < numChipsOnBoard; i++){
-	for(int j = 0; j < psec_buffersize; j++){
-
-	  acdcData[AC_adr].AC_RAW_DATA[i][j] = buffer[usb_read_offset_flag +
-			      (psec_buffersize+infoBuffersize)*i+j];	
-	  //printf("%d: %d, ",i*j+j, AC_RAW_DATA[i][j]);
-	}
-	for(int k = 0; k < infoBuffersize; k++){
-	  acdcData[AC_adr].AC_INFO[i][k] = buffer[usb_read_offset_flag + 
-				 (i+1)*psec_buffersize
-				 +  (i*infoBuffersize) + k];
-	  //printf("%x %d\n", AC_INFO[i][k],k);
-	}
-      }   
-    }
-
-    catch(...){
-      fprintf(stderr, "Please connect the board. [DEFAULT exception]\n");
-      return 1;
-    }
-
-    return 0;
-  }
-}
-   
 int SuMo::get_AC_info(bool PRINT, int frontEnd){
   int aa = frontEnd;
   unsigned short AC_INFO[numChipsOnBoard][infoBuffersize];
@@ -352,8 +272,14 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
     acdcData[aa].RO_DAC_VALUE[i] =    (float) AC_INFO[i][8] * ref_volt_mv/num_bits;
   }
    
+  acdcData[aa].CC_BIN_COUNT =         (acdcData[aa].CC_HEADER_INFO[1] & 0x18) >> 3;
+  acdcData[aa].CC_EVENT_COUNT =       acdcData[aa].CC_HEADER_INFO[3] | acdcData[aa].CC_HEADER_INFO[2] << 16;
+  acdcData[aa].CC_TIMESTAMP_LO =      acdcData[aa].CC_HEADER_INFO[4];
+  acdcData[aa].CC_TIMESTAMP_MID =     acdcData[aa].CC_HEADER_INFO[5];
+  acdcData[aa].CC_TIMESTAMP_HI =      acdcData[aa].CC_HEADER_INFO[6]; 
+
   acdcData[aa].BIN_COUNT_RISE =       AC_INFO[0][9] & 0x0F;
-  acdcData[aa].BIN_COUNT_FALL =       AC_INFO[0][9] & 0xF0;
+  acdcData[aa].BIN_COUNT_FALL =       (AC_INFO[0][9] & 0xF0) >> 4;
   
   acdcData[aa].SELF_TRIG_SETTINGS =   AC_INFO[1][9];
   acdcData[aa].TRIG_EN =              acdcData[aa].SELF_TRIG_SETTINGS & 0x1;
@@ -377,6 +303,12 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
   if(PRINT){
     cout << std::fixed;
     cout << std::setprecision(2);
+    cout << std::dec << endl;
+    cout << "central card header info: " << endl;
+    cout << "bin:" << acdcData[aa].CC_BIN_COUNT
+	 << " evt.count:" << acdcData[aa].CC_EVENT_COUNT
+	 << " timestamp: " <<  acdcData[aa].CC_TIMESTAMP_HI <<":"<<acdcData[aa].CC_TIMESTAMP_MID 
+	 <<":"<<acdcData[aa].CC_TIMESTAMP_LO<< endl;
     cout << "--------" << endl;
     cout << "event count: " << std::dec << acdcData[aa].EVENT_COUNT; 
     cout << " board time: " << acdcData[aa].TIMESTAMP_HI<<":"<<acdcData[aa].TIMESTAMP_MID<<":"<<acdcData[aa].TIMESTAMP_LO;
@@ -409,7 +341,6 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
       cout << "|Trig:"               << acdcData[aa].TRIGGER_THRESHOLD[i] << "mV";
       cout << endl;
     }
-    cout << endl;
   } 
   return 0;
 }

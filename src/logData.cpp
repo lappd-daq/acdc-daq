@@ -57,10 +57,10 @@ int main(int argc, char* argv[]){
 int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate){
   bool convert_to_voltage;
   int check_event, asic_baseline[psecSampleCells], count = 0, psec_cnt = 0, numTimeouts = 0;
-  float sample, t = 0.;
+  float sample, _now_, t = 0.;
   char logDataFilename[300];
   Timer timer = Timer(); 
-  //time_t t0, now;
+  time_t now;
 
   /* handle filename */
   sprintf(logDataFilename, "%s.txt", log_filename);
@@ -95,10 +95,10 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   timer.start();
 
   for(int k=0;k<NUM_READS; k++){
+    /* unix timestamp */
+    time(&now);
     /* rough cpu timing in seconds since readout start time*/
-    //time(&now);
-    t = timer.stop();    
-
+    t = timer.stop(); 
     /*set read mode to NULL */
     set_usb_read_mode(16);
     /*reset last event on firmware */
@@ -116,7 +116,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 
     /* show event number at terminal */
     if((k+1) % 2 == 0 || k==0){
-      cout << "Readout:  " << k+1 << " of " << NUM_READS << " :: @time " << t << " sec         \r";
+      cout << "Readout:  " << k+1 << " of " << NUM_READS << " :: @time "<< t << " sec         \r";
       cout.flush();
     }       
     /**************************************/
@@ -145,7 +145,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	psec_cnt = 0;
 	/*assign meta data */
 	get_AC_info(false, targetAC);
-	form_meta_data(targetAC, k, t);
+	form_meta_data(targetAC, k, t, now);
 
 	check_event = 0;
 
@@ -167,9 +167,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	/* wraparound_correction, if desired: */
 	int baseline[psecSampleCells];
 	unwrap_baseline(baseline, 2); 
-	for (int j = 0; j < psecSampleCells; j++){
-	  asic_baseline[j] = baseline[j];
-	}
+	for (int j = 0; j < psecSampleCells; j++) asic_baseline[j] = baseline[j];
       }
     }
 	
@@ -219,18 +217,20 @@ bool fileExists(const string& filename)
     return false;
 }
 
-void SuMo::form_meta_data(int Address, int count, double cpuTime)
+void SuMo::form_meta_data(int Address, int count, double cpuTime, time_t now)
 {
   int i = Address;
   acdcData[i].Data[AC_CHANNELS][0] = count;
-  acdcData[i].Data[AC_CHANNELS][1] = CC_EVENT_NO;
-  acdcData[i].Data[AC_CHANNELS][2] = CC_BIN_COUNT; 
-  acdcData[i].Data[AC_CHANNELS][3] = WRAP_CONSTANT; 
-  acdcData[i].Data[AC_CHANNELS][4] = acdcData[i].EVENT_COUNT;
-  acdcData[i].Data[AC_CHANNELS][5] = acdcData[i].TIMESTAMP_HI;
-  acdcData[i].Data[AC_CHANNELS][6] = acdcData[i].TIMESTAMP_MID;
-  acdcData[i].Data[AC_CHANNELS][7] = acdcData[i].TIMESTAMP_LO;
-  acdcData[i].Data[AC_CHANNELS][8] = cpuTime;
+  acdcData[i].Data[AC_CHANNELS][1] = acdcData[i].CC_EVENT_COUNT;
+  acdcData[i].Data[AC_CHANNELS][2] = acdcData[i].CC_BIN_COUNT; 
+  acdcData[i].Data[AC_CHANNELS][3] = acdcData[i].EVENT_COUNT;
+  acdcData[i].Data[AC_CHANNELS][4] = acdcData[i].TIMESTAMP_HI;
+  acdcData[i].Data[AC_CHANNELS][5] = acdcData[i].TIMESTAMP_MID;
+  acdcData[i].Data[AC_CHANNELS][6] = acdcData[i].TIMESTAMP_LO;
+  
+  acdcData[i].Data[AC_CHANNELS][7] = acdcData[i].CC_TIMESTAMP_HI;
+  acdcData[i].Data[AC_CHANNELS][8] = acdcData[i].CC_TIMESTAMP_MID;
+  acdcData[i].Data[AC_CHANNELS][9] = acdcData[i].CC_TIMESTAMP_LO;
 
   acdcData[i].Data[AC_CHANNELS][10] = acdcData[i].BIN_COUNT_RISE;
   acdcData[i].Data[AC_CHANNELS][11] = acdcData[i].BIN_COUNT_FALL;
@@ -258,6 +258,9 @@ void SuMo::form_meta_data(int Address, int count, double cpuTime)
   for(int j=0; j<AC_CHANNELS; j++){
     acdcData[i].Data[AC_CHANNELS][j+40] = acdcData[i].SELF_TRIG_SCALER[j];
   }
+  acdcData[i].Data[AC_CHANNELS][70] = cpuTime;
+  acdcData[i].Data[AC_CHANNELS][71] = now;
+  acdcData[i].Data[AC_CHANNELS][72] = WRAP_CONSTANT; 
 
 }
 
