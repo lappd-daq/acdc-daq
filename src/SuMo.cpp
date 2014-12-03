@@ -8,7 +8,8 @@
 #include <unistd.h>
 #include "SuMo.h"
 /* associated .cpp files: */
-#include "makePedandLin.cpp"
+#include "calibration/makePedandLin.cpp"
+#include "calibration/loadPedandLin.cpp"
 
 using namespace std;
 
@@ -267,7 +268,7 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
   for (int i = 0; i < 5; i++){
     acdcData[aa].RO_CNT[i] =          (float) AC_INFO[i][4] * 10 * pow(2,11)/ (pow(10,6));
     acdcData[aa].RO_TARGET_CNT[i] =   (float) AC_INFO[i][5] * 10 * pow(2,11)/(pow(10,6));
-    acdcData[aa].VBIAS[i] =           (float) AC_INFO[i][6] * ref_volt_mv/num_bits;
+    acdcData[aa].VBIAS[i] =           (int) AC_INFO[i][6];
     acdcData[aa].TRIGGER_THRESHOLD[i]=(float) AC_INFO[i][7] * ref_volt_mv/num_bits;
     acdcData[aa].RO_DAC_VALUE[i] =    (float) AC_INFO[i][8] * ref_volt_mv/num_bits;
   }
@@ -337,7 +338,7 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
       cout << "|ADC clock/trgt:"     << acdcData[aa].RO_CNT[i];
       cout << "/"                    << acdcData[aa].RO_TARGET_CNT[i] << "MHz";
       cout << ",bias:"               << acdcData[aa].RO_DAC_VALUE[i] <<"mV";
-      cout << "|Ped:"                << acdcData[aa].VBIAS[i] << "mV";
+      cout << "|Ped:"           <<dec<< acdcData[aa].VBIAS[i]* ref_volt_mv/num_bits << "mV";
       cout << "|Trig:"               << acdcData[aa].TRIGGER_THRESHOLD[i] << "mV";
       cout << endl;
     }

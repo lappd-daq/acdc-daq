@@ -16,7 +16,6 @@ author: eric oberla
 
 #define cc_buffersize         31
 #define ac_buffersize         8100
-#define all_ac_buffersize     24400
 #define AC_CHANNELS           30
 #define psec_buffersize       1536
 #define infoBuffersize        17
@@ -60,9 +59,8 @@ class SuMo{
   
   int check_usb();
   int read_CC(bool SHOW_CC_STATUS,bool SHOW_AC_STATUS);
-  int read_AC(bool ENABLE_FILESAVE, unsigned int trig_mode, int AC_adr); /*deprecated, phase this one out */
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for additional retval handling: */
-  int read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE);  /* use this bulk read function instead */
+  int read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE);  
 
   void dump_data(){
     bool all[numFrontBoards] = {1,1,1,1};
@@ -71,7 +69,10 @@ class SuMo{
   }
   int get_AC_info(bool PRINT, int AC_adr);
   int generate_ped(bool ENABLE_FILESAVE);
+  int put_lut_on_heap(bool* range);
+  void free_lut_from_heap(bool* range);
   int make_count_to_voltage(void);
+  int make_count_to_voltage(bool COPY, bool* range);
   int load_lut();
   int load_ped();
   int oscilloscope(int trig_mode, int numFrames, int AC_adr, int range[2]);
@@ -96,7 +97,7 @@ class SuMo{
     unsigned int           TIMESTAMP_HI; /* 16 bits */
     unsigned int           TIMESTAMP_MID;/* 16 bits */
     unsigned int           TIMESTAMP_LO; /* 16 bits */
-    float                  VBIAS[numChipsOnBoard];
+    int                    VBIAS[numChipsOnBoard];
     float                  RO_CNT[numChipsOnBoard];
     float                  RO_TARGET_CNT[numChipsOnBoard];
     float                  RO_DAC_VALUE[numChipsOnBoard];
@@ -147,9 +148,12 @@ class SuMo{
   }
   int unwrap(int ASIC);
   void unwrap_baseline(int *baseline, int ASIC);
-  unsigned int           PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
-  float                  LUT[numFrontBoards][4096][AC_CHANNELS];
-  float                  oldLUT[numFrontBoards][4096][AC_CHANNELS]; 
+ 
+  float*** LUT_CELL; 
+  int*** LUT_CELL_COPY; 
+  float*** LUT;
+  float*** LUT_COPY;
+  unsigned int PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
   /* metadata from CC */
   unsigned int       CC_INFO[cc_buffersize];  
   unsigned int       LAST_CC_INSTRUCT;
