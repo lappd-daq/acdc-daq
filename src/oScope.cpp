@@ -69,7 +69,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
   int asic_baseline[psecSampleCells];
   int frameCount = 0;
 
-  float sample;
+  int sample;
   ScopePipe myPipe;
   string sendWord;
 
@@ -104,15 +104,11 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     for(int i = 0; i < AC_CHANNELS; i++){
       if(i>0 && i % 6 == 0) psec_cnt ++;
       
-      for(int j = 0; j < psecSampleCells; j++){
-	if(convert_to_voltage){
-	  //sample =  LUT[(int)AC_RAW_DATA[psec_cnt][i%6*256+j]][i]*1000;
-	  //sample -= LUT[(int)PED_DATA[i][j]][i]*1000;
-	}
-	else{
-	  sample = (float) acdcData[AC_adr].AC_RAW_DATA[psec_cnt][i%6*256+j];
-	  sample -= (float) PED_DATA[AC_adr][i][j];
-	}
+      for(int j = 0; j < psecSampleCells; j++){	
+	sample = acdcData[AC_adr].AC_RAW_DATA[psec_cnt][i%6*256+j];
+	sample -= PED_DATA[AC_adr][i][j];
+	sample += acdcData[AC_adr].VBIAS[psec_cnt];
+	
 	pdat[i][j] = sample;
       }
     }

@@ -18,6 +18,7 @@ $RECYCLE.BIN/
 *.txt
 /calibrations/*
 *.hdf5
+*.root
 
 # compile files
 /obj/*

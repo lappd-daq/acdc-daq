@@ -15,7 +15,11 @@ const int NUM_ARGS = 4;
 const char* filename = "logData";
 const char* description = "log data from DAQ";
 using namespace std;
-  
+/********************/
+
+/* subtract pedestal values on-line */
+bool PED_SUBTRCT = true; 
+
 static int LIMIT_READOUT_RATE = 10000;
 static int NUM_SEQ_TIMEOUTS = 100;
 /* note: usb timeout defined in include/stdUSB.h */
@@ -56,8 +60,8 @@ int main(int argc, char* argv[]){
 
 int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate){
   bool convert_to_voltage;
-  int check_event, asic_baseline[psecSampleCells], count = 0, psec_cnt = 0, numTimeouts = 0;
-  float sample, _now_, t = 0.;
+  int sample, check_event, asic_baseline[psecSampleCells], count = 0, psec_cnt = 0, numTimeouts = 0;
+  float  _now_, t = 0.;
   char logDataFilename[300];
   Timer timer = Timer(); 
   time_t now;
@@ -77,19 +81,13 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   /* read all front end cards */
   bool all[numFrontBoards];
   for(int i=0;i<numFrontBoards; i++) all[i] = true;
-  
-  /* need to add voltage LUT stuff here, eventually */
-  convert_to_voltage = false;
-  /*if(load_lut() != 0) convert_to_voltage = false;
-   *else
-   *  convert_to_voltage = output_mode;
-   */
 
   /* setup some things */
   if(trig_mode) set_usb_read_mode(24);
   else set_usb_read_mode(16), dump_data();
-  
-  load_ped();
+   
+  if(PED_SUBTRCT) load_ped(); 
+
   /* cpu time zero */
   //t0 = time(NULL);
   timer.start();
@@ -153,13 +151,10 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	  if(i>0 && i % 6 == 0) psec_cnt ++;
 
 	  for(int j = 0; j < psecSampleCells; j++){
-	    if(convert_to_voltage){
-	      //sample =  LUT[(int)AC_RAW_DATA[psec_cnt][i%6*256+j]][i]*1000;
-	      //sample -= LUT[(int)PED_DATA[targetAC][i][j]][i]*1000;
-	    }
-	    else{
-	      sample = (float) acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
-	      sample -= (float) PED_DATA[targetAC][i][j];
+	    sample = acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
+	    if(PED_SUBTRCT){
+	      sample -= PED_DATA[targetAC][i][j];           //subtract pedestal ADC counts
+	      sample += acdcData[targetAC].VBIAS[psec_cnt]; //baseline value given by DAC setting;
 	    }
 	    acdcData[targetAC].Data[i][j] = sample;
 	  }
