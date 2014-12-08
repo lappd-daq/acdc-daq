@@ -1,3 +1,25 @@
+///////////////////////////////////////////////////////////////////////////////////////
+// Convert AC/DC board data into .root format. Compresses data by ~3X
+// specify number of boards in file/DAQ system in line # 42 
+// 
+//-----
+// to run:
+// open root, i.e. type 'root' at command line:
+//
+// .L ROOT-conversion-and-calibration/ConvertACDCdata.C+
+//  ...  takes 2 (required) filein, filout, and option to correct 
+//  ...  to correct for cell-by-cell voltage gain calibration
+//  ConvertACDCdata("test.txt", "test.root")
+//
+//  to quickly plot
+//  re-open root (.q previous session)
+//  
+//  TFile *f = new TFile("test.root")
+//  ...  to look at waveform in channel 4 at 5th event, for example:
+//  T->Draw("Data[4]:sample", "event==5")
+//
+///////////////////////////////////////////////////////////////////////////////////////
+
 //#ifndef __CINT__
 #include "iostream"
 #include "fstream"
@@ -24,9 +46,6 @@ const Int_t numChipsOnBoard =    5;
 const Int_t psecSampleCells =    256;
 
 void ConvertACDCdata(char *filein, char *fileout, bool applyGainCorrection=true){ 
-  //char filein[200] = "test.txt";
-  //char fileout[200] = "test.root";
-  //bool applyGainCorrection=true;
      
   float*** VoltageLUT;
   VoltageLUT = new float**[numChannelsPerBoard*numBoardsInFile];
@@ -43,11 +62,10 @@ void ConvertACDCdata(char *filein, char *fileout, bool applyGainCorrection=true)
     int entry;
     
     float Voltage[numChannelsPerBoard*numBoardsInFile][psecSampleCells]; 
-        //int ADC[4096];
     //int numBoardsinLUTFile = 0;
     //T_lut->SetBranchAddress("numBoardsforLUT", numBoardsinLUTFile);
-    TBranch* Entrylut  = T_lut->GetBranch("count"); 
-    TBranch* Vlut  = T_lut->GetBranch("Voltage"); 
+    TBranch* Entrylut  = T_lut->GetBranch("ADC"); 
+    TBranch* Vlut  =     T_lut->GetBranch("Voltage"); 
     //TBranch* ADlut  = T_lut->GetBranch("ADC"); 
     
     Entrylut->SetAddress( &entry);
@@ -56,7 +74,6 @@ void ConvertACDCdata(char *filein, char *fileout, bool applyGainCorrection=true)
     
     for(int i=0; i< T_lut->GetEntries(); i++){
       T_lut->GetEntry(i);
-      //cout << i << endl;
       for(int j=0; j<numBoardsInFile; j++){
 	for(int chan=0; chan<numChannelsPerBoard; chan++){
 	  for(int samp=0; samp<psecSampleCells; samp++){
