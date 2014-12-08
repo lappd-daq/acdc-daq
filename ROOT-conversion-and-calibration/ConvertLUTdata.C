@@ -1,14 +1,39 @@
-#ifndef __CINT__
+///////////////////////////////////////////////////////////////////////////////////////
+// Convert AC/DC board LUT data into .root format. Compresses data by ~3X
+// specify number of boards in file/DAQ system in line # 42
+// 
+//-----
+// to run:
+// open root, i.e. type 'root' at command line:
+//
+// .L ROOT-conversion-and-calibration/Convert-LUT-data.C+
+//  ConvertLUTdata()
+//
+//  to quickly plot
+//  re-open root (.q previous session)
+//  
+//  TFile *f = new TFile("calibrations/LUT.root")
+//  ...  to look at channel 5, cell 55 transfer curve:
+//  Tlut->Draw("Voltage[5][55]:ADC")
+//
+///////////////////////////////////////////////////////////////////////////////////////
+
+
 #include "iostream"
 #include "fstream"
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
+#include "TBranch.h"
+#include "TF1.h"
+#include "TH1F.h"
+#include "TProfile.h"
+#include "TMath.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#endif
+
 using namespace std;
 /**************************************************/
 /* number of boards should match number of input cal files */
@@ -29,8 +54,20 @@ char fileout[200]   = "calibrations/LUT.root";
 void ConvertLUTdata(){ 
 
   TFile *f = new TFile(fileout, "RECREATE");
-  int board, count ,ADC[4096], channel, sample;
-  float Voltage[numChannelsPerBoard*numBoardsforLUT][psecSampleCells][4096];
+  int   ADC;
+  int   board;
+  //float Voltage[numChannelsPerBoard*numBoardsforLUT][psecSampleCells][4096];
+  
+  /* put on heap memory so compiling works */
+  float*** Voltage;
+  Voltage = new float**[numChannelsPerBoard*numBoardsforLUT];
+  for(int j=0; j<numBoardsforLUT; j++){
+    for(int chan=0; chan<numChannelsPerBoard; chan++){
+      Voltage[chan+j*numChannelsPerBoard] = new float*[psecSampleCells];
+      for(int samp=0; samp<psecSampleCells; samp++) Voltage[chan+j*numChannelsPerBoard][samp] = new float[4096];
+    }
+  }
+  
   float V[numChannelsPerBoard*numBoardsforLUT][psecSampleCells];
 
   char Voltage_leaf[200];
@@ -38,13 +75,10 @@ void ConvertLUTdata(){
   sprintf(Voltage_leaf, "Voltage[%i][256]/F",numChannelsPerBoard*numBoardsforLUT);
  
   TTree *Tlut = new TTree("Tlut", "Tlut");
-  //Tlut->Branch("board", &board, "board/I");
-  Tlut->Branch("count", &count, "count/I");
-  Tlut->Branch("ADC", &ADC, "ADC[4096]/I");
-  Tlut->Branch("numBoardsforLUT", &numBoardsforLUT, "numBoardsforLUT/I");
-  //Tlut->Branch("channel", &channel, "channel/I");
-  //Tlut->Branch("sample", &sample, "sample/I");
-  Tlut->Branch("Voltage", &V, Voltage_leaf);			  
+  
+  TBranch *_ADC = Tlut->Branch("ADC", &ADC, "ADC/I");
+  //TBranch *_numBoardsForLUT =Tlut->Branch("numBoardsforLUT", &numBoardsforLUT, "numBoardsforLUT/I");
+  TBranch *_Voltage =Tlut->Branch("Voltage", &V, Voltage_leaf);			  
   
   /* open cal data .txt file */
   for(int fileNum = 0; fileNum < numBoardsforLUT; fileNum++){
@@ -62,6 +96,7 @@ void ConvertLUTdata(){
     int row = 0, tmp;
     float temp = 0.;
     while(ifs){
+      int channel, sample;
       ifs >> tmp;
       //cout << row << ":" << ADC[row] << ":" << numChannelsPerBoard*fileNum << endl;
       for(int i=0; i<numChannelsPerBoard; i++){
@@ -86,8 +121,7 @@ void ConvertLUTdata(){
 
   /* this is a messy way to go about this.. */
   for(int i=0; i<4096; i++){
-    count = i;
-    ADC[i] = i;
+    ADC = i;
     for(int fileNum = 0; fileNum < numBoardsforLUT; fileNum++)
       for(int channel=0; channel<numChannelsPerBoard; channel++)
 	for(int sample=0; sample<psecSampleCells; sample++) 
