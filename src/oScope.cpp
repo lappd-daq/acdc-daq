@@ -51,6 +51,8 @@ int main(int argc, char* argv[]){
     if(Sumo.check_active_boards(num_checks))
       return 1;
     
+    int mode = Sumo.check_readout_mode();
+
     Sumo.oscilloscope(trigMode, numFrames, acdcNum, plotRange);
  
     return 0;
@@ -58,10 +60,20 @@ int main(int argc, char* argv[]){
 } 
 
 int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] ){
-  
+
+  int device = 0;   //default is master board
   bool scopeBoard[numFrontBoards];
   for(int i=0; i<numFrontBoards; i++) scopeBoard[i] = false;
   scopeBoard[AC_adr] = true;
+
+  if(AC_adr >= boardsPerCC && mode != USB2x){
+    cout << "error, no USB slave device in readout configuration" << endl;
+    return -2;
+  }
+  else if(AC_adr >= boardsPerCC && mode == USB2x){
+    cout << "scoping slave device " << endl;
+    device = 1; //slave device
+  }
 
   bool convert_to_voltage = false;
   int check_event, count = 0, psec_cnt = 0;
@@ -80,6 +92,10 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
   myPipe.send_cmd("set xyplane 0");
   myPipe.send_cmd("set view 14, 100, 1, 1.5");
   myPipe.send_cmd("set yrange [0:256]");
+  
+  myPipe.send_cmd("set xlabel \'channel\' ");
+  myPipe.send_cmd("set ylabel \'sample no.\' ");
+  //  myPipe.send_cmd("set zlabel \'counts\' ");
 
   if(DC_ACTIVE[AC_adr] == false){
     printf("no AC detected at specified address. cannot perform oscilloscope function!\n");
@@ -90,11 +106,17 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
 
   while(frameCount < numFrames){
     psec_cnt = 0;
-    manage_cc_fifo(1);
-    if(trig_mode) set_usb_read_mode(7);
-    if(!trig_mode){ 
-      set_usb_read_mode(16);
-      software_trigger(1 << AC_adr);
+    if(device==1) manage_cc_fifo_slaveDevice(1);
+    else          manage_cc_fifo(1);
+    
+    if(trig_mode){
+      if(device==1) set_usb_read_mode_slaveDevice(7);
+      set_usb_read_mode(7);
+    }
+    
+    else if(!trig_mode){ 
+      if(device==1) set_usb_read_mode_slaveDevice(16), software_trigger_slaveDevice(1 << AC_adr-boardsPerCC);
+      else          set_usb_read_mode(16), software_trigger(1 << AC_adr);
     }
     
     read_AC(1, scopeBoard, false); 
@@ -105,9 +127,8 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
       if(i>0 && i % 6 == 0) psec_cnt ++;
       
       for(int j = 0; j < psecSampleCells; j++){	
-	sample = acdcData[AC_adr].AC_RAW_DATA[psec_cnt][i%6*256+j];
+	sample  = adcDat[AC_adr]->AC_RAW_DATA[psec_cnt][i%6*256+j];
 	sample -= PED_DATA[AC_adr][i][j];
-	sample += acdcData[AC_adr].VBIAS[psec_cnt];
 	
 	pdat[i][j] = sample;
       }
