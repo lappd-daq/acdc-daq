@@ -33,8 +33,20 @@ int main(int argc, char* argv[]){
   else{
     SuMo Sumo;
     int num_checks = 3;    
+    
     if(Sumo.check_active_boards(num_checks)) return 1;
-    Sumo.read_CC(true, false);
+    
+    Sumo.check_active_boards(true);
+    int device = 0;
+    Sumo.read_CC(true, false, device);
+    
+    int mode = Sumo.check_readout_mode();
+    if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
+      cout << "Slave board detected " << endl;
+      device = 1;
+      Sumo.read_CC(true, false, device);
+    }
+
     return 0;   
   }
 } 

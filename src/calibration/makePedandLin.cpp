@@ -21,6 +21,7 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE){
     read_AC(0, DC_ACTIVE, false);
     /* close trigger */
     manage_cc_fifo(1);
+    if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
     /* make pedestal files for each board */
     for(int targetAC=0; targetAC < numFrontBoards; targetAC++){    
       if(!BOARDS_READOUT[targetAC]) continue;
@@ -31,7 +32,7 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE){
 	if(i>0 && i % 6 == 0) psec_cnt ++;
 	/* make raw arrays from incoming data */
 	for(int j=0; j<psecSampleCells; j++)
-	  calData[targetAC].raw_ped_data_array[i][j][k] = acdcData[targetAC].AC_RAW_DATA[psec_cnt][i%6*256+j];
+	  calData[targetAC].raw_ped_data_array[i][j][k] = adcDat[targetAC]->AC_RAW_DATA[psec_cnt][i%6*256+j];
       }
     } /* end front-end board loop */
   } /* end num readouts loop */
@@ -193,6 +194,7 @@ int SuMo::make_count_to_voltage(void){
     //}
   
     set_usb_read_mode(16); 
+    if(mode==USB2x) set_usb_read_mode_slaveDevice(16); 
     set_pedestal_value(i); //once
     set_pedestal_value(i); //twice
     set_pedestal_value(i); //3 times for good measure

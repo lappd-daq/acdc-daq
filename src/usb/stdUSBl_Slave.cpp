@@ -15,13 +15,13 @@
 #include <stdio.h>
 #include "stdUSB.h"
 
-stdUSB::stdUSB(void) {
-    stdUSB::stdHandle = INVALID_HANDLE_VALUE;
+stdUSBSlave::stdUSBSlave(void) {
+    stdUSBSlave::stdHandle = INVALID_HANDLE_VALUE;
     //printf("stdUSB initiated\n");
     //createHandles();
 }
 
-stdUSB::~stdUSB(void) {
+stdUSBSlave::~stdUSBSlave(void) {
   if(stdHandle != INVALID_HANDLE_VALUE){
     //printf("usb closed from destructor\n");  
     freeHandle();
@@ -34,14 +34,14 @@ stdUSB::~stdUSB(void) {
  * @param  
  * @return bool -- SUCCEED or FAILED
  */
-bool stdUSB::createHandles(int num) {
+bool stdUSBSlave::createHandles(int num) {
     int retval;
     struct usb_device *dev;
    
     if (stdHandle != INVALID_HANDLE_VALUE)
         goto ok;
     
-    dev = stdUSB::init(num);
+    dev = stdUSBSlave::init(num);
     retval = (long)dev;
 
     if (retval == 0)
@@ -68,13 +68,14 @@ bool stdUSB::createHandles(int num) {
     /* on ok */
  ok:
 //printf("createhandles: OK\n");
-    return SUCCEED;
+    return stdUSB::SUCCEED;
 
     /* on failure*/
  fail:
-    printf("create USB handle: FAILED\n");
-    return FAILED; // Unable to open usb device. No handle.
+    //printf("create USB handle: FAILED\n");
+    return stdUSB::FAILED; // Unable to open usb device. No handle.
 }
+
 /**
  * Internal function.
  *  Initialises libusb and finds the correct usb device.
@@ -82,7 +83,7 @@ bool stdUSB::createHandles(int num) {
  * @return usb_device* -- A pointer to USBFX2 libusb dev entry, 
  * or INVALID_HANDLE_VALUE on failure.
  */
-struct usb_device* stdUSB::init(int num) {
+struct usb_device* stdUSBSlave::init(int num) {
     struct usb_bus *usb_bus;
     struct usb_device *dev;
 
@@ -110,38 +111,39 @@ struct usb_device* stdUSB::init(int num) {
         }
     }
 
-    printf("init: device not found\n");
+    printf("init: Slave device not found\n");
     /* on failure (device not found) */
     return INVALID_HANDLE_VALUE;
 }
+
 /**
  * Frees handles and resources allcated by createHandle().
  * @param  
  * @return bool -- SUCCEED or FAILED
  */
-bool stdUSB::freeHandle(void) //throw(...)
+bool stdUSBSlave::freeHandle(void) //throw(...)
 {
     /* release interface */
     int retval = usb_release_interface(stdHandle, USBFX2_INTFNO);
     if (retval != 0)
-        return FAILED;
+        return stdUSB::FAILED;
 
     /* close usb handle */
     //retval = usb_reset(stdHandle); 
     retval = usb_close(stdHandle);
     if (retval != 0)
-        return FAILED;
+        return stdUSB::FAILED;
     //if (retval == 0)
     //printf("usb reset \n");
     
     /* all ok */
-    return SUCCEED;
+    return stdUSB::SUCCEED;
 }
 
-bool stdUSB::freeHandles(void) {
+bool stdUSBSlave::freeHandles(void) {
     // this function exits just because there is no reason
     // to open and close handle all time
-    return SUCCEED;
+    return stdUSB::SUCCEED;
 }
 
 /**
@@ -150,10 +152,10 @@ bool stdUSB::freeHandles(void) {
  * to be sent to the device
  * @return bool -- SUCCEED or FAILED
  */
-bool stdUSB::sendData(unsigned int data)// throw(...)
+bool stdUSBSlave::sendData(unsigned int data)// throw(...)
 {
     if (stdHandle == INVALID_HANDLE_VALUE)
-	return FAILED;
+	return stdUSB::FAILED;
 
     /* Shifted right because send value needs to be in 
        HEX base. char[4] ^= int (char -> 1byte, int -> 4 bytes)
@@ -176,11 +178,11 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
 
     if (retval == 4){ //return value must be exact as the bytes transferred
       //printf("sending data to board...\n");  
-      return SUCCEED;
+      return stdUSB::SUCCEED;
     }
     else{
       printf("could not send data to board\n");
-      return FAILED;
+      return stdUSB::FAILED;
     }
 }
 
@@ -191,12 +193,12 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
  * @param lread -- out param: number of samples read
  * @return bool -- SUCCEED or FAILED
  */
-bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
+bool stdUSBSlave::readData(unsigned short * pData, int l, int* lread)// throw(...)
 {
     // no handle = don't read out any data
     if (stdHandle == INVALID_HANDLE_VALUE) {
       *lread = 0;
-      return FAILED;
+      return stdUSB::FAILED;
     }
 
     int buff_sz = l*sizeof(unsigned short);
@@ -216,24 +218,24 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
         //*lread = retval/buff_sz;
         *lread = (int)(retval / (unsigned long)sizeof(unsigned short));
         //*lread *= 4;
-        return SUCCEED;
+        return stdUSB::SUCCEED;
     } else
       //printf("error code: %s\n", strerror(-1 * retval));
       //printf("error code: %i\n", retval);
         *lread = retval;
-        return FAILED;
+        return stdUSB::FAILED;
 }
 
-bool stdUSB::isOpen() {
+bool stdUSBSlave::isOpen() {
 	return (stdHandle != INVALID_HANDLE_VALUE);
 }
 
-bool stdUSB::reset(){
+bool stdUSBSlave::reset(){
   int retval = usb_reset(stdHandle);
 
   if(retval == 0)
-    return SUCCEED;
+    return stdUSB::SUCCEED;
 
   else
-    return FAILED;
+    return stdUSB::FAILED;
 }

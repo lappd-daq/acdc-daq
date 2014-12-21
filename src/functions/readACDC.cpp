@@ -32,13 +32,21 @@ int main(int argc, char* argv[]){
   /* function defined below */
   else{
     SuMo Sumo;
-    int num_checks = 10;
+    int num_checks = 3;
     
     //Sumo.set_usb_read_mode(16); 
     if(Sumo.check_active_boards(num_checks)) return 1;
     
     //Sumo.software_trigger(15);
-    Sumo.read_CC(true, true);
+    int device = 0;
+    Sumo.read_CC(true, true, device);
+    
+    int mode = Sumo.check_readout_mode();
+    if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
+      cout << "Slave board detected " << endl;
+      device = 1;
+      Sumo.read_CC(true, true, device);
+    }
     return 0;
     
   }

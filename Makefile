@@ -20,10 +20,9 @@ EXE=	bin/logData \
 	bin/dumpData bin/oScope   bin/usbResetDevice \
 	bin/makeLUT
 #############################################################################
-OBJS= 	obj/stdUSBl.o \
+OBJS= 	obj/stdUSBl.o obj/stdUSBl_Slave.o\
 		obj/SuMo.o \
 		obj/ScopePipe.o \
-		obj/usb_commands.o 
 #	obj/log_data_hd5.o
 #############################################################################
 default:

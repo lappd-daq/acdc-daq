@@ -6,14 +6,14 @@ using namespace std;
 
 int SuMo::load_ped(){
   
-  for(int targetAC = 0; targetAC < 4; targetAC++){  
+  for(int targetAC = 0; targetAC < numFrontBoards; targetAC++){  
     char ped_filename[500];
     sprintf(ped_filename, "calibrations/PED_DATA_%d.txt", targetAC);
     
     FILE* fped_in = fopen(ped_filename, "r");
 
     if (fped_in == NULL){
-      printf("No pedestal file found for board #%d\n", targetAC);
+      //printf("No pedestal file found for board #%d\n", targetAC);
       continue;
     }
     int rows=0;

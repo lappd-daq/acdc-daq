@@ -91,13 +91,13 @@ void setDefaultValues(){
 }
 /* default trig settings (OFF) */
 int readParamsFromBoard(SuMo& acdc){
-  acdc.read_CC(false, false);
+  acdc.read_CC(false, false, 0);
   for(int i=0; i<numFrontBoards; i++){
     if(acdc.DC_ACTIVE[i] == 1){
       acdc.get_AC_info(false,i);
-      pedestal[i]    =acdc.acdcData[i].VBIAS[0];
-      threshold[i]   =acdc.acdcData[i].TRIGGER_THRESHOLD[0];
-      trig_mask[i]   =acdc.acdcData[i].SELF_TRIG_MASK;
+      pedestal[i]    =acdc.adcDat[i]->vbias[0];
+      threshold[i]   =acdc.adcDat[i]->trigger_threshold[0];
+      trig_mask[i]   =acdc.adcDat[i]->self_trig_mask;
       //trig_enable[i] =acdc.acdcData[i].TRIG_EN[i];
     }
   }
