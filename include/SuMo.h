@@ -29,18 +29,20 @@ class SuMo{
 
   //instructions to hardware 
   void reset_dll();
-  void reset_self_trigger();
+  void reset_self_trigger(unsigned int mask, int device = 0);
   void reset_time_stamp();
   void reset_acdc();
   void align_lvds();
-  void set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, bool RATE_ONLY, bool TRIG_SIGN);
-  void set_self_trigger_mask(int mask, bool HILO);
-  void set_pedestal_value(unsigned int PED_VALUE);
-  void set_dll_vdd(unsigned int VALUE);
-  void set_trig_threshold(unsigned int TRIG_VALUE);
-  void set_ro_target_count(unsigned int TARGET_RO_COUNT);
+  
   void toggle_LED(bool EN);
-  void toggle_CAL(bool EN); 
+  void toggle_CAL(bool EN, int device = 0); 
+  
+  void set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, bool RATE_ONLY, bool TRIG_SIGN, unsigned int mask, int device = 0);
+  void set_self_trigger_mask(int mask, bool HILO, unsigned int board_mask, int device = 0);
+  void set_pedestal_value(unsigned int PED_VALUE, unsigned int mask, int device = 0);
+  void set_dll_vdd(unsigned int VALUE, unsigned int mask, int device = 0);
+  void set_trig_threshold(unsigned int TRIG_VALUE, unsigned int mask, int device = 0);
+  void set_ro_target_count(unsigned int TARGET_RO_COUNT);
  
   void set_usb_read_mode(unsigned int READ_MODE);
   void set_usb_read_mode_slaveDevice(unsigned int READ_MODE);

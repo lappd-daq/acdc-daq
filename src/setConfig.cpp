@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <iomanip>
 #include <sstream>
+#include <math.h>
 #include "SuMo.h"
 
 using namespace std;
@@ -27,7 +28,10 @@ unsigned int threshold[numFrontBoards];
 bool         trig_sign;             // (-) pulses
 bool         wait_for_sys;
 bool         rate_only;   
-bool         hrdw_trig;   
+bool         hrdw_trig;
+bool         hrdw_trig_sl;
+unsigned int hrdw_trigsrc;
+unsigned int hrdw_trig_slsrc;
 /* running this function without paramsFile, turns off all board-level triggers */
 
 void setDefaultValues();
@@ -48,28 +52,74 @@ int main(int argc, char* argv[]){
   /* function defined below */
   else{
     SuMo Sumo;
-    int num_checks = 5;
+    int  num_checks = 5;
     char paramsFile[200];
 
     if(Sumo.check_active_boards(num_checks)) return 1;
-    readParamsFromBoard(Sumo);
 
     if(argc == 2){
       strcpy(paramsFile, argv[1]);
-      parseTrigParams(paramsFile);
+      parseTrigParams(paramsFile);   
     }
     else  
       setDefaultValues();
+      
+    int device       = 0;
 
-    //Sumo.reset_self_trigger();
-    /* send trig mask to boards in 2 sets of 16 bit words */
-    Sumo.set_self_trigger_mask(0x00007FFF&trig_mask[0], 0);
-    Sumo.set_self_trigger_mask(0x3FFF8000&trig_mask[0], 1);
-    /* push trigger settings, can check by reading back ACDC settings */
-    Sumo.set_self_trigger(trig_enable[0], wait_for_sys, rate_only, trig_sign);
-    Sumo.set_pedestal_value(pedestal[0]);
-    Sumo.set_trig_threshold(threshold[0]);
-    //Sumo.dump_data();
+    cout << "__________________________" << endl;
+
+    Sumo.set_usb_read_mode(16);
+    
+    int mode = Sumo.check_readout_mode();
+    if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
+      Sumo.set_usb_read_mode_slaveDevice(16);
+    }
+
+    Sumo.dump_data();
+    
+    for(int i=0; i<numFrontBoards; i++){
+      //Sumo.reset_self_trigger();
+      unsigned int boardAddress = pow(2, i % 4);
+      if(i >= 4)   device = 1;  
+      
+      if(Sumo.DC_ACTIVE[i] == false){
+	cout << "no board = " << i << " addressed at device " 
+	     << device << ":0x" << hex << boardAddress << endl;
+	cout << "__________________________" << std::dec << endl;
+	continue;
+      }
+ 
+      cout << "writing settings to board " << i << " addressed at device " 
+	   << device << ":0x" << hex << boardAddress << endl;
+
+      /* send trig mask to boards in 2 sets of 16 bit words */
+      Sumo.set_self_trigger_mask(0x00007FFF&trig_mask[i], 0, boardAddress, device);
+      Sumo.set_self_trigger_mask(0x3FFF8000&trig_mask[i], 1, boardAddress, device);
+    
+      /* push trigger settings, can check by reading back ACDC settings */
+      cout << "writing pedestal of " << pedestal[i] << " to board " << i << endl;
+      cout << "writing trig_enable of " << trig_enable[i] << " to board " << i << endl;
+
+      Sumo.set_pedestal_value(pedestal[i], boardAddress, device);
+      Sumo.set_trig_threshold(threshold[i], boardAddress, device);
+      Sumo.set_self_trigger(trig_enable[i], wait_for_sys, rate_only, trig_sign, boardAddress, device);
+
+      cout << "__________________________" << std::dec << endl;
+      //Sumo.dump_data();
+    }
+
+    if(hrdw_trig){
+      unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trigsrc << 12;
+      cout << "setting trig mode to master device " << ext_trig_mode << endl;
+      Sumo.set_usb_read_mode(ext_trig_mode);
+    }
+    
+    if(hrdw_trig_sl){
+      unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trig_slsrc << 12;
+      cout << "setting trig mode to slave device " << ext_trig_mode << endl;
+      Sumo.set_usb_read_mode_slaveDevice(ext_trig_mode);
+    }
+
     return 0;
   }
 }
@@ -87,9 +137,12 @@ void setDefaultValues(){
   wait_for_sys= false;
   rate_only   = false;
   hrdw_trig   = false;
+  hrdw_trig_sl= false;
+  hrdw_trigsrc= 0;
+  hrdw_trig_slsrc = 0;
   cout << "self-trigger disabled" << endl;
 }
-/* default trig settings (OFF) */
+/* read register settings */
 int readParamsFromBoard(SuMo& acdc){
   acdc.read_CC(false, false, 0);
   for(int i=0; i<numFrontBoards; i++){
@@ -112,7 +165,8 @@ int parseTrigParams(const char* file){
   string line, data;
   
   unsigned int tmp1, tmp2, tmp3;
-  
+  bool bool_tmp1;
+
   while(getline(in,line)){
     stringstream linestream(line);
     getline(linestream, data, '\t');
@@ -124,38 +178,53 @@ int parseTrigParams(const char* file){
       linestream >> tmp1 >> hex >> tmp2;
       trig_mask[tmp1] = tmp2;
       cout << data << " on board " << tmp1 << " set to 0x" 
-	   << hex << tmp2 << endl;
+	   << hex << tmp2 << dec << endl;
     }      
     else if(data.find("trig_enable")==0){
-      linestream >> tmp1 >> tmp2;
-      trig_enable[tmp1] = tmp2;
-      cout << data << " on board " << tmp1 << " set to " << tmp2 << endl;
+      linestream >> tmp1 >> bool_tmp1;
+      trig_enable[tmp1] = bool_tmp1;
+      cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
     } 
     else if(data.find("trig_sign")==0){
-      linestream >> tmp1;
-      trig_sign = tmp1;  
-      cout << data << " set to " << tmp1 << endl;
+      linestream >> bool_tmp1;
+      trig_sign = bool_tmp1;  
+      cout << data << " set to " << bool_tmp1 << endl;
     } 
     else if(data.find("wait_for_sys")==0){
-      linestream >> tmp1;
-      wait_for_sys = tmp1;
-      cout << data << " set to " << tmp1 << endl;
+      linestream >> bool_tmp1;
+      wait_for_sys = bool_tmp1;
+      cout << data << " set to " << bool_tmp1 << endl;
     } 
     else if(data.find("rate_only")==0){
-      linestream >> tmp1;
-      rate_only = tmp1;
-      cout << data << " set to " << tmp1 << endl;
+      linestream >> bool_tmp1;
+      rate_only = bool_tmp1;
+      cout << data << " set to " << bool_tmp1 << endl;
     } 
     else if(data.find("hrdw_trig")==0){
+      linestream >> bool_tmp1;
+      hrdw_trig = bool_tmp1;
+      cout << data << " set to " << hrdw_trig << endl;
+    } 
+    else if(data.find("hrdw_sl_trig")==0){
+      linestream >> bool_tmp1;
+      hrdw_trig_sl = bool_tmp1;
+      cout << data << " set to " << bool_tmp1 << endl;
+    } 
+    else if(data.find("hrdw_src_trig")==0){
       linestream >> tmp1;
-      hrdw_trig= tmp1;
+      hrdw_trigsrc = tmp1;
+      cout << data << " set to " << tmp1 << endl;
+    } 
+    else if(data.find("hrdw_slsrc_trig")==0){
+      linestream >> tmp1;
+      hrdw_trig_slsrc = tmp1;
       cout << data << " set to " << tmp1 << endl;
     } 
     else if(data.find("pedestal")==0){
       linestream >> tmp1 >> tmp2;
       pedestal[tmp1]= tmp2;
       cout << data << " on board " << tmp1 << " set to 0x" 
-	   << tmp2 << endl;
+	   << hex << tmp2 << endl;
     }
     else if(data.find("thresh")==0){
       linestream >> tmp1 >> tmp2;

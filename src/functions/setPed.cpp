@@ -32,7 +32,8 @@ int main(int argc, char* argv[]){
   else{
     SuMo Sumo;
     int temp = 0;
-    int num_checks = 10;
+    int num_checks = 3;
+    int device = 0;
     int ped = atoi(argv[1]);
     if(ped > 4095 || ped < 0){
       cout << "invalid pedestal value" << endl;
@@ -42,7 +43,16 @@ int main(int argc, char* argv[]){
     if(Sumo.check_active_boards(num_checks))
       return 1;
 
-    Sumo.set_pedestal_value(ped);
+    Sumo.set_pedestal_value(ped,15, device );
+ 
+    int mode = Sumo.check_readout_mode();
+    if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
+      cout << "Slave board detected " << endl;
+      device = 1;
+      Sumo.set_pedestal_value(ped, 15, device);
+
+    }
+
     cout << "Pedestal Voltage set to " << ped*1200/4096 << " mV\n";
 
     return 0;

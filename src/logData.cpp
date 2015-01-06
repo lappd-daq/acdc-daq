@@ -18,7 +18,7 @@ using namespace std;
 /********************/
 
 /* subtract pedestal values on-line */
-bool PED_SUBTRCT = false; 
+static bool PED_SUBTRCT = false; 
 
 static int LIMIT_READOUT_RATE = 10000;
 static int NUM_SEQ_TIMEOUTS = 100;
@@ -124,8 +124,8 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 
     /*send trigger over software if not looking externally */
     if(trig_mode){ 
-      set_usb_read_mode(7);
-      if(mode == USB2x)  set_usb_read_mode_slaveDevice(7);
+                         reset_self_trigger(15, 0), set_usb_read_mode(7);
+      if(mode == USB2x)  reset_self_trigger(15, 1), set_usb_read_mode_slaveDevice(7);
       usleep(acq_rate+LIMIT_READOUT_RATE);
     }
     else{

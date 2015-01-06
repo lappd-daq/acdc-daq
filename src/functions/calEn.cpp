@@ -11,7 +11,7 @@
 #include "SuMo.h"
 
 /* specific to file */
-const int NUM_ARGS =      2;
+const int NUM_ARGS =      3;
 const char* filename =     "calEn";
 const char* description =  "turn cal switch on/off on ACDC card";
 
@@ -37,12 +37,14 @@ int main(int argc, char* argv[]){
     if(Sumo.check_active_boards(num_checks))
       return 1;
 
+    int device = atoi(argv[2]);
+
     if( atoi(argv[1]) == 1 || std::string(argv[1]) == "ON" || 
 	std::string(argv[1]) == "on")
-      Sumo.toggle_CAL(true);
+      Sumo.toggle_CAL(true, device);
     else if ( atoi(argv[1]) == 0 || std::string(argv[1]) == "OFF" || 
 	std::string(argv[1]) == "off")
-      Sumo.toggle_CAL(false);
+      Sumo.toggle_CAL(false, device);
     else{
       cout << "invalid argument" << endl;
       return 1;

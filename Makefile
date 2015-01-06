@@ -16,7 +16,7 @@ INC= -I./include/
 EXE=	bin/logData \
 	bin/takePed  bin/setPed   bin/ledEn bin/setupLVDS \
 	bin/readCC   bin/readACDC bin/resetACDC \
-	bin/calEn    bin/resetDll bin/setTrig  \
+	bin/calEn    bin/resetDll bin/setConfig \
 	bin/dumpData bin/oScope   bin/usbResetDevice \
 	bin/makeLUT
 #############################################################################
@@ -54,7 +54,7 @@ bin/calEn	: obj/calEn.o    	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/setupLVDS	: obj/setupLVDS.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/resetACDC	: obj/resetACDC.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/resetDll	: obj/resetDll.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/setTrig	: obj/setTrig.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
+bin/setConfig	: obj/setConfig.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/dumpData	: obj/dumpData.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/oScope	: obj/oScope.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/makeLUT	: obj/makeLUT.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@

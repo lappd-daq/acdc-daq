@@ -1,0 +1,50 @@
+#ifndef __DAQINSTRUCTION_H__
+#define __DAQINSTRUCTION_H__
+
+#include <stdlib.h>
+#include <stdio.h>
+#include "SuMo.h"
+#include "stdUSB.h"
+
+class DAQInstruction{
+
+ public:
+  DAQInstruction();
+  ~DAQInstruction();
+
+  
+  void sync_usb(bool SYNC);
+
+  //instructions to hardware 
+  void reset_dll();
+  void reset_self_trigger();
+  void reset_time_stamp();
+  void reset_acdc();
+  void align_lvds();
+  void set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, bool RATE_ONLY, bool TRIG_SIGN);
+  void set_self_trigger_mask(int mask, bool HILO);
+  void set_pedestal_value(unsigned int PED_VALUE);
+  void set_dll_vdd(unsigned int VALUE);
+  void set_trig_threshold(unsigned int TRIG_VALUE);
+  void set_ro_target_count(unsigned int TARGET_RO_COUNT);
+  void set_usb_read_mode(unsigned int READ_MODE);
+  void manage_cc_fifo(bool VALUE);
+  void manage_cc_fifo_slaveDevice(bool VALUE);
+  void toggle_LED(bool EN);
+  void toggle_CAL(bool EN);
+  
+  void software_trigger(unsigned int SOFT_TRIG_MASK);
+  void software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK);
+
+ private:
+  void createUSBHandles();
+  void closeUSBHandles();
+
+ protected:
+  SuMo           daq;
+  stdUSB         usb;        //object to handle USB device
+  stdUSBSlave    usb2;       //object to handle USB slave device
+
+};
+
+#endif

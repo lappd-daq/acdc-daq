@@ -47,6 +47,7 @@ int SuMo::check_readout_mode(void){
     mode = USB2x;  
     usb.freeHandles();
     usb2.freeHandles();
+    //cout << "mode is " << mode << endl;
   }
   else if(usb.createHandles() == stdUSB::SUCCEED){
     mode = USB;
@@ -96,6 +97,7 @@ int SuMo::check_active_boards(int NUM){
       cout << "failed to find connected ADC boards" << endl;
       return 1;
   }
+  //cout << "readout mode is " << mode << endl;
   return 0;
 }
 
@@ -121,7 +123,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
     else       usb.readData(buffer, cc_buffersize+2, &samples); 
     
     if(samples < 2){
-      if(print) cout << "error: no data in buffer" << endl;
+      if(print) cout << "error: no data in buffer on device #" << device << endl;
       return -1;
     }
     
@@ -129,7 +131,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
       CC_INFO[i] = buffer[i];
       if(print) cout << i << ":" << buffer[i] << " ";
     }
-    if(print) cout << "samples received: " << samples << endl;
+    if(print) cout << "samples received: " << samples << " on device #" << device << endl;
   }
   catch(...){
     fprintf(stderr, "Please connect the board. [DEFAULT exception] \n");

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <math.h>
 #include "SuMo.h"
 #include "ScopePipe.h"
 
@@ -16,7 +17,7 @@ const int NUM_ARGS =      4;
 const char* filename =     "oScope";
 const char* description =  "pipe data to gnuplot window.";
 
-static int scopeRefresh = 600000;
+static int scopeRefresh = 100000;
 
 using namespace std;
 
@@ -76,7 +77,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
   }
 
   bool convert_to_voltage = false;
-  int check_event, count = 0, psec_cnt = 0;
+  int count = 0, psec_cnt = 0;
   float pdat[AC_CHANNELS][psecSampleCells];
   int asic_baseline[psecSampleCells];
   int frameCount = 0;
@@ -103,24 +104,39 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
   }
   
   load_ped();
+    
+  unsigned int bit_address = pow(2, AC_adr % boardsPerCC);
 
   while(frameCount < numFrames){
     psec_cnt = 0;
     if(device==1) manage_cc_fifo_slaveDevice(1);
     else          manage_cc_fifo(1);
     
+    /* handle trigger */
     if(trig_mode){
-      if(device==1) set_usb_read_mode_slaveDevice(7);
-      set_usb_read_mode(7);
+      if(device==1){
+	reset_self_trigger(15, 1);
+	set_usb_read_mode_slaveDevice(7);
+      }
+      else{
+	reset_self_trigger(15, 0);
+	set_usb_read_mode(7);
+      }
+
+      usleep(scopeRefresh);
+
     }
     
+
+    /* otherwise, send trigger over software */
     else if(!trig_mode){ 
       if(device==1) set_usb_read_mode_slaveDevice(16), software_trigger_slaveDevice(1 << AC_adr-boardsPerCC);
       else          set_usb_read_mode(16), software_trigger(1 << AC_adr);
     }
     
+    /* pull data from central card */
     read_AC(1, scopeBoard, false); 
-    check_event = 0;
+    
     get_AC_info(false, AC_adr);
     
     for(int i = 0; i < AC_CHANNELS; i++){
@@ -139,7 +155,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     unwrap_baseline(baseline, 2);   // firmware wraparound marked on ASIC #2 
     for (int j = 0; j < psecSampleCells; j++){
       asic_baseline[j] = baseline[j];
-      }
+    }
      
     for(int i=range[0]; i < range[1]; i++){	  
       if(i==range[0]) myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with lines, \\");
@@ -160,7 +176,6 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     frameCount++;
   }
   /*hold window*/
-  int temp;
   cout << "press enter to quit"; 
   cin.ignore();
   return 0; 
