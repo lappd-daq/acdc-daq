@@ -76,9 +76,9 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     device = 1; //slave device
   }
 
-  bool convert_to_voltage = false;
   int count = 0, psec_cnt = 0;
-  float pdat[AC_CHANNELS][psecSampleCells];
+  int pdat[AC_CHANNELS][psecSampleCells];
+  int max_pdat = 10;
   int asic_baseline[psecSampleCells];
   int frameCount = 0;
 
@@ -110,24 +110,21 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
   while(frameCount < numFrames){
     psec_cnt = 0;
     if(device==1) manage_cc_fifo_slaveDevice(1);
-    else          manage_cc_fifo(1);
+    manage_cc_fifo(1);
     
     /* handle trigger */
     if(trig_mode){
-      if(device==1){
-	reset_self_trigger(15, 1);
-	set_usb_read_mode_slaveDevice(7);
-      }
-      else{
-	reset_self_trigger(15, 0);
-	set_usb_read_mode(7);
-      }
+      if(device==1) reset_self_trigger(15, 1);
+      reset_self_trigger(15, 0);
 
+      if(device==1) set_usb_read_mode_slaveDevice(7);
+      set_usb_read_mode(7);
+     
       usleep(scopeRefresh);
 
+      if(device==1) set_usb_read_mode_slaveDevice(0);
+      set_usb_read_mode(0);
     }
-    
-
     /* otherwise, send trigger over software */
     else if(!trig_mode){ 
       if(device==1) set_usb_read_mode_slaveDevice(16), software_trigger_slaveDevice(1 << AC_adr-boardsPerCC);
@@ -142,13 +139,18 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     for(int i = 0; i < AC_CHANNELS; i++){
       if(i>0 && i % 6 == 0) psec_cnt ++;
       
-      for(int j = 0; j < psecSampleCells; j++){	
+        for(int j = 0; j < psecSampleCells; j++){	
 	sample  = adcDat[AC_adr]->AC_RAW_DATA[psec_cnt][i%6*256+j];
 	sample -= PED_DATA[AC_adr][i][j];
 	
 	pdat[i][j] = sample;
+	if(fabs(pdat[i][j]) > max_pdat) max_pdat = fabs(pdat[i][j]);
       }
     }
+
+    /* scale z-axis */
+    if(max_pdat < 200) myPipe.send_cmd("set zrange [-200:200]");
+    else               myPipe.send_cmd("set auto z");
     
     int baseline[psecSampleCells];
     
@@ -158,16 +160,16 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     }
      
     for(int i=range[0]; i < range[1]; i++){	  
-      if(i==range[0]) myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with lines, \\");
-      else if(i==range[1]-1) myPipe.send_cmd("\'-\' using 1:2:3 notitle with lines");
+      if(i==range[0]) myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with points, \\");
+      else if(i==range[1]-1) myPipe.send_cmd("\'-\' using 1:2:3 notitle with points");
       else
-	myPipe.send_cmd("\'-\' using 1:2:3 notitle with lines, \\");
+	myPipe.send_cmd("\'-\' using 1:2:3 notitle with points, \\");
     }
 	
     for(int i=range[0]; i < range[1]; i++){	  
       for(int j=0; j < psecSampleCells; j++){
 	char sendWord[100];
-	sprintf(sendWord, "%d %d %f", i, j, pdat[i][asic_baseline[j]]);
+	sprintf(sendWord, "%d %d %d", i, j, pdat[i][asic_baseline[j]]);
 	myPipe.send_cmd(sendWord);	        
       }
       myPipe.send_cmd("eof");	        

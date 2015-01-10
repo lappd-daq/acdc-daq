@@ -114,8 +114,8 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
   if(device==1 && mode != USB2x) return -2;
   
   /* set usb read mode for numFrontBoards+1 (central card readout-only) */
-  if(device) set_usb_read_mode_slaveDevice(4);
-  else       set_usb_read_mode(4);
+  if(device) set_usb_read_mode_slaveDevice(5);
+  else       set_usb_read_mode(5);
 
   /* try readout */
   try{
@@ -218,7 +218,7 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
 
   int ff=adcDat[aa]->bin_count_rise =       AC_INFO[0][9] & 0x0F;
   int gg=adcDat[aa]->bin_count_fall =       (AC_INFO[0][9] & 0xF0) >> 4;
-  
+
   int hh=adcDat[aa]->self_trig_settings =   AC_INFO[1][9];
   int ii=adcDat[aa]->trig_en =              adcDat[aa]->self_trig_settings & 0x1;
   int jj=adcDat[aa]->trig_wait_for_sys =    adcDat[aa]->self_trig_settings & 0x2;
@@ -226,7 +226,7 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
   int ll=adcDat[aa]->trig_sign =            adcDat[aa]->self_trig_settings & 0x8;
   
   //acdcData[aa].EVENT_COUNT =          AC_INFO[2][9]  | AC_INFO[2][9]  << 16;
-  int mm =adcDat[aa]->reg_self_trig[0] =    AC_INFO[0][10] | AC_INFO[1][10] << 16;
+  int mm =adcDat[aa]->reg_self_trig[0] =     AC_INFO[0][10] | AC_INFO[1][10] << 16;
   int nn =adcDat[aa]->reg_self_trig[1] =     AC_INFO[2][10] | AC_INFO[3][10] << 16;
   int oo =adcDat[aa]->reg_self_trig[2] =     AC_INFO[4][10] | AC_INFO[0][11] << 16;
   int pp =adcDat[aa]->reg_self_trig[3] =     AC_INFO[1][11] | AC_INFO[2][11] << 16;
@@ -263,7 +263,7 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
 	 << ", rate_only: "          << kk
 	 << ", EN: "                 << ii
 	 << endl;
-    cout << "bin count rise edge: "  << ff 
+    cout << "bin count rise edge: "  << ff
 	 << ", bin count fall edge: "<< gg
          << endl;
 

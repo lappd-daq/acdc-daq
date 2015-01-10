@@ -39,8 +39,8 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
 
     if(print) cout << "reading board: " << boardAddress << endl; 
 
-    if(device) set_usb_read_mode_slaveDevice(boardAddress-boardsPerCC);
-    else       set_usb_read_mode(boardAddress);
+    if(device) set_usb_read_mode_slaveDevice(boardAddress+1-boardsPerCC);
+    else       set_usb_read_mode(boardAddress+1);
     
     int samples;
     unsigned short buffer[ac_buffersize];

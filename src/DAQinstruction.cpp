@@ -84,19 +84,27 @@ void SuMo::align_lvds()
 void SuMo::toggle_CAL(bool EN, int device)
 {
   createUSBHandles();
-  if(EN != false){
-    if(device == 0)                usb.sendData((unsigned int)0x00020001);
-    if(device == 1 && mode==USB2x) usb2.sendData((unsigned int)0x00020001);
+ 
+  unsigned int send_word = 0x00020000;
+  
+  if(EN != false){							
+
+    send_word = send_word | 15 << boardAdrOffset | 0x7FFF;
+    if(device == 0)                usb.sendData(send_word);
+    if(device == 1 && mode==USB2x) usb2.sendData(send_word);
 
   }
   else{
-    if(device == 0)                usb.sendData((unsigned int)0x00020000);
-    if(device == 1 && mode==USB2x) usb2.sendData((unsigned int)0x00020000);
+    send_word = send_word | 15 << boardAdrOffset;
+    if(device == 0)                usb.sendData(send_word);
+    if(device == 1 && mode==USB2x) usb2.sendData(send_word);
   }
   closeUSBHandles();
 }
 
-void SuMo::set_pedestal_value(unsigned int PED_VALUE, unsigned int boardAdr, int device)
+void SuMo::set_pedestal_value(  unsigned int PED_VALUE, 
+				unsigned int boardAdr, 
+				int device)
 {
   createUSBHandles();
   const unsigned int hi_cmd = 0x00030000;    
@@ -110,10 +118,16 @@ void SuMo::set_pedestal_value(unsigned int PED_VALUE, unsigned int boardAdr, int
 /*
  *
  */
-void SuMo::set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, bool RATE_ONLY, bool TRIG_SIGN, unsigned int boardAdr, int device)
+void SuMo::set_self_trigger(     bool ENABLE_TRIG, 
+				 bool SYS_TRIG_OPTION, 
+				 bool RATE_ONLY, 
+				 bool TRIG_SIGN, 
+				 bool USE_BOARD_SMA_TRIG,
+				 unsigned int boardAdr, 
+				 int device)
 {
     const unsigned int hi_cmd = 0x00070000;   
-    unsigned int send_word = hi_cmd | TRIG_SIGN << 3 | RATE_ONLY << 2 
+    unsigned int send_word = hi_cmd | USE_BOARD_SMA_TRIG << 4 | TRIG_SIGN << 3 | RATE_ONLY << 2 
                                     | SYS_TRIG_OPTION << 1 | ENABLE_TRIG | boardAdr << boardAdrOffset;
     //printf("%i\n", send_word);
     createUSBHandles();

@@ -127,6 +127,8 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
                          reset_self_trigger(15, 0), set_usb_read_mode(7);
       if(mode == USB2x)  reset_self_trigger(15, 1), set_usb_read_mode_slaveDevice(7);
       usleep(acq_rate+LIMIT_READOUT_RATE);
+                         set_usb_read_mode(0);
+      if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);
     }
     else{
       software_trigger((unsigned int)15);
