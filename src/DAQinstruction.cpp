@@ -264,6 +264,15 @@ void SuMo::reset_acdc()
 
   closeUSBHandles();
 }
+void SuMo::hard_reset()
+{
+  usb.createHandles();
+  unsigned int send_word = 0x00040FFF | 15 << boardAdrOffset;
+  usb.sendData(send_word);
+  if(mode == USB2x) usb2.sendData(send_word);
+
+  closeUSBHandles();
+}
 /*
  *
  */ 

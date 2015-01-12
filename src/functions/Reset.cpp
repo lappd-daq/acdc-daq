@@ -25,10 +25,18 @@ int main(int argc, char* argv[]){
     cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
     return 1; 
   }
-  else if(argc != NUM_ARGS){
+  else if(argc > NUM_ARGS+1){
     cout << "error: wrong number of arguments" << endl;
     return -1;
   }
+  else if(argc == NUM_ARGS+1){
+    SuMo Sumo;
+    Sumo.hard_reset();
+    Sumo.hard_reset();
+    Sumo.hard_reset();
+    return 2;
+  }
+
   /* function defined below */
   else{
     SuMo Sumo;
