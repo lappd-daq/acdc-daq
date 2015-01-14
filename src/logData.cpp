@@ -66,14 +66,24 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   time_t now;
 
   /* handle filename */
-  sprintf(logDataFilename, "%s.txt", log_filename);
+  // 'scalar' mode
+  ofstream rate_fs;
+  if(trig_mode == 2){
+    char logRateFilename[300];
+    sprintf(logRateFilename, "%s.acdc.rate", log_filename);
+    rate_fs.open(logRateFilename, ios::trunc);
+  }
+  
+  // full waveform, standard mode
+  sprintf(logDataFilename, "%s.acdc.dat", log_filename);
   string temp;
   while(fileExists(logDataFilename)){
     cout << "file already exists, try new filename: (or enter to overwrite / ctrl-C to quit): ";
     getline(cin, temp);
     if(temp.empty()) break;
-    sprintf(logDataFilename, "%s.txt", temp.c_str());
+    sprintf(logDataFilename, "%s.acdc.dat", temp.c_str());
   }
+  
   ofstream ofs;
   ofs.open(logDataFilename, ios::trunc);
 
@@ -82,7 +92,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   for(int i=0;i<numFrontBoards; i++) all[i] = true;
 
   /* setup some things */
-  if(trig_mode) {
+  if(trig_mode==1) {
                     set_usb_read_mode(24);
     if(mode==USB2x) set_usb_read_mode_slaveDevice(24);
   }
@@ -123,7 +133,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
 
     /*send trigger over software if not looking externally */
-    if(trig_mode){ 
+    if(trig_mode==1){ 
                          reset_self_trigger(15, 0), set_usb_read_mode(7);
       if(mode == USB2x)  reset_self_trigger(15, 1), set_usb_read_mode_slaveDevice(7);
       usleep(acq_rate+LIMIT_READOUT_RATE);
@@ -131,9 +141,15 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);
     }
     else{
+      // 'rate-only' mode, only pull data every second
+      if(trig_mode == 2){
+	usleep(3e6);
+      }
+      
       software_trigger((unsigned int)15);
       if(mode == USB2x) software_trigger_slaveDevice((unsigned int)15);
       usleep(LIMIT_READOUT_RATE); /* somewhat arbitrary hard-coded rate limitation */
+   
     }
 
     /* show event number at terminal */
@@ -197,6 +213,20 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   
       ofs <<endl;
     } 
+  
+    if(trig_mode == 2){
+      for(int board=0; board<numFrontBoards; board++){
+	if(BOARDS_READOUT[board]){
+
+	  rate_fs << k << "\t" << board << "\t" << t << "\t";
+
+	  for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  adcDat[board]->self_trig_scalar[channel] << "\t";
+	  
+	  rate_fs << endl;
+	}
+      }
+    }
+
   }
   cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.\r", usleep(100000),cout.flush();
   cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec..\r", usleep(100000),cout.flush();
@@ -215,6 +245,8 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   /* add whitespace to end of file */
   ofs <<endl<<endl;
   ofs.close();
+
+  if(trig_mode == 2) rate_fs.close();
 
   set_usb_read_mode(16);  //turn off trigger, if on
   dump_data();

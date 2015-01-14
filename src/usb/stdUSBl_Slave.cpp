@@ -111,7 +111,7 @@ struct usb_device* stdUSBSlave::init(int num) {
         }
     }
 
-    printf("init: Slave device not found\n");
+    //printf("init: Slave device not found\n");
     /* on failure (device not found) */
     return INVALID_HANDLE_VALUE;
 }

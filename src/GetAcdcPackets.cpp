@@ -145,7 +145,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
       }  
       for(int i=0; i<AC_CHANNELS; i++){
 	adcDat[boardAddress]->self_trig_scalar[i] = buffer[adcDat[boardAddress]->DATA_FOOTER[numChipsOnBoard-1]+2+i];
-	//if(print) cout << acdcData[boardAddress].SELF_TRIG_SCALER[i] << endl;
+	if(print) cout << adcDat[boardAddress]->self_trig_scalar[i] << endl;
       }
       
       BOARDS_READOUT[boardAddress] = true;
