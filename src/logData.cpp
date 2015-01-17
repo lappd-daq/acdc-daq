@@ -24,6 +24,8 @@ static int LIMIT_READOUT_RATE = 10000;
 static int NUM_SEQ_TIMEOUTS = 100;
 /* note: usb timeout defined in include/stdUSB.h */
 
+bool overwriteExistingFile = false;
+
 bool fileExists(const std::string& filename);
 
 int main(int argc, char* argv[]){
@@ -33,8 +35,8 @@ int main(int argc, char* argv[]){
     cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
     return 1; 
   }
-  else if(argc != NUM_ARGS){
-    cout << "error: wrong number of arguments" << endl;
+  else if(argc > NUM_ARGS+1 || argc < NUM_ARGS){
+    cout << "error: too many number of arguments" << endl;
     return -1;
   }
   else{

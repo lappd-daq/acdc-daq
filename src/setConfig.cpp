@@ -24,8 +24,9 @@ const char* description=   "setup trigger, parse trigger parms file (argv[1])";
 //configuration variables:
 unsigned int trig_mask[numFrontBoards];
 bool         trig_enable[numFrontBoards];
-unsigned int pedestal[numFrontBoards];
-unsigned int threshold[numFrontBoards];
+unsigned int pedestal[numFrontBoards][numChipsOnBoard];
+unsigned int threshold[numFrontBoards][numChipsOnBoard];
+unsigned int cal_en[numFrontBoards];
 bool         trig_sign;             
 bool         wait_for_sys;
 bool         rate_only;   
@@ -76,10 +77,13 @@ int main(int argc, char* argv[]){
 /* default trig settings (OFF) */
 void set_default_values(){
   for(int i=0; i<numFrontBoards; i++){
+    for(int j=0; j<numChipsOnBoard; j++){
+      pedestal[i][j]       = 0x800;
+      threshold[i][j]      = 0x000;
+    }
+    
     trig_mask[i]      = 0x00000000;  // 32 bit
     trig_enable[i]    = false;
-    pedestal[i]       = 0x800;
-    threshold[i]      = 0x000;
     sma_trig_on_fe[i] = false;
 
   }
@@ -125,15 +129,24 @@ int write_config_to_hardware(SuMo& Sumo){
     
     /* send trig mask to boards in 2 sets of 16 bit words */
     Sumo.set_self_trigger_mask(0x00007FFF&trig_mask[i], 0, boardAddress, device);
-    Sumo.set_self_trigger_mask(0x3FFF8000&trig_mask[i], 1, boardAddress, device);
+    Sumo.set_self_trigger_mask((0x3FFF8000&trig_mask[i]) >> 15, 1, boardAddress, device);
     
     /* push trigger settings, can check by reading back ACDC settings */
-    cout << "writing pedestal of " << pedestal[i] << " to board " << i << endl;
     cout << "writing trig_enable of " << trig_enable[i] << " to board " << i << endl;
-    
-    Sumo.set_pedestal_value(pedestal[i], boardAddress, device);
-    Sumo.set_trig_threshold(threshold[i], boardAddress, device);
-    Sumo.set_self_trigger(trig_enable[i], wait_for_sys, rate_only, trig_sign, sma_trig_on_fe[i], boardAddress, device);
+      
+    for(int j=0; j<numChipsOnBoard; j++){
+      unsigned int chipAddress = pow(2, j % numChipsOnBoard);
+
+      Sumo.set_pedestal_value(pedestal[i][j], boardAddress, device, chipAddress);
+      Sumo.set_trig_threshold(threshold[i][j], boardAddress, device, chipAddress);
+    }
+
+    Sumo.set_self_trigger( trig_enable[i], 
+			   wait_for_sys, 
+			   rate_only, trig_sign, 
+			   sma_trig_on_fe[i], 
+			   boardAddress, 
+			   device);
     
     cout << "__________________________" << std::dec << endl;
     //Sumo.dump_data();
@@ -232,16 +245,16 @@ int parse_setup_file(const char* file, bool verbose){
 	cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
     } 
     else if(data.find("pedestal")==0){
-      linestream >> tmp1 >> tmp2;
-      pedestal[tmp1]= tmp2;
+      linestream >> tmp1 >> tmp3 >>  tmp2;
+      pedestal[tmp1][tmp3]= tmp2;
       if(tt)
-	cout << data << " on board " << tmp1 << " set to 0x"  << hex << tmp2 << endl;
+	cout << data << " on board:chip " << tmp1 << ":" << tmp3 << " set to 0x"  << hex << tmp2 << endl;
     }
     else if(data.find("thresh")==0){
-      linestream >> tmp1 >> tmp2;
-      threshold[tmp1]= tmp2;
+      linestream >> tmp1 >> tmp3 >> tmp2;
+      threshold[tmp1][tmp3]= tmp2;
       if(tt)
-	cout << data << " on board " << tmp1 << " set to 0x"  << hex << tmp2 << endl;
+	cout << data << " on board:chip " << tmp1 << ":" << tmp3 << " set to 0x"  << hex << tmp2 << endl;
     }
 
   }

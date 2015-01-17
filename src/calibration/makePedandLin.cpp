@@ -15,12 +15,14 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE){
   unsigned int middle = int(num_ped_reads/2);
   unsigned int psec_cnt;
   float temp;
-  
+
+  bool verbose = false;
+
   bool all[numFrontBoards];
   for(int i=0;i<numFrontBoards; i++) all[i] = true;
   
   if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
-                  set_usb_read_mode(16), dump_data();
+  set_usb_read_mode(16), dump_data();
 
   for(int k=0; k<num_ped_reads; k++){   
     /*set read mode to NULL */
@@ -31,7 +33,7 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE){
     if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
 
     /* read data using trigger over software */
-    read_AC(0, all, false);
+    read_AC(0, DC_ACTIVE, false);
         
     /* make pedestal files for each board */
     for(int targetAC=0; targetAC < numFrontBoards; targetAC++){    
@@ -53,21 +55,25 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE){
   for(int board=0; board < numFrontBoards; board++){   
     if(calData[board].PED_SUCCESS){
       for(int i = 0; i<AC_CHANNELS; i++){
-	cout << "ch." << i << ":";
+	
+	if(verbose) cout << "ch." << i << ":";
+	
 	for(int j = 0; j<psecSampleCells; j++){
 	  /* calc RMS */
 	  qsort(calData[board].raw_ped_data_array[i][j], num_ped_reads, sizeof(unsigned short), compare);
 	  calData[board].PED_DATA[i][j] = (unsigned int)calData[board].raw_ped_data_array[i][j][middle];
 	  temp = 0;
 	  for(int k = 0; k<num_ped_reads; k++) { 
-	    temp += pow((calData[board].raw_ped_data_array[i][j][k]-(unsigned short)calData[board].PED_DATA[i][j]),2);
+	    temp += pow((calData[board].raw_ped_data_array[i][j][k]-
+			 (unsigned short)calData[board].PED_DATA[i][j]),2);
 	  }
 	  calData[board].PED_RMS[i][j] = sqrt(temp/num_ped_reads);
-	  if(j==0) cout << "ped[0]=" << calData[board].PED_DATA[i][j] << " | ";
+	  if(verbose && j==0) cout << "ped[0]=" << calData[board].PED_DATA[i][j] << " | ";
 	}
-	if( (i+1)%6 == 0) cout << endl;
+	if(verbose) 
+	  if( (i+1)%6 == 0) cout << endl;
       }   
-      cout << endl;
+      if(verbose) cout << endl;
       /*done with calculations*/
       /*save to file, if specified*/
       if(ENABLE_FILESAVE){

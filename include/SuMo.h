@@ -33,7 +33,7 @@ class SuMo{
   void reset_time_stamp();
   void reset_acdc();
   void align_lvds();
-  
+  //front-end card specific instructions
   void toggle_LED(bool EN);
   void toggle_CAL(bool EN, int device = 0); 
   
@@ -41,10 +41,11 @@ class SuMo{
 			bool RATE_ONLY, bool TRIG_SIGN, bool USE_SMA, 
 			unsigned int mask, int device = 0);
   void set_self_trigger_mask(int mask, bool HILO, unsigned int board_mask, int device = 0);
-  void set_pedestal_value(unsigned int PED_VALUE, unsigned int mask, int device = 0);
-  void set_dll_vdd(unsigned int VALUE, unsigned int mask, int device = 0);
-  void set_trig_threshold(unsigned int TRIG_VALUE, unsigned int mask, int device = 0);
-  void set_ro_target_count(unsigned int TARGET_RO_COUNT);
+  //chip-level instructions
+  void set_pedestal_value(unsigned int PED_VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
+  void set_dll_vdd(unsigned int VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
+  void set_trig_threshold(unsigned int TRIG_VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
+  void set_ro_target_count(unsigned int TARGET_RO_COUNT, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
  
   //manage PC interface
   void set_usb_read_mode(unsigned int READ_MODE);
