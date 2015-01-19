@@ -79,7 +79,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
 
   int count = 0, psec_cnt = 0;
   int pdat[AC_CHANNELS][psecSampleCells];
-  int max_pdat = SCOPE_AUTOSCALE;
+  int max_pdat;
   int asic_baseline[psecSampleCells];
   int frameCount = 0;
 
@@ -109,6 +109,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
   unsigned int bit_address = pow(2, AC_adr % boardsPerCC);
 
   while(frameCount < numFrames){
+    max_pdat = SCOPE_AUTOSCALE-1;
     psec_cnt = 0;
     if(device==1) manage_cc_fifo_slaveDevice(1);
     manage_cc_fifo(1);
@@ -145,8 +146,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
 	sample -= PED_DATA[AC_adr][i][j];
 	
 	pdat[i][j] = sample;
-	if(fabs(pdat[i][j]) > SCOPE_AUTOSCALE) max_pdat = fabs(pdat[i][j]);
-	else                                   max_pdat = SCOPE_AUTOSCALE-1;
+	if(fabs(pdat[i][j]) >= SCOPE_AUTOSCALE) max_pdat = fabs(pdat[i][j]);
       }
     }
 
