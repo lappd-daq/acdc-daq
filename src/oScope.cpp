@@ -18,6 +18,7 @@ const char* filename =     "oScope";
 const char* description =  "pipe data to gnuplot window.";
 
 static int scopeRefresh = 100000;
+const  int SCOPE_AUTOSCALE = 200;
 
 using namespace std;
 
@@ -78,7 +79,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
 
   int count = 0, psec_cnt = 0;
   int pdat[AC_CHANNELS][psecSampleCells];
-  int max_pdat = 10;
+  int max_pdat = SCOPE_AUTOSCALE;
   int asic_baseline[psecSampleCells];
   int frameCount = 0;
 
@@ -144,12 +145,13 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
 	sample -= PED_DATA[AC_adr][i][j];
 	
 	pdat[i][j] = sample;
-	if(fabs(pdat[i][j]) > max_pdat) max_pdat = fabs(pdat[i][j]);
+	if(fabs(pdat[i][j]) > SCOPE_AUTOSCALE) max_pdat = fabs(pdat[i][j]);
+	else                                   max_pdat = SCOPE_AUTOSCALE-1;
       }
     }
 
     /* scale z-axis */
-    if(max_pdat < 200) myPipe.send_cmd("set zrange [-200:200]");
+    if(max_pdat < SCOPE_AUTOSCALE) myPipe.send_cmd("set zrange [-200:200]");
     else               myPipe.send_cmd("set auto z");
     
     int baseline[psecSampleCells];
