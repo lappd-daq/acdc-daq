@@ -152,7 +152,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
 
     /* scale z-axis */
     if(max_pdat < SCOPE_AUTOSCALE) myPipe.send_cmd("set zrange [-200:200]");
-    else               myPipe.send_cmd("set auto z");
+    else                           myPipe.send_cmd("set auto z");
     
     int baseline[psecSampleCells];
     
@@ -162,10 +162,10 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     }
      
     for(int i=range[0]; i < range[1]; i++){	  
-      if(i==range[0]) myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with points, \\");
-      else if(i==range[1]-1) myPipe.send_cmd("\'-\' using 1:2:3 notitle with points");
+      if(i==range[0]) myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with linespoints, \\");
+      else if(i==range[1]-1) myPipe.send_cmd("\'-\' using 1:2:3 notitle with linespoints");
       else
-	myPipe.send_cmd("\'-\' using 1:2:3 notitle with points, \\");
+	myPipe.send_cmd("\'-\' using 1:2:3 notitle with linespoints, \\");
     }
 	
     for(int i=range[0]; i < range[1]; i++){	  
