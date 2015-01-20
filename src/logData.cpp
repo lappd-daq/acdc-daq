@@ -22,7 +22,7 @@ static bool PED_SUBTRCT = false;
 
 static int LIMIT_READOUT_RATE = 10000;
 static int NUM_SEQ_TIMEOUTS = 100;
-const  float  MAX_INT_TIMER    = 600.;  // 10 minutes
+const  float  MAX_INT_TIMER    = 100.;  
 /* note: usb timeout defined in include/stdUSB.h */
 
 bool overwriteExistingFile = false;
@@ -141,11 +141,16 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 
     /*send trigger over software if not looking externally */
     if(trig_mode==1){ 
-                         reset_self_trigger(15, 0), set_usb_read_mode(7);
-      if(mode == USB2x)  reset_self_trigger(15, 1), set_usb_read_mode_slaveDevice(7);
-      usleep(acq_rate+LIMIT_READOUT_RATE);
-                         set_usb_read_mode(0);
-      if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);
+      if(mode == USB2x) reset_self_trigger(15, 1);
+      reset_self_trigger(15, 0);
+
+      if(mode == USB2x)  set_usb_read_mode_slaveDevice(7);
+      set_usb_read_mode(7);
+
+      usleep(acq_rate+LIMIT_READOUT_RATE);  //acq rate limit
+             
+      if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                 
+      set_usb_read_mode(0);
     }
     else{
       // 'rate-only' mode, only pull data every second
@@ -168,13 +173,13 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     /*Do bulk read on all front-end cards */  
     int numBoards = read_AC(1, all, false);
     /**************************************/
+    
     /* handle timeouts or lack of data */
     int numBoardsTimedout = 0;
     for(int i=0; i<numFrontBoards; i++) numBoardsTimedout = numBoardsTimedout + (int)BOARDS_TIMEOUT[i];
     // timeout on all boards
     if( numBoards == 0 ){
-      ofs << k << " " << 0xFF << " " << endl;
-
+      //ofs << k << " " << 0xFF << " " << endl;
       k = k-1;  //repeat event
       continue;	
       
