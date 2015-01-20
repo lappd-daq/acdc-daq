@@ -95,6 +95,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   for(int i=0;i<numFrontBoards; i++) all[i] = true;
 
   /* setup some things */
+  /*
   if(trig_mode==1) {
                     set_usb_read_mode(24);
     if(mode==USB2x) set_usb_read_mode_slaveDevice(24);
@@ -103,6 +104,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
     set_usb_read_mode(16), dump_data();
   } 
+  */
    
   load_ped();
   /* save pedestal data to file header for reference, easy access */
@@ -133,11 +135,11 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       break;
     }
     /*set read mode to NULL */
-    set_usb_read_mode(16);
-    if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
+    //set_usb_read_mode(16);
+    //if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
     /*reset last event on firmware */
-    manage_cc_fifo(1);
     if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
+    manage_cc_fifo(1);
 
     /*send trigger over software if not looking externally */
     if(trig_mode==1){ 
