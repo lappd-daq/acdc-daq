@@ -22,6 +22,7 @@ static bool PED_SUBTRCT = false;
 
 static int LIMIT_READOUT_RATE = 10000;
 static int NUM_SEQ_TIMEOUTS = 100;
+const  int MAX_INT_TIMER    = 600;  // 10 minutes
 /* note: usb timeout defined in include/stdUSB.h */
 
 bool overwriteExistingFile = false;
@@ -127,6 +128,10 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     time(&now);
     /* rough cpu timing in seconds since readout start time*/
     t = timer.stop(); 
+    if(t > MAX_INT_TIMER) {
+      cout << endl << "readout timed out at " << t << "on event " << k << endl;
+      break;
+    }
     /*set read mode to NULL */
     set_usb_read_mode(16);
     if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
@@ -164,12 +169,27 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     int numBoards = read_AC(1, all, false);
     /**************************************/
     /* handle timeouts or lack of data */
+
+    // timeout on all boards
+    if( numBoards == 0 ){
+      ofs << k << " " << 0xFF << " ";
+
+      for(int i=0; i<numFrontBoards; i++){
+	if(BOARDS_TIMEOUT[i]){
+	  for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << 0xFF << " ";
+	  
+	  k = k-1;  //repeat event
+	  continue;
+	}
+      }
+    }
+    /*
     int numBoardsTimedout = 0;
     for(int i=0; i<numFrontBoards; i++) numBoardsTimedout = numBoardsTimedout + (int)BOARDS_TIMEOUT[i];
     if(numBoards == 0 || numBoardsTimedout > 0){
-      /* check for number of timeouts in a row */
+      // check for number of timeouts in a row 
       numTimeouts++; 
-      /* handle if too many timeouts: */
+      // handle if too many timeouts: 
       if(numTimeouts > NUM_SEQ_TIMEOUTS){
 	cout << endl << "error: too many timeouts in a row" << endl; 
 	return -1;
@@ -177,7 +197,8 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       k = k-1;
       continue; 
     }
-    else numTimeouts = 0;
+    else numTimeouts = 0; 
+    */
 
     /* form data for filesave */
     for(int targetAC = 0; targetAC < numFrontBoards; targetAC++){ 
@@ -203,6 +224,17 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	int baseline[psecSampleCells];
 	unwrap_baseline(baseline, 2); 
 	for (int j = 0; j < psecSampleCells; j++) asic_baseline[j] = baseline[j];
+      }
+      //if timeout on only some, but not all boards
+      else if( numBoards > 0 && BOARDS_TIMEOUT[targetAC] ){
+	for(int i = 0; i < AC_CHANNELS; i++){
+	  if(i>0 && i % 6 == 0) psec_cnt ++;
+
+	  for(int j = 0; j < psecSampleCells; j++){
+	    sample = 0xFF;            
+	    adcDat[targetAC]->Data[i][j] = sample;
+	  }
+	}  
       }
     }
 	
