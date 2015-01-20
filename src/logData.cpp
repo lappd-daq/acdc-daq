@@ -22,7 +22,7 @@ static bool PED_SUBTRCT = false;
 
 static int LIMIT_READOUT_RATE = 10000;
 static int NUM_SEQ_TIMEOUTS = 100;
-const  int MAX_INT_TIMER    = 600;  // 10 minutes
+const  float  MAX_INT_TIMER    = 600.;  // 10 minutes
 /* note: usb timeout defined in include/stdUSB.h */
 
 bool overwriteExistingFile = false;
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]){
 
 int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate){
   bool convert_to_voltage;
-  int sample, check_event, asic_baseline[psecSampleCells], count = 0, psec_cnt = 0, numTimeouts = 0;
+  int sample, check_event, asic_baseline[psecSampleCells], count = 0, psec_cnt = 0, numTimeouts = 0, last_k;
   float  _now_, t = 0.;
   char logDataFilename[300];
   Timer timer = Timer(); 
@@ -169,19 +169,15 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     int numBoards = read_AC(1, all, false);
     /**************************************/
     /* handle timeouts or lack of data */
-
+    int numBoardsTimedout = 0;
+    for(int i=0; i<numFrontBoards; i++) numBoardsTimedout = numBoardsTimedout + (int)BOARDS_TIMEOUT[i];
     // timeout on all boards
     if( numBoards == 0 ){
-      ofs << k << " " << 0xFF << " ";
+      ofs << k << " " << 0xFF << " " << endl;
 
-      for(int i=0; i<numFrontBoards; i++){
-	if(BOARDS_TIMEOUT[i]){
-	  for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << 0xFF << " ";
-	  
-	  k = k-1;  //repeat event
-	  continue;
-	}
-      }
+      k = k-1;  //repeat event
+      continue;	
+      
     }
     /*
     int numBoardsTimedout = 0;
@@ -244,7 +240,9 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       for(int board=0; board<numFrontBoards; board++)
 	if(BOARDS_READOUT[board])
 	  for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << adcDat[board]->Data[channel][i] << " ";
-  
+        else if(BOARDS_TIMEOUT[board])
+  	  for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << adcDat[board]->Data[channel][i] << " ";
+
       ofs <<endl;
     } 
   
@@ -260,20 +258,11 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	}
       }
     }
-
+    last_k = k;
   }
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec..\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec...\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec....\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.....\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec......\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.......\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec........\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec.........\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec..........\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec...........\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << NUM_READS << " of " << NUM_READS << " :: @time " <<t<< " sec...........finished logging\r",cout.flush();
+  
+  cout << "Readout:  " << last_k+1<< " of " << NUM_READS << " :: @time " <<t<< " sec...........\r", usleep(100000),cout.flush();
+  cout << "Readout:  " << last_k+1 << " of " << NUM_READS << " :: @time " <<t<< " sec...........finished logging\r",cout.flush();
 
   manage_cc_fifo(1);
   /* add whitespace to end of file */
