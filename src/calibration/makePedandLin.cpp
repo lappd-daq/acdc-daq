@@ -22,7 +22,8 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE){
   for(int i=0;i<numFrontBoards; i++) all[i] = true;
   
   if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
-  set_usb_read_mode(16), dump_data();
+  set_usb_read_mode(16);
+  dump_data();
 
   for(int k=0; k<num_ped_reads; k++){   
     /*set read mode to NULL */

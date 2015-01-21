@@ -229,7 +229,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	for (int j = 0; j < psecSampleCells; j++) asic_baseline[j] = baseline[j];
       }
       //if timeout on only some, but not all boards
-      else if( numBoards > 0 && BOARDS_TIMEOUT[targetAC] ){
+      else if( numBoards > 0 && BOARDS_TIMEOUT[targetAC] && DC_ACTIVE[targetAC]){
 	for(int i = 0; i < AC_CHANNELS; i++){
 	  if(i>0 && i % 6 == 0) psec_cnt ++;
 

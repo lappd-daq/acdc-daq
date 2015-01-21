@@ -43,7 +43,7 @@ struct packet_t{
   unsigned int           DATA_ADC_END[numChipsOnBoard];
   unsigned int           DATA_FOOTER[numChipsOnBoard];
   /* raw data saved here */
-  unsigned short         AC_RAW_DATA[numChipsOnBoard][psec_buffersize];
+  unsigned int           AC_RAW_DATA[numChipsOnBoard][psec_buffersize];
   unsigned int           Data[AC_CHANNELS+1][psecSampleCells]; /* AC_CHANNELS waveforms + 1 metadata */
   unsigned short         AC_INFO[numChipsOnBoard][infoBuffersize];
 };

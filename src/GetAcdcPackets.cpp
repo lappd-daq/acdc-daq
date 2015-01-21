@@ -39,8 +39,8 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
 
     if(print) cout << "reading board: " << boardAddress << endl; 
 
-    if(device) set_usb_read_mode_slaveDevice(boardAddress+1-boardsPerCC);
-    else       set_usb_read_mode(boardAddress+1);
+    if(device == 1) set_usb_read_mode_slaveDevice(boardAddress+1-boardsPerCC);
+    else            set_usb_read_mode(boardAddress+1);
     
     int samples;
     unsigned short buffer[ac_buffersize];
@@ -55,8 +55,8 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
 
     /* try to get packet from addressed AC/DC card */
     try{
-      if(device) usb2.readData(buffer, ac_buffersize+2, &samples);
-      else       usb.readData(buffer, ac_buffersize+2, &samples);
+      if(device == 1) usb2.readData(buffer, ac_buffersize+2, &samples);
+      else            usb.readData(buffer, ac_buffersize+2, &samples);
       
       if(print) cout << "samples received: " << samples << " on board " << boardAddress << endl;
 
