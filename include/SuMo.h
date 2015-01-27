@@ -81,6 +81,7 @@ class SuMo{
   int  check_active_boards_slaveDevice(void);
   
   bool DC_ACTIVE[numFrontBoards];           //TRUE if boards are connected and synced
+  bool EVENT_FLAG[numFrontBoards];
   bool BOARDS_READOUT[numFrontBoards];      //TRUE if board was successfully readout when data requested
   bool BOARDS_TIMEOUT[numFrontBoards];      //TRUE if board was unsuccessfully readout when data requested (timeout error)
  

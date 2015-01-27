@@ -103,9 +103,9 @@ int SuMo::check_active_boards(int NUM){
 
 int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
 
-  sync_usb(0);
-  bool print = false; /* verbose */
-  int samples;        /* no. of words in usb packet */
+  //sync_usb(0);
+  bool print = false; // verbose 
+  int samples;        // no. of words in usb packet 
 
   unsigned short buffer[cc_buffersize];
   memset(buffer, 0x0, cc_buffersize*sizeof(unsigned short));
@@ -143,18 +143,30 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
     if(device) cout << "AC/DC connection status :: Slave Device: \n";
     else       cout << "AC/DC connection status: \n";
   }
-  
+  //set all to false before checking for active boards
+  //for(int i=0; i<numFrontBoards; i++) DC_ACTIVE[i] = false;
+
   int slave_index = device*boardsPerCC;
-  /* look for ACDC boards, (un)set global variable DC_ACTIVE[numFrontBoards] */
-  if(buffer[2] & 0x1){ DC_ACTIVE[0+slave_index] = true; 
+  /* look for ACDC boards, set global variable DC_ACTIVE[numFrontBoards] */
+  if(buffer[2] & 0x11){ DC_ACTIVE[0+slave_index] = true; 
     if(SHOW_CC_STATUS) cout <<"* DC 0 detected!! \n";}
-  if(buffer[2] & 0x2){ DC_ACTIVE[1+slave_index] = true;
+  if(buffer[2] & 0x22){ DC_ACTIVE[1+slave_index] = true;
     if(SHOW_CC_STATUS) cout <<"* DC 1 detected!! \n";}
-  if(buffer[2] & 0x4){ DC_ACTIVE[2+slave_index] = true; 
+  if(buffer[2] & 0x44){ DC_ACTIVE[2+slave_index] = true; 
     if(SHOW_CC_STATUS) cout <<"* DC 2 detected!! \n";}
-  if(buffer[2] & 0x8){ DC_ACTIVE[3+slave_index] = true;
+  if(buffer[2] & 0x88){ DC_ACTIVE[3+slave_index] = true;
     if(SHOW_CC_STATUS) cout <<"* DC 3 detected!! \n";}
-  
+
+  //check for events in CC RAM
+  if(buffer[4] & 0x1) EVENT_FLAG[0+slave_index] = true; 
+  if(buffer[4] & 0x2) EVENT_FLAG[1+slave_index] = true;
+  if(buffer[4] & 0x4) EVENT_FLAG[2+slave_index] = true; 
+  if(buffer[4] & 0x8) EVENT_FLAG[3+slave_index] = true;
+  int ram_events = EVENT_FLAG[0+slave_index] + 
+                   EVENT_FLAG[1+slave_index] + 
+                   EVENT_FLAG[2+slave_index] + 
+                   EVENT_FLAG[3+slave_index];
+
   /* print board meta-data */
   if(SHOW_AC_STATUS){
     bool tmp_active[numFrontBoards];
@@ -186,10 +198,10 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
   
   if(SHOW_CC_STATUS) cout << "\n**********************\n";
   
-  if(device)  usb2.freeHandles();
-  else        usb.freeHandles();
+  //if(device)  usb2.freeHandles();
+  //else        usb.freeHandles();
 
-  return 0;
+  return ram_events;
 }
 
 int SuMo::get_AC_info(bool PRINT, int frontEnd){

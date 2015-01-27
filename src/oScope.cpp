@@ -17,7 +17,7 @@ const int NUM_ARGS =      4;
 const char* filename =     "oScope";
 const char* description =  "pipe data to gnuplot window.";
 
-static int scopeRefresh = 100000;
+static int scopeRefresh = 300000;
 const  int SCOPE_AUTOSCALE = 200;
 
 using namespace std;
@@ -107,6 +107,11 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
   load_ped();
     
   unsigned int bit_address = pow(2, AC_adr % boardsPerCC);
+  
+  if(trig_mode == 0){
+    if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                
+    set_usb_read_mode(0); 
+  }
 
   while(frameCount < numFrames){
     max_pdat = SCOPE_AUTOSCALE-1;
@@ -115,7 +120,7 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     manage_cc_fifo(1);
     
     /* handle trigger */
-    if(trig_mode){
+    if(trig_mode == 1){
       if(device==1) reset_self_trigger(15, 1);
       reset_self_trigger(15, 0);
 
@@ -128,9 +133,9 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
       set_usb_read_mode(0);
     }
     /* otherwise, send trigger over software */
-    else if(!trig_mode){ 
-      if(device==1) set_usb_read_mode_slaveDevice(16), software_trigger_slaveDevice(1 << AC_adr-boardsPerCC);
-      else          set_usb_read_mode(16), software_trigger(1 << AC_adr);
+    else if(trig_mode == 0){ 
+      if(device==1) software_trigger_slaveDevice(1 << AC_adr-boardsPerCC);
+      else          software_trigger(1 << AC_adr);
     }
     
     /* pull data from central card */

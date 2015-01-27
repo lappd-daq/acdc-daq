@@ -20,9 +20,9 @@ using namespace std;
 /* subtract pedestal values on-line */
 static bool PED_SUBTRCT = false; 
 
-static int LIMIT_READOUT_RATE = 10000;
-static int NUM_SEQ_TIMEOUTS = 100;
-const  float  MAX_INT_TIMER    = 100.;  
+static int LIMIT_READOUT_RATE = 20000;  //usecs limit between event polling
+static int NUM_SEQ_TIMEOUTS = 100;      // number of sequential timeouts before ending run
+const  float  MAX_INT_TIMER    = 50.;   // max cpu timer before ending run (secs)
 /* note: usb timeout defined in include/stdUSB.h */
 
 bool overwriteExistingFile = false;
@@ -62,11 +62,12 @@ int main(int argc, char* argv[]){
 
 int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate){
   bool convert_to_voltage;
-  int sample, check_event, asic_baseline[psecSampleCells], count = 0, psec_cnt = 0, numTimeouts = 0, last_k;
+  int check_event, asic_baseline[psecSampleCells], count = 0, psec_cnt = 0, numTimeouts = 0, last_k;
   float  _now_, t = 0.;
   char logDataFilename[300];
   Timer timer = Timer(); 
   time_t now;
+  unsigned short sample;
 
   /* handle filename */
   // 'scalar' mode
@@ -94,18 +95,6 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   bool all[numFrontBoards];
   for(int i=0;i<numFrontBoards; i++) all[i] = true;
 
-  /* setup some things */
-  /*
-  if(trig_mode==1) {
-                    set_usb_read_mode(24);
-    if(mode==USB2x) set_usb_read_mode_slaveDevice(24);
-  }
-  else {
-    if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
-    set_usb_read_mode(16), dump_data();
-  } 
-  */
-   
   load_ped();
   /* save pedestal data to file header for reference, easy access */
   /* zero pad to match data format */
@@ -125,6 +114,12 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   //t0 = time(NULL);
   timer.start();
 
+  bool reset_event = true;
+       
+  // set read mode to NULL 
+  set_usb_read_mode(0);
+  if(mode==USB2x) set_usb_read_mode_slaveDevice(0);
+
   for(int k=0;k<NUM_READS; k++){
     /* unix timestamp */
     time(&now);
@@ -134,80 +129,84 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       cout << endl << "readout timed out at " << t << "on event " << k << endl;
       break;
     }
-    /*set read mode to NULL */
-    //set_usb_read_mode(16);
-    //if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
-    /*reset last event on firmware */
-    if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
-    manage_cc_fifo(1);
-
-    /*send trigger over software if not looking externally */
-    if(trig_mode==1){ 
-      if(mode == USB2x) reset_self_trigger(15, 1);
-      reset_self_trigger(15, 0);
-
-      if(mode == USB2x)  set_usb_read_mode_slaveDevice(7);
-      set_usb_read_mode(7);
-
-      usleep(acq_rate+LIMIT_READOUT_RATE);  //acq rate limit
-             
-      if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                 
-      set_usb_read_mode(0);
+    
+    //reset last event on firmware if specified
+    if(reset_event){
+      if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
+      manage_cc_fifo(1);
     }
+    // trig_mode = 1 is external source or PSEC4 self trigger
+    if(trig_mode==1){ 
+      if(reset_event){
+	if(mode == USB2x) reset_self_trigger(15, 1);
+	reset_self_trigger(15, 0);
+      }        
+      //this sets 'trig_valid' flag
+      if(mode == USB2x)  set_usb_read_mode_slaveDevice(7);  //this sets 'trig_valid' flag
+      set_usb_read_mode(7);
+      
+      //acq rate limit
+      usleep(acq_rate+LIMIT_READOUT_RATE); 
+
+      //turn off 'trig valid flag' until checking if data in buffer
+      if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                
+      set_usb_read_mode(0); 
+    }
+
+    // trig_mode = 0 is over software (USB), i.e. calibration logging
     else{
       // 'rate-only' mode, only pull data every second
-      if(trig_mode == 2){
-	usleep(3e6);
-      }
-      
+      if(trig_mode == 2) usleep(3e6);
+
       software_trigger((unsigned int)15);
       if(mode == USB2x) software_trigger_slaveDevice((unsigned int)15);
-      usleep(LIMIT_READOUT_RATE); /* somewhat arbitrary hard-coded rate limitation */
-   
+      
+      //acq rate limit
+      usleep(LIMIT_READOUT_RATE); // somewhat arbitrary hard-coded rate limitation
+     
     }
+    //check if event in Central Card RAM buffer
+    int evts = read_CC(false, false, 0);
+    if(mode==USB2x) evts += read_CC(false, false, 1);
 
-    /* show event number at terminal */
-    if((k+1) % 2 == 0 || k==0){
+    if( evts == 0 ){
+      cout << "Readout:  " << k+1 << " of " << NUM_READS << " :: @time "<< t << " sec  --NULL--     \r";
+      cout.flush();
+      reset_event = false; // don't reset, just wait another period of time
+      k = k-1;             //repeat event
+      continue;
+    }
+    
+    // show event number at terminal 
+    if((k+1) % 1 == 0 || k==0){
       cout << "Readout:  " << k+1 << " of " << NUM_READS << " :: @time "<< t << " sec         \r";
       cout.flush();
     }       
-    /**************************************/
-    /*Do bulk read on all front-end cards */  
-    int numBoards = read_AC(1, all, false);
-    /**************************************/
     
-    /* handle timeouts or lack of data */
+    /**************************************/
+    //Do bulk read on all front-end cards   
+    int numBoards = read_AC(1, all, false);
+    /**************************************/    
+    /*
+    // handle timeouts or lack of data 
     int numBoardsTimedout = 0;
     for(int i=0; i<numFrontBoards; i++) numBoardsTimedout = numBoardsTimedout + (int)BOARDS_TIMEOUT[i];
     // timeout on all boards
     if( numBoards == 0 ){
-      //ofs << k << " " << 0xFF << " " << endl;
+      reset_event = false; // don't reset, just wait another period of time
       k = k-1;  //repeat event
       continue;	
       
     }
-    /*
-    int numBoardsTimedout = 0;
-    for(int i=0; i<numFrontBoards; i++) numBoardsTimedout = numBoardsTimedout + (int)BOARDS_TIMEOUT[i];
-    if(numBoards == 0 || numBoardsTimedout > 0){
-      // check for number of timeouts in a row 
-      numTimeouts++; 
-      // handle if too many timeouts: 
-      if(numTimeouts > NUM_SEQ_TIMEOUTS){
-	cout << endl << "error: too many timeouts in a row" << endl; 
-	return -1;
-      }
-      k = k-1;
-      continue; 
-    }
-    else numTimeouts = 0; 
     */
+    
+    reset_event = true; //have event, go ahead and reset for next event
 
-    /* form data for filesave */
+    // form data for filesave 
     for(int targetAC = 0; targetAC < numFrontBoards; targetAC++){ 
       if(BOARDS_READOUT[targetAC] && numBoards > 0){
 	psec_cnt = 0;
-	/*assign meta data */
+	// assign meta data 
 	get_AC_info(false, targetAC);
 	form_meta_data(targetAC, k, t, now);
 
@@ -220,7 +219,7 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	    sample = adcDat[targetAC]->AC_RAW_DATA[psec_cnt][i%6*256+j];
 	    if(PED_SUBTRCT) sample -= PED_DATA[targetAC][i][j];          
 	    
-	    adcDat[targetAC]->Data[i][j] = sample;
+	    adcDat[targetAC]->Data[i][j] = (unsigned int) sample;
 	  }
 	}  
 	/* wraparound_correction, if desired: */
@@ -270,7 +269,9 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   
   cout << "Readout:  " << last_k+1<< " of " << NUM_READS << " :: @time " <<t<< " sec...........\r", usleep(100000),cout.flush();
   cout << "Readout:  " << last_k+1 << " of " << NUM_READS << " :: @time " <<t<< " sec...........finished logging\r",cout.flush();
-
+  
+  set_usb_read_mode(16);  //turn off trigger, if on
+  set_usb_read_mode(0);
   manage_cc_fifo(1);
   /* add whitespace to end of file */
   ofs <<endl<<endl;
@@ -278,7 +279,6 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 
   if(trig_mode == 2) rate_fs.close();
 
-  set_usb_read_mode(16);  //turn off trigger, if on
   dump_data();
   
   cout << endl;

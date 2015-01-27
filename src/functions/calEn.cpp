@@ -36,15 +36,20 @@ int main(int argc, char* argv[]){
     Sumo.set_usb_read_mode(16); 
     if(Sumo.check_active_boards(num_checks))
       return 1;
+ 
 
+    Sumo.set_usb_read_mode(0);
     int device = atoi(argv[2]);
+    if(device == 1) Sumo.set_usb_read_mode_slaveDevice(0);
 
     if( atoi(argv[1]) == 1 || std::string(argv[1]) == "ON" || 
-	std::string(argv[1]) == "on")
+	std::string(argv[1]) == "on"){
       Sumo.toggle_CAL(true, device);
+    }
     else if ( atoi(argv[1]) == 0 || std::string(argv[1]) == "OFF" || 
-	std::string(argv[1]) == "off")
+	      std::string(argv[1]) == "off"){
       Sumo.toggle_CAL(false, device);
+  }
     else{
       cout << "invalid argument" << endl;
       return 1;
