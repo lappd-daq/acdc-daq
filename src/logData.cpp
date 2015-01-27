@@ -79,7 +79,13 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   }
   
   // full waveform, standard mode
-  sprintf(logDataFilename, "%s.acdc.dat", log_filename);
+  time(&now);
+  char timestring[100];
+  strftime(timestring, 80, "%Y-%m-%d-%H-%M", localtime(&now));  
+  sprintf(logDataFilename, "%s-%s.acdc.dat", timestring, log_filename);
+  
+  // check if file exists, inquire whether to overwrite 
+  // shouldn't be an issue now since file timestamped in filename ^^
   string temp;
   while(fileExists(logDataFilename)){
     cout << "file already exists, try new filename: (or enter to overwrite / ctrl-C to quit): ";
