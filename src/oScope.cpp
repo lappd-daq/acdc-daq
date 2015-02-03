@@ -129,8 +129,10 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
      
       usleep(scopeRefresh);
 
-      if(device==1) set_usb_read_mode_slaveDevice(0);
-      set_usb_read_mode(0);
+      for(int jj=0; jj<10; jj++){
+	if(device==1) set_usb_read_mode_slaveDevice(0);
+	set_usb_read_mode(0);
+      }
     }
     /* otherwise, send trigger over software */
     else if(trig_mode == 0){ 
@@ -138,6 +140,11 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
       else          software_trigger(1 << AC_adr);
     }
     
+    int evts = read_CC(false, false, 0);
+    if(mode==USB2x) evts += read_CC(false, false, 1);
+    
+    if( evts == 0 ) continue;
+
     /* pull data from central card */
     read_AC(1, scopeBoard, false); 
     
@@ -184,6 +191,10 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
 
     frameCount++;
   }
+ 
+  if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
+  manage_cc_fifo(1);
+
   /*hold window*/
   cout << "press enter to quit"; 
   cin.ignore();

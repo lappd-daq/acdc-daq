@@ -20,9 +20,9 @@ using namespace std;
 /* subtract pedestal values on-line */
 static bool PED_SUBTRCT = false; 
 
-static int LIMIT_READOUT_RATE = 20000;  //usecs limit between event polling
-static int NUM_SEQ_TIMEOUTS = 100;      // number of sequential timeouts before ending run
-const  float  MAX_INT_TIMER    = 50.;   // max cpu timer before ending run (secs)
+static int LIMIT_READOUT_RATE  = 20000;  //usecs limit between event polling
+static int NUM_SEQ_TIMEOUTS    = 100;    // number of sequential timeouts before ending run
+const  float  MAX_INT_TIMER    = 50.;    // max cpu timer before ending run (secs)
 /* note: usb timeout defined in include/stdUSB.h */
 
 bool overwriteExistingFile = false;
@@ -153,10 +153,12 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       
       //acq rate limit
       usleep(acq_rate+LIMIT_READOUT_RATE); 
-
-      //turn off 'trig valid flag' until checking if data in buffer
-      if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                
-      set_usb_read_mode(0); 
+      
+      for(int jj=0; jj<10; jj++){
+	//turn off 'trig valid flag' until checking if data in buffer
+	if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                
+	set_usb_read_mode(0); 
+      }
     }
 
     // trig_mode = 0 is over software (USB), i.e. calibration logging
