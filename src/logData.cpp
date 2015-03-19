@@ -20,9 +20,9 @@ using namespace std;
 /* subtract pedestal values on-line */
 static bool PED_SUBTRCT = false; 
 
-static int LIMIT_READOUT_RATE  = 20000;  //usecs limit between event polling
+static int LIMIT_READOUT_RATE  = 80000;  //usecs limit between event polling
 static int NUM_SEQ_TIMEOUTS    = 100;    // number of sequential timeouts before ending run
-const  float  MAX_INT_TIMER    = 50.;    // max cpu timer before ending run (secs)
+const  float  MAX_INT_TIMER    = 40.;    // max cpu timer before ending run (secs)
 /* note: usb timeout defined in include/stdUSB.h */
 
 bool overwriteExistingFile = false;
@@ -82,8 +82,9 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   time(&now);
   char timestring[100];
   strftime(timestring, 80, "%Y-%m-%d-%H-%M", localtime(&now));  
-  sprintf(logDataFilename, "%s-%s.acdc.dat", timestring, log_filename);
-  
+  //sprintf(logDataFilename, "%s-%s.acdc.dat", timestring, log_filename);
+  sprintf(logDataFilename, "%s.acdc.dat", log_filename);
+
   // check if file exists, inquire whether to overwrite 
   // shouldn't be an issue now since file timestamped in filename ^^
   string temp;
@@ -102,6 +103,8 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   for(int i=0;i<numFrontBoards; i++) all[i] = true;
 
   load_ped();
+
+  int number_of_frontend_cards = 0;
   /* save pedestal data to file header for reference, easy access */
   /* zero pad to match data format */
   for(int i=0; i < psecSampleCells; i++){
@@ -109,12 +112,22 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     ofs << i << " " << 0 << " ";
     for(int board=0; board<numFrontBoards; board++){
       if(DC_ACTIVE[board]){
+	if(i == 0) number_of_frontend_cards++;
 	for(int channel=0; channel < AC_CHANNELS; channel++) ofs << PED_DATA[board][channel][i]<< " "; 
 	ofs << 0 << " ";
       }
     }
     ofs << endl;
   }
+
+  cout << "--------------------------------------------------------------" << endl;
+  cout << "number of front-end boards detected = " << number_of_frontend_cards 
+       << " of " << numFrontBoards << " address slots in system" << endl;
+  cout << "Trying for " << NUM_READS << " events logged to disk, in a timeout window of "
+       << MAX_INT_TIMER << " seconds" << endl;
+  cout << "--------------------------------------------------------------" << endl << endl;
+
+  usleep(100000);
 
   /* cpu time zero */
   //t0 = time(NULL);
@@ -126,39 +139,61 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   set_usb_read_mode(0);
   if(mode==USB2x) set_usb_read_mode_slaveDevice(0);
 
-  for(int k=0;k<NUM_READS; k++){
+  for(int k=0; k<NUM_READS; k++){
     /* unix timestamp */
     time(&now);
     /* rough cpu timing in seconds since readout start time*/
     t = timer.stop(); 
+    
+    // interrupt if past specified logging time
     if(t > MAX_INT_TIMER) {
       cout << endl << "readout timed out at " << t << "on event " << k << endl;
       break;
     }
     
     //reset last event on firmware if specified
-    if(reset_event){
-      if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
-      manage_cc_fifo(1);
-    }
+  
+    //prep_sync();
+    if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
+    manage_cc_fifo(1);
+    //make_sync();
+    
+    //read_CC(false, false, 100);
+    //cout << "Readout:  " << k+1 << " of " << NUM_READS << " :: evtflags-";
+    //for(int evt_flag =0; evt_flag< numFrontBoards; evt_flag++) cout << EVENT_FLAG[evt_flag];
+    //cout << " :: digflags-";
+    //for(int dig_flag =0; dig_flag< numFrontBoards; dig_flag++) cout << DIGITIZING_START_FLAG[dig_flag];
+    //cout <<" :: @time "<< t << " sec  --NULL--     \r";    
+    //cout.flush(); 
+    
+    usleep(1000);
+
     // trig_mode = 1 is external source or PSEC4 self trigger
-    if(trig_mode==1){ 
-      if(reset_event){
-	if(mode == USB2x) reset_self_trigger(15, 1);
-	reset_self_trigger(15, 0);
-      }        
+    if(trig_mode == 1){ 
+
+      //if(reset_event){
+	//prep_sync();
+	//if(mode == USB2x) reset_self_trigger(15, 1);
+	//reset_self_trigger(15, 0);
+	//make_sync();
+      //}        
+      
+      //prep_sync();
       //this sets 'trig_valid' flag
       if(mode == USB2x)  set_usb_read_mode_slaveDevice(7);  //this sets 'trig_valid' flag
       set_usb_read_mode(7);
-      
+      //make_sync();
+
       //acq rate limit
       usleep(acq_rate+LIMIT_READOUT_RATE); 
       
-      for(int jj=0; jj<10; jj++){
-	//turn off 'trig valid flag' until checking if data in buffer
-	if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                
-	set_usb_read_mode(0); 
-      }
+      //prep_sync();
+      //turn off 'trig valid flag' until checking if data in buffer
+      if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                
+      set_usb_read_mode(0);
+      //make_sync();
+
+      usleep(1000);
     }
 
     // trig_mode = 0 is over software (USB), i.e. calibration logging
@@ -166,31 +201,57 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       // 'rate-only' mode, only pull data every second
       if(trig_mode == 2) usleep(3e6);
 
-      software_trigger((unsigned int)15);
+      prep_sync();
       if(mode == USB2x) software_trigger_slaveDevice((unsigned int)15);
-      
+      software_trigger((unsigned int) 15);
+      make_sync();
+
       //acq rate limit
       usleep(LIMIT_READOUT_RATE); // somewhat arbitrary hard-coded rate limitation
      
     }
     //check if event in Central Card RAM buffer
-    int evts = read_CC(false, false, 0);
-    if(mode==USB2x) evts += read_CC(false, false, 1);
+    //int evts = read_CC(false, false, 0);
+    //if(mode==USB2x) evts += read_CC(false, false, 1);
+    int evts = read_CC(false, false, 100);
 
-    if( evts == 0 ){
-      cout << "Readout:  " << k+1 << " of " << NUM_READS << " :: @time "<< t << " sec  --NULL--     \r";
+    int digs = 0;
+    for(int chkdig=0; chkdig<numFrontBoards; chkdig++){
+      digs+=DIGITIZING_START_FLAG[chkdig];
+    }
+
+    if(digs != evts) cout << "ERRORERRORERRORERRORERROERIEOROAERO" << endl;
+
+    if( evts < number_of_frontend_cards ){
+      cout << "Readout:  " << k+1 << " of " << NUM_READS;
+      cout <<" :: system evt-" << CC_EVENT_COUNT_FROMCC0 << "|" << CC_EVENT_COUNT_FROMCC1;
+      cout <<" :: evtflags-";
+      for(int evt_flag =0; evt_flag< numFrontBoards; evt_flag++) cout << EVENT_FLAG[evt_flag];
+      cout << " :: digflags-";
+      for(int dig_flag =0; dig_flag< numFrontBoards; dig_flag++) cout << DIGITIZING_START_FLAG[dig_flag];
+      cout <<" :: @time "<< t << " sec  --NULL--     \r";
+
+      cout << endl;
       cout.flush();
-      reset_event = false; // don't reset, just wait another period of time
+      //reset_event = false; // don't reset, just wait another period of time
+      reset_event = true;
       k = k-1;             //repeat event
       continue;
     }
     
     // show event number at terminal 
-    if((k+1) % 1 == 0 || k==0){
-      cout << "Readout:  " << k+1 << " of " << NUM_READS << " :: @time "<< t << " sec         \r";
-      cout.flush();
-    }       
-    
+    else{
+      if((k+1) % 1 == 0 || k==0){
+	cout << "Readout:  " << k+1 << " of " << NUM_READS;
+	cout <<" :: system evt-" << CC_EVENT_COUNT_FROMCC0 << "|" << CC_EVENT_COUNT_FROMCC1;
+	cout <<" :: evtflags-";
+	for(int evt_flag =0; evt_flag< numFrontBoards; evt_flag++) cout << EVENT_FLAG[evt_flag];
+	cout << " :: digflags-";
+	for(int dig_flag =0; dig_flag< numFrontBoards; dig_flag++) cout << DIGITIZING_START_FLAG[dig_flag];
+	cout <<" :: @time "<< t << " sec                   \r";
+	cout.flush();
+      }       
+    }
     /**************************************/
     //Do bulk read on all front-end cards   
     int numBoards = read_AC(1, all, false);
@@ -207,7 +268,14 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       
     }
     */
-    
+  
+    for(int jj=0; jj<2; jj++){
+      prep_sync();
+      //turn off 'trig valid flag' until checking if data in buffer
+      if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                
+      set_usb_read_mode(0);
+      make_sync();
+    }
     reset_event = true; //have event, go ahead and reset for next event
 
     // form data for filesave 
@@ -275,21 +343,26 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     last_k = k;
   }
   
-  cout << "Readout:  " << last_k+1<< " of " << NUM_READS << " :: @time " <<t<< " sec...........\r", usleep(100000),cout.flush();
-  cout << "Readout:  " << last_k+1 << " of " << NUM_READS << " :: @time " <<t<< " sec...........finished logging\r",cout.flush();
-  
-  set_usb_read_mode(16);  //turn off trigger, if on
-  set_usb_read_mode(0);
-  manage_cc_fifo(1);
+  cout << endl;
+  cout << "Done on readout:  " << last_k+1 << " :: @time " <<t<< " sec" << endl;
+   
+  for(int jj=0; jj<3; jj++){
+
+    if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
+    manage_cc_fifo(1);   
+      //if(mode==USB2x) set_usb_read_mode_slaveDevice(16);
+      //set_usb_read_mode(16);  //turn off trigger, if on
+    if(mode==USB2x) set_usb_read_mode_slaveDevice(0);
+    set_usb_read_mode(0);
+    dump_data();
+  }
+
   /* add whitespace to end of file */
   ofs <<endl<<endl;
   ofs.close();
 
   if(trig_mode == 2) rate_fs.close();
 
-  dump_data();
-  
-  cout << endl;
   cout << "Data saved in file: " << logDataFilename << endl << "*****" << endl;
   return 0;
 }
@@ -314,11 +387,17 @@ void SuMo::form_meta_data(int Address, int count, double cpuTime, time_t now)
   adcDat[i]->Data[AC_CHANNELS][4] = adcDat[i]->timestamp_hi;
   adcDat[i]->Data[AC_CHANNELS][5] = adcDat[i]->timestamp_mid;
   adcDat[i]->Data[AC_CHANNELS][6] = adcDat[i]->timestamp_lo;
+
+  //cout << i << ":" << adcDat[i]->CC_EVENT_COUNT << endl;
   
   adcDat[i]->Data[AC_CHANNELS][7] = adcDat[i]->CC_TIMESTAMP_HI;
   adcDat[i]->Data[AC_CHANNELS][8] = adcDat[i]->CC_TIMESTAMP_MID;
   adcDat[i]->Data[AC_CHANNELS][9] = adcDat[i]->CC_TIMESTAMP_LO;
-
+  
+  //cout << i << ":" << adcDat[i]->timestamp_hi << ":"
+  //     << adcDat[i]->timestamp_mid << ":" << adcDat[i]->timestamp_lo << endl;
+  //cout << i << ":--CC--:" << adcDat[i]->CC_TIMESTAMP_MID << ":" << adcDat[i]->CC_TIMESTAMP_LO << endl;
+  
   adcDat[i]->Data[AC_CHANNELS][10] = adcDat[i]->bin_count_rise;
   adcDat[i]->Data[AC_CHANNELS][11] = adcDat[i]->bin_count_fall;
   adcDat[i]->Data[AC_CHANNELS][12] = adcDat[i]->self_trig_settings; 

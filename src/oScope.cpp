@@ -11,6 +11,7 @@
 #include <math.h>
 #include "SuMo.h"
 #include "ScopePipe.h"
+#include "Timer.h"
 
 /* specific to file */
 const int NUM_ARGS =      4;
@@ -62,6 +63,8 @@ int main(int argc, char* argv[]){
 } 
 
 int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] ){
+  Timer timer = Timer();
+  float t;
 
   int device = 0;   //default is master board
   bool scopeBoard[numFrontBoards];
@@ -112,13 +115,22 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     if(mode == USB2x)  set_usb_read_mode_slaveDevice(0);                
     set_usb_read_mode(0); 
   }
+  
+  timer.start();
 
   while(frameCount < numFrames){
+
     max_pdat = SCOPE_AUTOSCALE-1;
     psec_cnt = 0;
     if(device==1) manage_cc_fifo_slaveDevice(1);
     manage_cc_fifo(1);
-    
+        
+    t = timer.stop(); 
+    if(t > 30) {
+      break;
+    }
+    usleep(1000);
+
     /* handle trigger */
     if(trig_mode == 1){
       if(device==1) reset_self_trigger(15, 1);
@@ -138,16 +150,27 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     else if(trig_mode == 0){ 
       if(device==1) software_trigger_slaveDevice(1 << AC_adr-boardsPerCC);
       else          software_trigger(1 << AC_adr);
+
+      usleep(scopeRefresh);
     }
     
-    int evts = read_CC(false, false, 0);
-    if(mode==USB2x) evts += read_CC(false, false, 1);
-    
-    if( evts == 0 ) continue;
+    //int evts = read_CC(false, false, 0);
+    //if(mode==USB2x) evts += read_CC(false, false, 1);
+    int evts = read_CC(false, false, 100);
+    cout << evts << ":";
+    cout << EVENT_FLAG[2] << EVENT_FLAG[3] << EVENT_FLAG[4] << EVENT_FLAG[5] 
+	 << EVENT_FLAG[6] << EVENT_FLAG[7] << " \r";
+    cout.flush();
+
+    if( EVENT_FLAG[AC_adr] == 0 ) continue;
 
     /* pull data from central card */
     read_AC(1, scopeBoard, false); 
-    
+      
+    for(int jj=0; jj<10; jj++){
+      if(device==1) set_usb_read_mode_slaveDevice(0);
+      set_usb_read_mode(0);
+    }
     get_AC_info(false, AC_adr);
     
     for(int i = 0; i < AC_CHANNELS; i++){
@@ -168,13 +191,14 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
     
     int baseline[psecSampleCells];
     
-    unwrap_baseline(baseline, 2);   // firmware wraparound marked on ASIC #2 
+    //    unwrap_baseline(baseline, 2);   // firmware wraparound marked on ASIC #2 
     for (int j = 0; j < psecSampleCells; j++){
-      asic_baseline[j] = baseline[j];
+      //      asic_baseline[j] = baseline[j];
+      asic_baseline[j] = j;
     }
      
     for(int i=range[0]; i < range[1]; i++){	  
-      if(i==range[0]) myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with linespoints, \\");
+      if(i==range[0])        myPipe.send_cmd("splot \'-\' using 1:2:3 notitle with linespoints, \\");
       else if(i==range[1]-1) myPipe.send_cmd("\'-\' using 1:2:3 notitle with linespoints");
       else
 	myPipe.send_cmd("\'-\' using 1:2:3 notitle with linespoints, \\");
@@ -191,9 +215,15 @@ int SuMo::oscilloscope( int trig_mode, int numFrames, int AC_adr, int range[2] )
 
     frameCount++;
   }
+
+  for(int jj=0; jj<3; jj++){
  
-  if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
-  manage_cc_fifo(1);
+    if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
+    manage_cc_fifo(1);
+    if(mode==USB2x) set_usb_read_mode_slaveDevice(0);
+    set_usb_read_mode(0);
+    dump_data();
+  }
 
   /*hold window*/
   cout << "press enter to quit"; 

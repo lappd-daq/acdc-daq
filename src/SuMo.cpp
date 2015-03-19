@@ -21,6 +21,7 @@ SuMo::SuMo()
   check_readout_mode();
   for(int i=0; i<numFrontBoards; i++){
     DC_ACTIVE[i] = false;
+    EVENT_FLAG[i] = false;
     adcDat[i] = new packet_t();
   }
 }
@@ -35,7 +36,9 @@ SuMo::~SuMo()
 void SuMo::dump_data(void){
   bool all[numFrontBoards];
   for(int i=0; i<numFrontBoards; i++) all[i] = true;
-  
+  manage_cc_fifo(1);
+  manage_cc_fifo_slaveDevice(1);
+
   read_AC(1, all,false);
 
   manage_cc_fifo(1);
@@ -103,78 +106,145 @@ int SuMo::check_active_boards(int NUM){
 
 int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
 
-  //sync_usb(0);
   bool print = false; // verbose 
   int samples;        // no. of words in usb packet 
+  int samples_device_0, samples_device_1;
 
-  unsigned short buffer[cc_buffersize];
-  memset(buffer, 0x0, cc_buffersize*sizeof(unsigned short));
+  if(device == 0)
+    for(int i=0; i<4; i++){
+      EVENT_FLAG[i] = false;
+      DIGITIZING_START_FLAG[i] = false;
+    }
+  else if(device == 1)
+    for(int i=4; i<numFrontBoards; i++){
+      EVENT_FLAG[i] = false;
+      DIGITIZING_START_FLAG[i] = false;
+    }
+  else if(device == 100){  //device = 100 for all boards in system
+    for(int i=0; i<numFrontBoards; i++){
+      EVENT_FLAG[i] = false;
+      DIGITIZING_START_FLAG[i] = false;
+    }
+    if(print) cout << "using device = 100, ALL devices " << endl;
+  }
+  else return -3; // device assignment error
 
   /* device = 1 for slave device */
-  if(device==1 && mode != USB2x) return -2;
+  if(device>1 && mode != USB2x) return -2;
   
   /* set usb read mode for numFrontBoards+1 (central card readout-only) */
-  if(device) set_usb_read_mode_slaveDevice(5);
-  else       set_usb_read_mode(5);
+  if (device==1)        set_usb_read_mode_slaveDevice(5);
+  else if(device == 0)  set_usb_read_mode(5);
+  else if(device == 100){
+    if(mode==USB2x) set_usb_read_mode_slaveDevice(5);
+    set_usb_read_mode(5);
+  }
+  else return -3;
 
-  /* try readout */
-  try{
-    if(device) usb2.readData(buffer, cc_buffersize+2, &samples);
-    else       usb.readData(buffer, cc_buffersize+2, &samples); 
+  int ram_events = 0;
+  int num_devices = 1;
+  int device_tmp  = device;
+  if(device == 100){
+    num_devices = 2;
+    device_tmp = 0;
+  }
+  else{
+    num_devices = 1;
+    device_tmp = device;
+  }
+  
+  for(int loop_cc = device_tmp; loop_cc < device_tmp+num_devices; loop_cc++){
     
-    if(samples < 2){
-      if(print) cout << "error: no data in buffer on device #" << device << endl;
-      return -1;
-    }
+    if(print) cout << "device in central card address loop : " << loop_cc << endl;
     
-    for(int i = 0; i < cc_buffersize; i++){ 
-      CC_INFO[i] = buffer[i];
-      if(print) cout << i << ":" << buffer[i] << " ";
+    unsigned short buffer[cc_buffersize];
+    memset(buffer, 0x0, cc_buffersize*sizeof(unsigned short));
+    /* try readout */
+    try{
+      if(loop_cc == 1){
+	usb2.readData(buffer, cc_buffersize+2, &samples);
+	samples_device_1 = samples;
+      }
+      else if (loop_cc == 0){
+	usb.readData(buffer, cc_buffersize+2, &samples); 
+	samples_device_0 = samples;
+      }
+      
+      if(samples < 2 && device != 100){
+	if(print) cout << "error: no data in buffer on device #" << device << endl;
+	return -1;
+      }
+      int cc_header_found=-1;
+      int cc_start_found=-1;
+      
+      for(int i = 0; i < 5; i++){
+	if (buffer[i] == 0x1234){
+	  cc_header_found = i;
+	  if(print) cout << "cc header @ " << i << endl;
+	}
+	if (buffer[i] == 0xDEAD){
+	  cc_start_found = i;
+	  if(print) cout << "cc start @ " << i << endl;
+	}
+      }
+      if(loop_cc == 0) CC_EVENT_COUNT_FROMCC0 = buffer[5];
+      if(loop_cc == 1) CC_EVENT_COUNT_FROMCC1 = buffer[5];
+        for(int i = 0; i < cc_buffersize; i++){
+	CC_INFO[i] = buffer[i];
+	if(print) cout << i << ":" << buffer[i] << " ";
+      }
+      if(print) cout << "samples received: " << samples << " on device #" << device << endl;
     }
-    if(print) cout << "samples received: " << samples << " on device #" << device << endl;
-  }
-  catch(...){
-    fprintf(stderr, "Please connect the board. [DEFAULT exception] \n");
-    return 1;
-  }
+    catch(...){
+      fprintf(stderr, "Please connect the board. [DEFAULT exception] \n");
+      return 1;
+    }
+  
+    if(SHOW_CC_STATUS){  
+      cout << endl;
+      if(device) cout << "AC/DC connection status :: Slave Device: \n";
+      else       cout << "AC/DC connection status: \n";
+    }
+  
+   
+    int slave_index = loop_cc*boardsPerCC;
+    /* look for ACDC boards, set global variable DC_ACTIVE[numFrontBoards] */
+    // add second handle for DC_ACTIVE
+    if(buffer[2] & 0x11){ DC_ACTIVE[0+slave_index] = true; 
+      if(SHOW_CC_STATUS) cout <<"* DC 0 detected!! \n";}
+    if(buffer[2] & 0x22){ DC_ACTIVE[1+slave_index] = true;
+      if(SHOW_CC_STATUS) cout <<"* DC 1 detected!! \n";}
+    if(buffer[2] & 0x44){ DC_ACTIVE[2+slave_index] = true; 
+      if(SHOW_CC_STATUS) cout <<"* DC 2 detected!! \n";}
+    if((buffer[2] & 0x8) && (buffer[2] & 0x88)){ DC_ACTIVE[3+slave_index] = true;
+      if(SHOW_CC_STATUS) cout <<"* DC 3 detected!! \n";}
+    
+    //check for events in CC RAM
+    if(buffer[4] & 0x1) EVENT_FLAG[0+slave_index] = true; 
+    if(buffer[4] & 0x2) EVENT_FLAG[1+slave_index] = true;
+    if(buffer[4] & 0x4) EVENT_FLAG[2+slave_index] = true; 
+    if(buffer[4] & 0x8) EVENT_FLAG[3+slave_index] = true;
+    ram_events += EVENT_FLAG[0+slave_index] + 
+      EVENT_FLAG[1+slave_index] + 
+      EVENT_FLAG[2+slave_index] + 
+      EVENT_FLAG[3+slave_index];
+    
+    if(buffer[4]>>4 & 0x1) DIGITIZING_START_FLAG[0+slave_index] = true; 
+    if(buffer[4]>>4 & 0x2) DIGITIZING_START_FLAG[1+slave_index] = true;
+    if(buffer[4]>>4 & 0x4) DIGITIZING_START_FLAG[2+slave_index] = true; 
+    if(buffer[4]>>4 & 0x8) DIGITIZING_START_FLAG[3+slave_index] = true;
 
-  if(SHOW_CC_STATUS){  
-    cout << endl;
-    if(device) cout << "AC/DC connection status :: Slave Device: \n";
-    else       cout << "AC/DC connection status: \n";
-  }
-  //set all to false before checking for active boards
-  //for(int i=0; i<numFrontBoards; i++) DC_ACTIVE[i] = false;
-
-  int slave_index = device*boardsPerCC;
-  /* look for ACDC boards, set global variable DC_ACTIVE[numFrontBoards] */
-  if(buffer[2] & 0x11){ DC_ACTIVE[0+slave_index] = true; 
-    if(SHOW_CC_STATUS) cout <<"* DC 0 detected!! \n";}
-  if(buffer[2] & 0x22){ DC_ACTIVE[1+slave_index] = true;
-    if(SHOW_CC_STATUS) cout <<"* DC 1 detected!! \n";}
-  if(buffer[2] & 0x44){ DC_ACTIVE[2+slave_index] = true; 
-    if(SHOW_CC_STATUS) cout <<"* DC 2 detected!! \n";}
-  if(buffer[2] & 0x88){ DC_ACTIVE[3+slave_index] = true;
-    if(SHOW_CC_STATUS) cout <<"* DC 3 detected!! \n";}
-
-  //check for events in CC RAM
-  if(buffer[4] & 0x1) EVENT_FLAG[0+slave_index] = true; 
-  if(buffer[4] & 0x2) EVENT_FLAG[1+slave_index] = true;
-  if(buffer[4] & 0x4) EVENT_FLAG[2+slave_index] = true; 
-  if(buffer[4] & 0x8) EVENT_FLAG[3+slave_index] = true;
-  int ram_events = EVENT_FLAG[0+slave_index] + 
-                   EVENT_FLAG[1+slave_index] + 
-                   EVENT_FLAG[2+slave_index] + 
-                   EVENT_FLAG[3+slave_index];
-
+  
+  }  //end loop over central cards
+  
   /* print board meta-data */
   if(SHOW_AC_STATUS){
     bool tmp_active[numFrontBoards];
     for(int ii = 0; ii<numFrontBoards; ii++) tmp_active[ii] = false; //mask off master or slave board for printing info
 
-    if(device){     //slave device
+    if(device == 1){     //slave device
       for(int board=boardsPerCC; board<numFrontBoards; board++) tmp_active[board]=DC_ACTIVE[board];
-      
+
       read_AC(0,tmp_active,false);
       for(int board=boardsPerCC; board<numFrontBoards; board++)
 	if(DC_ACTIVE[board]){
@@ -183,7 +253,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
 	}
       manage_cc_fifo_slaveDevice(1);
     }
-    else{          //master device
+    else if( device == 0){          //master device
       for(int board=0; board<boardsPerCC; board++) tmp_active[board]=DC_ACTIVE[board];
 
       read_AC(0,tmp_active,false);
@@ -192,6 +262,17 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device){
 	  cout << endl << "AC/DC #" << board << ":";
 	  get_AC_info(true, board);
 	}
+      manage_cc_fifo(1);
+    }
+    else if( device == 100){          //all devices
+      
+      read_AC(0,DC_ACTIVE,false, true);
+      for(int board=0; board<numFrontBoards; board++)
+	if(DC_ACTIVE[board]){
+	  cout << endl << "AC/DC #" << board << ":";
+	  get_AC_info(true, board);
+	}
+      if(mode == USB2x) manage_cc_fifo_slaveDevice(1);
       manage_cc_fifo(1);
     }
   }
@@ -243,13 +324,17 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
   int oo =adcDat[aa]->reg_self_trig[2] =     AC_INFO[4][10] | AC_INFO[0][11] << 16;
   int pp =adcDat[aa]->reg_self_trig[3] =     AC_INFO[1][11] | AC_INFO[2][11] << 16;
   int qq =adcDat[aa]->self_trig_mask =       AC_INFO[3][11] | AC_INFO[4][11] << 16;
-  int rr =adcDat[aa]->last_ac_instruct =     AC_INFO[0][12] | AC_INFO[1][12] << 16;
-  int ss =adcDat[aa]->last_last_ac_instruct= AC_INFO[2][12] | AC_INFO[3][12] << 16;
+  long rr =adcDat[aa]->last_ac_instruct =     AC_INFO[0][12] | AC_INFO[1][12] << 16 | AC_INFO[2][12] << 32; //now another timestamp
+  int rr_a = AC_INFO[0][12];
+  int rr_b = AC_INFO[1][12];
+  int rr_c = AC_INFO[2][12];
+  int ss =adcDat[aa]->last_last_ac_instruct= AC_INFO[3][12] | AC_INFO[4][12] << 16;  //now another event counter
   int tt =adcDat[aa]->event_count =          AC_INFO[3][13] | AC_INFO[4][13] << 16;
   int uu =adcDat[aa]->timestamp_hi=          AC_INFO[2][13];
   int vv =adcDat[aa]->timestamp_mid=         AC_INFO[1][13];
   int ww =adcDat[aa]->timestamp_lo=          AC_INFO[0][13];
 
+  //cout << "dig time: " << rr_c << ":" << rr_b << ":" << rr_a << endl;
   if(PRINT){
     
     cout << std::fixed;
@@ -262,7 +347,9 @@ int SuMo::get_AC_info(bool PRINT, int frontEnd){
     cout << "--------" << endl;
     cout << "event count: " << std::dec << tt; 
     cout << " board time: " << uu <<":"<< vv <<":"<< ww << endl;
-    cout << "last instructions: 0x" <<  std::hex << rr << ", 0x" << ss << endl;
+    cout << "digtz count: " << std::dec << ss; 
+    cout << "   ADC time: " << rr_c <<":"<< rr_b <<":"<< rr_a << endl;
+    //cout << "last instructions: 0x" <<  std::hex << rr << ", 0x" << ss << endl;
     cout << "registered self-trig bits: 0x" << hex << mm
 	 <<", 0x"                           << hex << nn
 	 <<", 0x"                           << hex << oo

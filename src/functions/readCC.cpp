@@ -25,9 +25,19 @@ int main(int argc, char* argv[]){
     cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
     return 1; 
   }
-  else if(argc != NUM_ARGS){
+  else if(argc > NUM_ARGS+1){
     cout << "error: wrong number of arguments" << endl;
     return -1;
+  }
+  else if(argc == NUM_ARGS+1 && std::string(argv[1]) == "sync"){
+    SuMo Sumo;
+    int num_checks = 3;    
+    
+    if(Sumo.check_active_boards(num_checks)) return 1;
+    Sumo.check_active_boards(true);
+
+    Sumo.read_CC(true, false, 100);
+    return 0;
   }
   /* function defined below */
   else{

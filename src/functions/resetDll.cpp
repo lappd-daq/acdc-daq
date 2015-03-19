@@ -25,11 +25,22 @@ int main(int argc, char* argv[]){
     cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
     return 1; 
   }
-  else if(argc != NUM_ARGS){
+  else if(argc > NUM_ARGS + 1){
     cout << "error: wrong number of arguments" << endl;
     return -1;
   }
   /* function defined below */
+  else if(argc == NUM_ARGS + 1 && std::string(argv[1]) == "sync"){
+    SuMo Sumo;
+    int num_checks = 5;
+    Sumo.set_usb_read_mode(16); 
+    if(Sumo.check_active_boards(num_checks))
+      return 1;
+
+    Sumo.reset_dll(true);
+    cout << "resetting PSEC4 sampling...\n";
+    return 0;
+  }
   else{
     SuMo Sumo;
     int num_checks = 5;

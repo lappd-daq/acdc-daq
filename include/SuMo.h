@@ -28,9 +28,9 @@ class SuMo{
   void sync_usb(bool SYNC);
 
   //instructions to hardware 
-  void reset_dll();
+  void reset_dll(bool sync = false);
   void reset_self_trigger(unsigned int mask, int device = 0);
-  void reset_time_stamp();
+  void reset_time_stamp(bool sync = false);
   void reset_acdc();
   void align_lvds();
   //front-end card specific instructions
@@ -39,6 +39,9 @@ class SuMo{
   
   void set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, 
 			bool RATE_ONLY, bool TRIG_SIGN, bool USE_SMA, 
+			bool USE_COINCIDENCE,
+			unsigned int coinc_window,
+			unsigned int coinc_pulse_width,
 			unsigned int mask, int device = 0);
   void set_self_trigger_mask(int mask, bool HILO, unsigned int board_mask, int device = 0);
   //chip-level instructions
@@ -53,17 +56,21 @@ class SuMo{
   void manage_cc_fifo(bool VALUE);
   void manage_cc_fifo_slaveDevice(bool VALUE);
 
-  void hard_reset();
-
+  void hard_reset(bool DEVICE=false);
+  void usb_force_wakeup();
+  
+  void prep_sync();
+  void make_sync();
   //send trigger over software
-  void software_trigger(unsigned int SOFT_TRIG_MASK);
-  void software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK);
+  void software_trigger(unsigned int SOFT_TRIG_MASK, bool set_bin=false, unsigned int bin=0);
+  void software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK, bool set_bin = false, unsigned int bin=0);
   
   //readout functions
   int  check_readout_mode();
   int  read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device = 0);
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for additional retval handling: */
-  int  read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE);  
+  int  read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE, 
+	       bool sync = false, bool set_bin=false, unsigned int bin=0);  
 
   void dump_data();
   
@@ -82,9 +89,14 @@ class SuMo{
   
   bool DC_ACTIVE[numFrontBoards];           //TRUE if boards are connected and synced
   bool EVENT_FLAG[numFrontBoards];
+  bool CAUGHT_EVENT_FLAG[numFrontBoards];
+  bool DIGITIZING_START_FLAG[numFrontBoards];
   bool BOARDS_READOUT[numFrontBoards];      //TRUE if board was successfully readout when data requested
   bool BOARDS_TIMEOUT[numFrontBoards];      //TRUE if board was unsuccessfully readout when data requested (timeout error)
- 
+
+  unsigned int CC_EVENT_COUNT_FROMCC0;
+  unsigned int CC_EVENT_COUNT_FROMCC1;
+
   struct packet_t *adcDat[numFrontBoards];
   enum cc_readout_mode mode;
 

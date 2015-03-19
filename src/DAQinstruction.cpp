@@ -33,22 +33,22 @@ void SuMo::sync_usb(bool SYNC)
 /*
  *
  */
-void SuMo::software_trigger(unsigned int SOFT_TRIG_MASK)
+void SuMo::software_trigger(unsigned int SOFT_TRIG_MASK, bool set_bin, unsigned int bin)
 {
     usb.createHandles();
     //usb.sendData((unsigned int)0x000E0000);//software trigger
     const unsigned int hi_cmd = 0x000E0000;    
-    unsigned int send_word = hi_cmd | SOFT_TRIG_MASK;
+    unsigned int send_word = hi_cmd | SOFT_TRIG_MASK | set_bin << 4 | bin << 5;
     usb.sendData(send_word);
     //printf("sent software trigger\n");
     usb.freeHandles();
 }
-void SuMo::software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK)
+void SuMo::software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK, bool set_bin, unsigned int bin)
 {
     usb2.createHandles();
     //usb.sendData((unsigned int)0x000E0000);//software trigger
     const unsigned int hi_cmd = 0x000E0000;    
-    unsigned int send_word = hi_cmd | SOFT_TRIG_MASK;
+    unsigned int send_word = hi_cmd | SOFT_TRIG_MASK | set_bin << 4 | bin << 5;
     usb2.sendData(send_word);
     //printf("sent software trigger\n");
     usb2.freeHandles();
@@ -129,11 +129,17 @@ void SuMo::set_self_trigger(     bool ENABLE_TRIG,
 				 bool RATE_ONLY, 
 				 bool TRIG_SIGN, 
 				 bool USE_BOARD_SMA_TRIG,
+				 bool USE_COINCIDENCE,
+			   	 unsigned int coinc_window,
+				 unsigned int coinc_pulse_width,
 				 unsigned int boardAdr, 
 				 int device)
 {
     const unsigned int hi_cmd = 0x00070000;   
-    unsigned int send_word = hi_cmd | USE_BOARD_SMA_TRIG << 4 
+    unsigned int send_word = hi_cmd | coinc_pulse_width << 6
+                                    | coinc_window << 9
+                                    | USE_COINCIDENCE << 5
+                                    | USE_BOARD_SMA_TRIG << 4 
                                     | TRIG_SIGN << 3 | RATE_ONLY << 2 
                                     | SYS_TRIG_OPTION << 1 | ENABLE_TRIG 
                                     | boardAdr << boardAdrOffset;
@@ -242,16 +248,18 @@ void SuMo::set_ro_target_count(unsigned int TARGET_RO_COUNT,
  *
  */
 /* various reset commands over USB */
-void SuMo::reset_dll()
+void SuMo::reset_dll(bool sync)
 {
   createUSBHandles();
   const unsigned int hi_cmd = 0x00041000;  
   const unsigned int mask = 31; //chip mask
   unsigned int send_word = hi_cmd |  mask << 20 | 15 << boardAdrOffset;
   
+  if(sync) prep_sync();
   usb.sendData(send_word); //dll reset pulse
   if(mode == USB2x) usb2.sendData(send_word);
-  
+  if(sync) make_sync();
+
   closeUSBHandles();
 }
 void SuMo::reset_self_trigger(unsigned int boardAdr, int device)
@@ -263,15 +271,16 @@ void SuMo::reset_self_trigger(unsigned int boardAdr, int device)
   if(device == 1 && mode == USB2x) usb2.sendData(send_word);
 
   closeUSBHandles();
-
 }
-void SuMo::reset_time_stamp()
+void SuMo::reset_time_stamp(bool sync)
 {
   createUSBHandles();
   unsigned int send_word = 0x00043000 | 15 << boardAdrOffset;
-  
+    
+  if(sync) prep_sync();
   usb.sendData(send_word);
   if(mode == USB2x) usb2.sendData(send_word);
+  if(sync) make_sync();
 
   closeUSBHandles();
 }
@@ -285,10 +294,19 @@ void SuMo::reset_acdc()
 
   closeUSBHandles();
 }
-void SuMo::hard_reset()
+void SuMo::hard_reset(bool DEVICE)
 {
   usb.createHandles();
   unsigned int send_word = 0x00040FFF | 15 << boardAdrOffset;
+  usb.sendData(send_word);
+  if(mode == USB2x && DEVICE==true) usb2.sendData(send_word);
+
+  closeUSBHandles();
+}
+void SuMo::usb_force_wakeup()
+{
+  usb.createHandles();
+  unsigned int send_word = 0x00040EFF;
   usb.sendData(send_word);
   if(mode == USB2x) usb2.sendData(send_word);
 
@@ -301,7 +319,7 @@ void SuMo::manage_cc_fifo(bool VALUE)
 {
   usb.createHandles();
   const unsigned int hi_cmd = 0x000B0000;
-  unsigned int send_word = hi_cmd | VALUE;
+  unsigned int send_word = hi_cmd | VALUE | 15 << boardAdrOffset;
   usb.sendData(send_word);
   usb.freeHandles();
 }
@@ -310,8 +328,24 @@ void SuMo::manage_cc_fifo_slaveDevice(bool VALUE)
 {
   usb2.createHandles();
   const unsigned int hi_cmd = 0x000B0000;
-  unsigned int send_word = hi_cmd | VALUE;
+  unsigned int send_word = hi_cmd | VALUE | 15 << boardAdrOffset;
   usb2.sendData(send_word);
   usb2.freeHandles();
 }
 
+void SuMo::prep_sync()
+{
+  usb.createHandles();
+  const unsigned int hi_cmd = 0x000C0006;
+  unsigned int send_word = hi_cmd | 1 << 14;
+  usb.sendData(send_word);
+  usb.freeHandles();
+}
+void SuMo::make_sync()
+{
+  usb.createHandles();
+  const unsigned int hi_cmd = 0x000C0006;
+  unsigned int send_word = hi_cmd;
+  usb.sendData(send_word);
+  usb.freeHandles();
+}

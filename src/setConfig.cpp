@@ -27,7 +27,7 @@ bool         trig_enable[numFrontBoards];
 unsigned int pedestal[numFrontBoards][numChipsOnBoard];
 unsigned int threshold[numFrontBoards][numChipsOnBoard];
 unsigned int cal_en[numFrontBoards];
-bool         trig_sign;             
+bool         trig_sign[numFrontBoards];             
 bool         wait_for_sys;
 bool         rate_only;   
 bool         sma_trig_on_fe[numFrontBoards];
@@ -35,6 +35,11 @@ bool         hrdw_trig;
 bool         hrdw_trig_sl;
 unsigned int hrdw_trigsrc;
 unsigned int hrdw_trig_slsrc;
+
+//programmability for 'wait_for_sys' self-trig coincidence mode
+unsigned int coincident_window;
+unsigned int cc_pulse_width;
+bool         USE_COINCIDENCE;
 
 /* running this function without paramsFile, turns off all board-level triggers */
 
@@ -85,9 +90,10 @@ void set_default_values(){
     trig_mask[i]      = 0x00000000;  // 32 bit
     trig_enable[i]    = false;
     sma_trig_on_fe[i] = false;
+    trig_sign[i]      = 0;
 
   }
-  trig_sign      = 0;   
+     
   wait_for_sys   = false;
   rate_only      = false;
   hrdw_trig      = false;
@@ -143,8 +149,11 @@ int write_config_to_hardware(SuMo& Sumo){
 
     Sumo.set_self_trigger( trig_enable[i], 
 			   wait_for_sys, 
-			   rate_only, trig_sign, 
-			   sma_trig_on_fe[i], 
+			   rate_only, trig_sign[i], 
+			   sma_trig_on_fe[i],
+			   true,
+			   1, //hard code for now
+			   1,
 			   boardAddress, 
 			   device);
     
@@ -199,10 +208,10 @@ int parse_setup_file(const char* file, bool verbose){
 	cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
     } 
     else if(data.find("trig_sign")==0){
-      linestream >> bool_tmp1;
-      trig_sign = bool_tmp1;  
+      linestream >> tmp1 >>  bool_tmp1;
+      trig_sign[tmp1] = bool_tmp1;  
       if(tt)
-	cout << data << " set to " << bool_tmp1 << endl;
+	cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
     } 
     else if(data.find("wait_for_sys")==0){
       linestream >> bool_tmp1;

@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "SuMo.h"
+#include "SuMo.h"`
 
 /* specific to file */
 const int NUM_ARGS =      1;
@@ -25,9 +25,21 @@ int main(int argc, char* argv[]){
     cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
     return 1; 
   }
-  else if(argc != NUM_ARGS){
+  else if(argc > NUM_ARGS+1){
     cout << "error: wrong number of arguments" << endl;
     return -1;
+  }
+  else if(argc == NUM_ARGS+1 && std::string(argv[1]) == "sync"){
+    SuMo Sumo;
+    int num_checks = 3;    
+    
+    if(Sumo.check_active_boards(num_checks)) return 1;
+    Sumo.check_active_boards(true);
+
+    Sumo.read_CC(true, true, 100);
+    Sumo.manage_cc_fifo(1);
+    Sumo.manage_cc_fifo_slaveDevice(1);
+    return 0;
   }
   /* function defined below */
   else{
@@ -40,12 +52,14 @@ int main(int argc, char* argv[]){
     //Sumo.software_trigger(15);
     int device = 0;
     Sumo.read_CC(true, true, device);
-    
+    Sumo.manage_cc_fifo(1);
+
     int mode = Sumo.check_readout_mode();
     if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
       cout << "Slave board detected " << endl;
       device = 1;
       Sumo.read_CC(true, true, device);
+      Sumo.manage_cc_fifo_slaveDevice(1);
     }
     return 0;
     

@@ -2,27 +2,37 @@
 
 using namespace std;
 
-int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE){
-  sync_usb(0);
+int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE, 
+		  bool sync, bool set_bin, unsigned int bin){
+
   bool print = false;     /* verbose switch for dumping info to terminal */
   int  numBoardsRead = 0; /* function returns number of front end cards successfully readout (int) */
   
   /* send trigger over USB from this function, if specified */
   unsigned int trig_mask = 0;
+  unsigned int trig_mask_slave = 0;
+
   if(!trig_mode){
     //loop over master board
     for(int boardAddress=0; boardAddress < boardsPerCC; boardAddress++)
       trig_mask = (mask[boardAddress] << boardAddress) | trig_mask; 
     if(print) cout << "trig mask " << trig_mask << endl;
-    software_trigger(trig_mask);
-    
+  
     //temporarily loop over slave board, eventually connected in firmware
-    trig_mask = 0;
-    for(int boardAddress=4; boardAddress < numFrontBoards; boardAddress++)
-      trig_mask = (mask[boardAddress] << boardAddress-4) | trig_mask; 
-    if(print) cout << "trig mask " << trig_mask << endl;
-    software_trigger_slaveDevice(trig_mask);
+    for(int boardAddress=boardsPerCC; boardAddress < numFrontBoards; boardAddress++)
+      trig_mask_slave = (mask[boardAddress] << boardAddress-4) | trig_mask_slave; 
+    if(print) cout << "trig mask on slave " << trig_mask_slave << endl;
 
+    if(sync){
+      prep_sync();
+      software_trigger(trig_mask, set_bin, bin);
+      software_trigger_slaveDevice(trig_mask_slave, set_bin, bin);
+      make_sync();
+    }
+    else{
+      software_trigger(trig_mask, set_bin, bin);
+      software_trigger_slaveDevice(trig_mask_slave, set_bin, bin);
+    }
   }
 
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for retval handling*/

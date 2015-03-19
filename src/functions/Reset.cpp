@@ -8,11 +8,12 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <unistd.h>
 #include "SuMo.h"
 
 /* specific to file */
 const int NUM_ARGS =      1;
-const char* filename =     "resetACDC";
+const char* filename =     "Reset";
 const char* description =  "global reset of front-end cards";
 
 using namespace std;
@@ -29,14 +30,30 @@ int main(int argc, char* argv[]){
     cout << "error: wrong number of arguments" << endl;
     return -1;
   }
-  else if(argc == NUM_ARGS+1){
+  else if(argc == NUM_ARGS+1 && std::string(argv[1]) == "hard" ){
     SuMo Sumo;
-    Sumo.hard_reset();
-    Sumo.hard_reset();
-    Sumo.hard_reset();
+    for(int ii=0; ii<3; ++ii){
+      Sumo.hard_reset(true);
+      usleep(1e5);
+    }
     return 2;
   }
-
+  else if(argc == NUM_ARGS+1 && std::string(argv[1]) == "time" ){
+    SuMo Sumo;
+    for(int ii=0; ii<3; ++ii){
+      Sumo.reset_time_stamp();
+      usleep(1e4);
+    }
+    return 2;
+  }
+  else if(argc == NUM_ARGS+1 && std::string(argv[1]) == "usb" ){
+    SuMo Sumo;
+    for(int ii=0; ii<3; ++ii){
+      Sumo.usb_force_wakeup();
+      usleep(1e6);
+    }
+    return 3;
+  }
   /* function defined below */
   else{
     SuMo Sumo;
