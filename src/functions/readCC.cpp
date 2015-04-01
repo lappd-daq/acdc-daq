@@ -44,7 +44,7 @@ int main(int argc, char* argv[]){
     SuMo Sumo;
     int num_checks = 3;    
     
-    if(Sumo.check_active_boards(num_checks)) return 1;
+    Sumo.check_active_boards(num_checks);
     
     Sumo.check_active_boards(true);
     int device = 0;

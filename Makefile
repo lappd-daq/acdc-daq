@@ -23,6 +23,7 @@ EXE=	bin/logData \
 OBJS= 	obj/stdUSBl.o obj/stdUSBl_Slave.o\
 		obj/SuMo.o \
 		obj/ScopePipe.o \
+		obj/oscilloscope.o
 #	obj/log_data_hd5.o
 #############################################################################
 default:

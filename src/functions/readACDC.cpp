@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "SuMo.h"`
+#include "SuMo.h"
 
 /* specific to file */
 const int NUM_ARGS =      1;
@@ -29,40 +29,53 @@ int main(int argc, char* argv[]){
     cout << "error: wrong number of arguments" << endl;
     return -1;
   }
-  else if(argc == NUM_ARGS+1 && std::string(argv[1]) == "sync"){
-    SuMo Sumo;
-    int num_checks = 3;    
-    
-    if(Sumo.check_active_boards(num_checks)) return 1;
-    Sumo.check_active_boards(true);
-
-    Sumo.read_CC(true, true, 100);
-    Sumo.manage_cc_fifo(1);
-    Sumo.manage_cc_fifo_slaveDevice(1);
-    return 0;
-  }
-  /* function defined below */
   else{
     SuMo Sumo;
-    int num_checks = 3;
-    
-    //Sumo.set_usb_read_mode(16); 
+    int num_checks = 3;  
     if(Sumo.check_active_boards(num_checks)) return 1;
-    
-    //Sumo.software_trigger(15);
-    int device = 0;
-    Sumo.read_CC(true, true, device);
-    Sumo.manage_cc_fifo(1);
 
-    int mode = Sumo.check_readout_mode();
-    if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
-      cout << "Slave board detected " << endl;
-      device = 1;
-      Sumo.read_CC(true, true, device);
-      Sumo.manage_cc_fifo_slaveDevice(1);
-    }
-    return 0;
+  
+    if(argc == NUM_ARGS+1 && (std::string(argv[1]) == "-sync" || std::string(argv[1]) == "-s")){
+      cout << "**reading ACDC data in sync mode.." << endl << "**" << endl;
     
+      Sumo.check_active_boards(true);
+
+      Sumo.read_CC(true, true, 100,0);
+    }
+    else if(argc == NUM_ARGS+1 && (std::string(argv[1]) == "-pull" || std::string(argv[1]) == "-p")){
+      cout << "**reading ACDC data in pull mode (reading last event data from AC/DC RAM).." 
+	   << endl << "**" << endl;
+
+      Sumo.check_active_boards(true);
+
+      Sumo.read_CC(true, true, 100,99);
+ 
+    }
+    else if(argc == NUM_ARGS+1){
+      cout << "invalid argugments, nothing was done " << endl;
+      Sumo.sys_wait(1000);
+      Sumo.dump_data();
+      return -2;
+    }
+
+    else{
+      cout << "**reading ACDC data in std mode.." 
+	   << endl << "**" << endl;
+      int device = 0;
+      Sumo.read_CC(true, true, device);    
+
+      int mode = Sumo.check_readout_mode();
+      if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
+	cout << "Slave board detected " << endl;
+	device = 1;
+	Sumo.read_CC(true, true, device,0);
+	
+      }
+    }
+  
+    Sumo.sys_wait(1000);
+    Sumo.dump_data();
+    return 0;
   }
 } 
             

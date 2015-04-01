@@ -12,7 +12,6 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE,
   unsigned int trig_mask = 0;
   unsigned int trig_mask_slave = 0;
 
-  if(!trig_mode){
     //loop over master board
     for(int boardAddress=0; boardAddress < boardsPerCC; boardAddress++)
       trig_mask = (mask[boardAddress] << boardAddress) | trig_mask; 
@@ -22,7 +21,8 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE,
     for(int boardAddress=boardsPerCC; boardAddress < numFrontBoards; boardAddress++)
       trig_mask_slave = (mask[boardAddress] << boardAddress-4) | trig_mask_slave; 
     if(print) cout << "trig mask on slave " << trig_mask_slave << endl;
-
+  
+    if(trig_mode==0){
     if(sync){
       prep_sync();
       software_trigger(trig_mask, set_bin, bin);
@@ -34,7 +34,11 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE,
       software_trigger_slaveDevice(trig_mask_slave, set_bin, bin);
     }
   }
-
+  else if(trig_mode==99){
+    readACDC_RAM(0, trig_mask);
+    if(mode==USB2x) readACDC_RAM(1, trig_mask_slave);
+  }
+     
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for retval handling*/
 
   for(int boardAddress=0; boardAddress < numFrontBoards; boardAddress++){
@@ -49,6 +53,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE,
 
     if(print) cout << "reading board: " << boardAddress << endl; 
 
+    usleep(100);
     if(device == 1) set_usb_read_mode_slaveDevice(boardAddress+1-boardsPerCC);
     else            set_usb_read_mode(boardAddress+1);
     

@@ -1,5 +1,7 @@
 #ifndef __STDUSB_H__
 #define __STDUSB_H__
+
+#include "Definitions.h"
 /*****
  
 stdUSBL - A libusb implementation of ezusbsys.
@@ -41,8 +43,8 @@ private:
     #define USBFX2_CNFNO 1 //USBFX2 configuration number
 
     /* USBFX2 device descriptions */
-    static const uint16_t USBFX2_VENDOR_ID = 0x6672; //0x090c;
-    static const uint16_t USBFX2_PRODUCT_ID = 0x2920; //0x1000;
+    static const uint16_t USBFX2_VENDOR_ID = VID1; //0x090c;
+    static const uint16_t USBFX2_PRODUCT_ID = PID1; //0x1000;
 
 protected:
     /* The handle to the usb device. Needed by write & read operations. */
@@ -77,8 +79,8 @@ private:
     #define USBFX2_CNFNO 1 //USBFX2 configuration number
 
     /* USBFX2 device descriptions */
-    static const uint16_t USBFX2_VENDOR_ID = 0x6672; //0x090c;
-    static const uint16_t USBFX2_PRODUCT_ID = 0x2921; //0x1000;
+    static const uint16_t USBFX2_VENDOR_ID = VID2; //0x090c;
+    static const uint16_t USBFX2_PRODUCT_ID = PID2; //0x1000;
 
 protected:
     /* The handle to the usb device. Needed by write & read operations. */

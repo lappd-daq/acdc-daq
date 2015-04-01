@@ -11,6 +11,7 @@ author: eric oberla
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <time.h>
 
 #include "stdUSB.h"
@@ -37,12 +38,17 @@ class SuMo{
   void toggle_LED(bool EN);
   void toggle_CAL(bool EN, int device = 0); 
   
-  void set_self_trigger(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, 
-			bool RATE_ONLY, bool TRIG_SIGN, bool USE_SMA, 
-			bool USE_COINCIDENCE,
-			unsigned int coinc_window,
-			unsigned int coinc_pulse_width,
-			unsigned int mask, int device = 0);
+  void set_self_trigger_lo(bool ENABLE_TRIG, bool SYS_TRIG_OPTION, 
+			   bool RATE_ONLY, bool TRIG_SIGN, bool USE_SMA, 
+		 	   bool USE_COINCIDENCE, bool USE_FAST_COINCIDENCE,
+			   unsigned int coinc_window,
+			   unsigned int mask, int device = 0);
+
+  void set_self_trigger_hi(unsigned int coinc_pulse_width,
+                           unsigned int asic_coincidence_min,
+                           unsigned int channel_coincidence_min,
+			   unsigned int mask, int device = 0);
+
   void set_self_trigger_mask(int mask, bool HILO, unsigned int board_mask, int device = 0);
   //chip-level instructions
   void set_pedestal_value(unsigned int PED_VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
@@ -55,10 +61,14 @@ class SuMo{
   void set_usb_read_mode_slaveDevice(unsigned int READ_MODE);
   void manage_cc_fifo(bool VALUE);
   void manage_cc_fifo_slaveDevice(bool VALUE);
+  void system_card_trig_valid(bool valid);
+  void system_slave_card_trig_valid(bool valid);
 
   void hard_reset(bool DEVICE=false);
   void usb_force_wakeup();
-  
+  void readACDC_RAM(int device, unsigned int mask);
+
+  void cleanup();
   void prep_sync();
   void make_sync();
   //send trigger over software
@@ -67,19 +77,21 @@ class SuMo{
   
   //readout functions
   int  check_readout_mode();
-  int  read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device = 0);
+  int  read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device = 0, int triGmode = 0);
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for additional retval handling: */
   int  read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE, 
 	       bool sync = false, bool set_bin=false, unsigned int bin=0);  
 
   void dump_data();
   
-  int  get_AC_info(bool PRINT, int AC_adr);             //parse meta-data from raw data stream
+  //int  get_AC_info(bool PRINT, int AC_adr);
+  int* get_AC_info(bool PRINT, int frontEnd,  bool PRINTALL=false, int count=0, double time = 0.,
+		   double dateTime=0., int evts = 0);         //parse meta-data from raw data stream
+  
   int  generate_ped(bool ENABLE_FILESAVE);              //generate pedestal calibration files for each active board (one per sample cell)
   int  make_count_to_voltage(void);                     //make count-to-voltage LUT for each active board (# active boards * 6 channels * 1536 cells * 4096 !!)
   int  make_count_to_voltage(bool COPY, bool* range);
   int  load_ped();
-  int  oscilloscope(int trig_mode, int numFrames, int AC_adr, int range[2]);
   int  log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate);
  
   int  check_active_boards(void);
@@ -100,13 +112,18 @@ class SuMo{
   struct packet_t *adcDat[numFrontBoards];
   enum cc_readout_mode mode;
 
- private:
-  
+  static void sys_wait( unsigned int sleep){
+    usleep(sleep);
+  }
+  bool fileExists(const std::string& filename);
+  unsigned int       PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
+
+private:
   void createUSBHandles();
   void closeUSBHandles();
   int  unwrap(int ASIC);
   void unwrap_baseline(int *baseline, int ASIC);
-  void form_meta_data(int Address, int count, double time, time_t now);
+  void print_to_terminal(int k, int NUM_READS, int cc_event, int board_trig, double t);
 
   struct cal_t{
     unsigned short raw_ped_data_array[AC_CHANNELS][psecSampleCells][num_ped_reads];
@@ -119,7 +136,7 @@ class SuMo{
   static int compare ( const void * a, const void * b){
     return(*(unsigned short*)a - *(unsigned short*)b);
   }
-   
+     
   int put_lut_on_heap(bool* range);                    //cpu memory management when taking full count-to-voltage calibration scan
   void free_lut_from_heap(bool* range);                //cpu memory management when taking full count-to-voltage calibration scan  
   
@@ -127,7 +144,7 @@ class SuMo{
   int***             LUT_CELL_COPY; 
   float***           LUT;
   float***           LUT_COPY;
-  unsigned int       PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
+  //unsigned int       PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
   
   /* metadata from CC */
   unsigned int       CC_INFO[cc_buffersize];  
