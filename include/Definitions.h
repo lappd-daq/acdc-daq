@@ -1,7 +1,7 @@
 #ifndef __DEFINITIONS_H__
 #define __DEFINITIONS_H__
 
-#define numFrontBoards        8        //max number of plugged boards
+#define numFrontBoards        4        //max number of plugged boards
 #define boardsPerCC           4        //max number of AC/DC cards per central card
 #define cc_buffersize         31       //Central-card meta-data size
 #define ac_buffersize         8100     //firmware packet size should not exceed this
@@ -23,7 +23,7 @@
 
 #define VID1                  0x6672
 #define VID2                  0x6672
-#define PID1                  0x2920
-#define PID2                  0x2921
+#define PID1                  0x2921
+#define PID2                  0x2920
 
 #endif

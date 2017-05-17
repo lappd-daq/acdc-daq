@@ -30,15 +30,17 @@ int main(int argc, char* argv[]){
     return -1;
   }
   /* function defined below */
-  else if(argc == NUM_ARGS + 1 && std::string(argv[1]) == "sync"){
+  else if(argc == NUM_ARGS + 1 && (std::string(argv[1]) == "-sync" ||
+				   std::string(argv[1]) == "-s")){
     SuMo Sumo;
     int num_checks = 5;
     Sumo.set_usb_read_mode(16); 
+    Sumo.set_usb_read_mode_slaveDevice(16);
     if(Sumo.check_active_boards(num_checks))
       return 1;
 
     Sumo.reset_dll(true);
-    cout << "resetting PSEC4 sampling...\n";
+    cout << "resetting PSEC4 sampling...in sync mode\n";
     return 0;
   }
   else{

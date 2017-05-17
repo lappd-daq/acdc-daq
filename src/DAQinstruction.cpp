@@ -68,14 +68,19 @@ void SuMo::align_lvds()
  */
  void SuMo::toggle_LED(bool EN)
 {
+  unsigned int boardAdr_all = 15;
+
   createUSBHandles();
+  unsigned int send_word = 0x000A0000;
+  send_word = send_word | boardAdr_all << boardAdrOffset;
+
   if(EN != false){
-    usb.sendData((unsigned int)0x000A0001);
-    if(mode == USB2x) usb2.sendData((unsigned int)0x000A0001);
+    usb.sendData(send_word | 0x1);
+    if(mode == USB2x) usb2.sendData(send_word | 0x1);
   } 
   else{
-    usb.sendData((unsigned int)0x000A0000);
-    if(mode == USB2x) usb2.sendData((unsigned int)0x000A0000);
+    usb.sendData(send_word);
+    if(mode == USB2x) usb2.sendData(send_word);
   }
   closeUSBHandles();
 }

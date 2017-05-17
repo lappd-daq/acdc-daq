@@ -14,7 +14,7 @@
 /* specific to file */
 const int NUM_ARGS =      1;
 const char* filename =     "Reset";
-const char* description =  "global reset of front-end cards";
+const char* description =  "global resets of front-end cards";
 
 using namespace std;
 
@@ -40,10 +40,14 @@ int main(int argc, char* argv[]){
   }
   else if(argc == NUM_ARGS+1 && std::string(argv[1]) == "time" ){
     SuMo Sumo;
-    for(int ii=0; ii<3; ++ii){
-      Sumo.reset_time_stamp();
-      usleep(1e4);
-    }
+    Sumo.read_CC(false, false,100);
+    Sumo.sys_wait(1e5);
+    Sumo.prep_sync();
+    Sumo.reset_time_stamp();
+    Sumo.make_sync();  
+    Sumo.sys_wait(1e5);
+    cout << "resetting counters and timestamps.." <<endl;
+    
     return 2;
   }
   else if(argc == NUM_ARGS+1 && std::string(argv[1]) == "usb" ){

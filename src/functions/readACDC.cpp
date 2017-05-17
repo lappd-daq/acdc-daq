@@ -73,7 +73,7 @@ int main(int argc, char* argv[]){
       }
     }
   
-    Sumo.sys_wait(1000);
+    Sumo.sys_wait(10000);
     Sumo.dump_data();
     return 0;
   }

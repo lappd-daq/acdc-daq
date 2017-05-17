@@ -21,7 +21,7 @@ static bool PED_SUBTRCT = false;
 
 static int LIMIT_READOUT_RATE  = 6000;  //usecs limit between event polling
 static int NUM_SEQ_TIMEOUTS    = 100;    // number of sequential timeouts before ending run
-const  float  MAX_INT_TIMER    = 1300.;    // max cpu timer before ending run (secs)
+const  float  MAX_INT_TIMER    = 800.;    // max cpu timer before ending run (secs)
 /* note: usb timeout defined in include/stdUSB.h */
 
 bool overwriteExistingFile = false;
@@ -179,25 +179,25 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       //system_card_trig_valid(false);
       //if(mode == USB2x) system_slave_card_trig_valid(false);                
     }
-   
-    manage_cc_fifo(1);
-    if(mode==USB2x) manage_cc_fifo_slaveDevice(1);	
-    usleep(100);
-    for(int iii=0; iii<2; iii++){
-      system_card_trig_valid(false);
-      if(mode==USB2x) system_slave_card_trig_valid(false);
-    }
+    else{
+      manage_cc_fifo(1);
+      if(mode==USB2x) manage_cc_fifo_slaveDevice(1);	
+      usleep(100);
+      for(int iii=0; iii<2; iii++){
+	system_card_trig_valid(false);
+	if(mode==USB2x) system_slave_card_trig_valid(false);
+      }
     
-    //send in trig 'valid' signal
-    usleep(100);
-    prep_sync();
-    if(mode==USB2x) system_slave_card_trig_valid(true);
-    system_card_trig_valid(true);
-    make_sync();
-    //}
-    //acq rate limit
-    usleep(acq_rate+LIMIT_READOUT_RATE); 
- 
+      //send in trig 'valid' signal
+      sys_wait(100);
+      prep_sync();
+      if(mode==USB2x) system_slave_card_trig_valid(true);
+      system_card_trig_valid(true);
+      make_sync();
+      //}
+      //acq rate limit
+      usleep(acq_rate+LIMIT_READOUT_RATE); 
+    }
     int num_pulls = 0; 
     int evts = 0; 
     int digs = 0;  
@@ -213,23 +213,25 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
       t = timer.stop();
       num_pulls++;
       if(num_pulls > 100) break;
+      //if(num_pulls > 10)  break;   //use this is board trigger does not iterate
     }
 
     last_board_trigger = board_trigger;
     if(mode == USB2x) system_slave_card_trig_valid(false);                
     system_card_trig_valid(false);
     //set_usb_read_mode_slaveDevice(0), set_usb_read_mode(0);
-    evts = read_CC(false, false, 100);
+    evts = read_CC(false, false, 0);
     for(int chkdig=0; chkdig<numFrontBoards; chkdig++)
       digs+=DIGITIZING_START_FLAG[chkdig];
 
-    if(evts == 0){
-      reset_event = true;
-      k = k-1;
-      continue;
-    }
+    //if(evts == 0){
+      //reset_event = true;
+      //k = k-1;
+      //continue;
+      //}
     //condition for dumping event and trying again.
-    else if( DIGITIZING_START_FLAG[2] == 0 || evts < 5 || evts != digs){
+    //else if( DIGITIZING_START_FLAG[2] == 0 || evts < 6 || evts != digs){
+    if( evts == 0 || evts != digs){ 
       print_to_terminal(k, NUM_READS,CC_EVENT_COUNT_FROMCC0, board_trigger, t);
       cout << "    --NULL--       " << endl;
       //cout.flush();
@@ -249,7 +251,8 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     /**************************************/
     //Do bulk read on all front-end cards   
     int numBoards = read_AC(1, all, false);
-    /**************************************/    
+    /**************************************/ 
+    sys_wait(10000);
   
     for(int jj=0; jj<2; jj++){
       //prep_sync();

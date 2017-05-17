@@ -34,15 +34,18 @@ int main(int argc, char* argv[]){
     SuMo Sumo;
     int num_checks = 10;
     Sumo.set_usb_read_mode(16); 
-    if(Sumo.check_active_boards(num_checks))
+    if(Sumo.check_active_boards(num_checks)){
+      cout << "did nothing" << endl;
       return 1;
-
+    }
     if( atoi(argv[1]) == 1 || std::string(argv[1]) == "ON" || 
 	std::string(argv[1]) == "on")
       Sumo.toggle_LED(true);
     else if ( atoi(argv[1]) == 0 || std::string(argv[1]) == "OFF" || 
-	std::string(argv[1]) == "off")
+	      std::string(argv[1]) == "off"){
       Sumo.toggle_LED(false);
+      Sumo.toggle_LED(false);
+    }
     else{
       cout << "invalid argument" << endl;
       return 1;

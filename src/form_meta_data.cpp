@@ -88,6 +88,7 @@ int* SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
   int uu =metaData[32]=adcDat[aa]->timestamp_hi=          AC_INFO[2][13];
   int vv =metaData[33]=adcDat[aa]->timestamp_mid=         AC_INFO[1][13];
   int ww =metaData[34]=adcDat[aa]->timestamp_lo=          AC_INFO[0][13];
+  cout << uu << ":" << vv << ":" << ww << endl;
 
   for(int j=0; j<AC_CHANNELS; j++){
     metaData[j+70] = adcDat[aa]->self_trig_scalar[j];

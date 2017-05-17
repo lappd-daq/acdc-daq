@@ -20,6 +20,7 @@ $RECYCLE.BIN/
 *.hdf5
 *.root
 
+
 # compile files
 /obj/*
 /bin/*
@@ -27,6 +28,7 @@ $RECYCLE.BIN/
 #temp files
 /src/*~
 /include/*~
+/config/*~
 
 # =========================
 # Operating System Files

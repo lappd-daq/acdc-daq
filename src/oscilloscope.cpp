@@ -8,8 +8,9 @@
 #include "Packet.h"
 #include "Timer.h"
 
-static int scopeRefresh = 300000;
+static int scopeRefresh = 30000;
 const  int SCOPE_AUTOSCALE = 200;
+const  int SCOPE_TIMEOUT   = 40;
 
 using namespace std;
 
@@ -25,7 +26,7 @@ int oscilloscope(SuMo& Sumo, int trig_mode, int numFrames, int boardID, int rang
 
   device = setup_scope(Sumo, boardID);
   if(device < 0) return -1;
-  setup_scope(myPipe, boardID);
+  if(setup_scope(myPipe, boardID) == 1) return -2;
 
   Sumo.load_ped();
   timer.start();
@@ -35,7 +36,7 @@ int oscilloscope(SuMo& Sumo, int trig_mode, int numFrames, int boardID, int rang
   scopeBoard[boardID] = true;
   
   int frameCount = 0;
-  while(frameCount < numFrames && t < 30){
+  while(frameCount < numFrames && t < SCOPE_TIMEOUT){
     t = timer.stop();
     if(prime_scope(Sumo, trig_mode, device, boardID, scopeRefresh) == 0) continue;
     max_pdat = log_from_scope(Sumo, boardID, pdat, scopeBoard);
@@ -78,7 +79,6 @@ int setup_scope(SuMo& Sumo, int boardID){
 }
 int setup_scope(ScopePipe& myPipe, int boardID){
 
-
   if(myPipe.init()) return 1;
   //myPipe.send_cmd("set zrange [-1000:1000]");
   myPipe.send_cmd("set term wxt size 610, 480");
@@ -94,22 +94,21 @@ int setup_scope(ScopePipe& myPipe, int boardID){
 }
 
 int prime_scope(SuMo& Sumo, int trig_mode, int device, int boardID, int scopeRefresh){
-  if(device==1) Sumo.manage_cc_fifo_slaveDevice(1);
+  if(Sumo.check_readout_mode()==1) Sumo.manage_cc_fifo_slaveDevice(1);
   Sumo.manage_cc_fifo(1);
 
-  if(trig_mode == 1){
-      if(device==1) Sumo.reset_self_trigger(15, 1);
+    if(trig_mode == 1){
+      if(Sumo.check_readout_mode()==1) Sumo.reset_self_trigger(15, 1);
       Sumo.reset_self_trigger(15, 0);
       Sumo.prep_sync();
       if(Sumo.check_readout_mode()==1) Sumo.system_slave_card_trig_valid(true);
       Sumo.system_card_trig_valid(true);
       Sumo.make_sync();
-   
+      
       Sumo.sys_wait(scopeRefresh);
-
+      
       Sumo.system_card_trig_valid(false);
-      if(Sumo.check_readout_mode()==1) Sumo.system_slave_card_trig_valid(false);
-
+      if(Sumo.check_readout_mode()==1) Sumo.system_slave_card_trig_valid(false); 
     }
     // otherwise, send trigger over software 
     else if(trig_mode == 0){ 
@@ -119,7 +118,8 @@ int prime_scope(SuMo& Sumo, int trig_mode, int device, int boardID, int scopeRef
       Sumo.sys_wait(1000);
     }
     
-    int evts = Sumo.read_CC(false, false, 100);
+    //int evts = Sumo.read_CC(false, false, 100);
+    int evts = Sumo.read_CC(false, false, 0);
     cout << evts << ":";
     for(int j=0; j<numFrontBoards; j++){
       cout << Sumo.EVENT_FLAG[j];

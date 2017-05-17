@@ -3,11 +3,11 @@
 
 #include "Definitions.h"
 /*****
- 
+
 stdUSBL - A libusb implementation of ezusbsys.
 
 StdUSB libusb implementation used here uses same function interface with native stdUSB Windows WDM driver.
- 
+
 *****/
 
 //#include <stdio.h>
@@ -55,7 +55,7 @@ class stdUSBSlave {
 public:
     stdUSBSlave(void);
     ~stdUSBSlave(void);
-    
+
     bool createHandles(int num=1);
     bool freeHandles(void);
     bool freeHandle(void);
