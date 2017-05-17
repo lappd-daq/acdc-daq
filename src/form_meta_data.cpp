@@ -20,8 +20,6 @@ int* SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
       AC_INFO[i][j] = adcDat[aa]->AC_INFO[i][j];
     }
   }
-
-  int metaData[psecSampleCells];
   char meta[100][300];
   for(int i = 0; i < psecSampleCells; i++){
     metaData[i] = 0;
@@ -44,20 +42,20 @@ int* SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
     metaData[55+i]=adcDat[aa]->trigger_threshold[i]=AC_INFO[i][7];  //(float) AC_INFO[i][7] * ref_volt_mv/num_bits;
     metaData[60+i]=adcDat[aa]->ro_dac_value[i] =    AC_INFO[i][8];    //(float) AC_INFO[i][8] * ref_volt_mv/num_bits;
   }
-   
+
   int ab=metaData[35]=adcDat[aa]->CC_BIN_COUNT =         (adcDat[aa]->CC_HEADER_INFO[1] & 0x18) >> 3;
   int bb=metaData[36]=adcDat[aa]->CC_EVENT_COUNT =       adcDat[aa]->CC_HEADER_INFO[3] | adcDat[aa]->CC_HEADER_INFO[2] << 16;
   int cc=metaData[37]=adcDat[aa]->CC_TIMESTAMP_LO =      adcDat[aa]->CC_HEADER_INFO[4];
   int dd=metaData[38]=adcDat[aa]->CC_TIMESTAMP_MID =     adcDat[aa]->CC_HEADER_INFO[5];
-  int ee=metaData[39]=adcDat[aa]->CC_TIMESTAMP_HI =      adcDat[aa]->CC_HEADER_INFO[6]; 
+  int ee=metaData[39]=adcDat[aa]->CC_TIMESTAMP_HI =      adcDat[aa]->CC_HEADER_INFO[6];
 
   int ff=metaData[7]=adcDat[aa]->bin_count_rise =       AC_INFO[0][9] & 0x0F;
-  
+
   int gg=metaData[8]=adcDat[aa]->self_trig_settings_2 = AC_INFO[0][9] >> 4;
   metaData[9]=adcDat[aa]->sys_coincidence_width =       adcDat[aa]->self_trig_settings_2 & 0x007;
   metaData[10]=adcDat[aa]->coincidence_num_chips =       adcDat[aa]->self_trig_settings_2 & 0x038;
   metaData[11]=adcDat[aa]->coincidence_num_chans =       adcDat[aa]->self_trig_settings_2 & 0xFC0;
- 
+
   int hh=metaData[12]=adcDat[aa]->self_trig_settings =   AC_INFO[1][9] & 0x3FF;
   int ii=metaData[13]=adcDat[aa]->trig_en =              adcDat[aa]->self_trig_settings & 0x1;
   int jj=metaData[14]=adcDat[aa]->trig_wait_for_sys =    adcDat[aa]->self_trig_settings & 0x2;
@@ -76,7 +74,7 @@ int* SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
   int pp =metaData[24]=adcDat[aa]->resets_from_firmw =    AC_INFO[0][11] | AC_INFO[1][11] << 16;
 
   metaData[25]=adcDat[aa]->firmware_version            =  AC_INFO[2][11];
-  
+
   int qq =metaData[26]=adcDat[aa]->self_trig_mask =       AC_INFO[3][11] | AC_INFO[4][11] << 16;
 
   int rr_a = metaData[27]=adcDat[aa]->dig_timestamp_lo   =   AC_INFO[0][12];
@@ -94,7 +92,7 @@ int* SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
     metaData[j+70] = adcDat[aa]->self_trig_scalar[j];
   }
   if(PRINT){
-    
+
     cout << std::fixed;
     cout << std::setprecision(2);
     cout << std::dec << endl;
@@ -103,18 +101,18 @@ int* SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
 	 << " evt.count:" << bb
 	 << " timestamp: " <<  ee <<":"<< dd <<":"<< cc << endl;
     cout << "--------" << endl;
-    cout << "event count: " << std::dec << tt; 
+    cout << "event count: " << std::dec << tt;
     cout << " board time: " << uu <<":"<< vv <<":"<< ww << endl;
-    cout << "digtz count: " << std::dec << ss; 
+    cout << "digtz count: " << std::dec << ss;
     cout << "   ADC time: " << rr_c <<":"<< rr_b <<":"<< rr_a << endl;
- 
+
     cout << "self-trig mask:       0x"     << hex << qq << endl;
-    cout << "self-trig settings:   0x" << hex << hh << endl;  
-    cout << "self-trig settings_2: 0x" << hex << gg << endl;  
-    cout << "mis-trig_count          " << dec << nn << endl;  
+    cout << "self-trig settings:   0x" << hex << hh << endl;
+    cout << "self-trig settings_2: 0x" << hex << gg << endl;
+    cout << "mis-trig_count          " << dec << nn << endl;
     cout << "firmware-self resets    "  << dec << pp << endl;
     cout << "firmware reset time     " << dec << ac << endl;
-    cout << "sys trig count on AC/DC " << dec << oo << endl;  
+    cout << "sys trig count on AC/DC " << dec << oo << endl;
     cout << "last time valid->digtz  " << dec << bc << endl;
     cout << "last num-chan trig self " << dec << ad << endl;
 
@@ -135,6 +133,6 @@ int* SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
       cout << "|Trig:"               << adcDat[aa]->trigger_threshold[i]* ref_volt_mv/num_bits << "mV";
       cout << endl;
     }
-  } 
+  }
   return metaData;
 }

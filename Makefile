@@ -5,11 +5,11 @@
 #############################################################################
 #Generic and Site Specific Flags
 CC=g++ -g -fPIC #-DH5_USE_16_API
-#LIBS    
+#LIBS
 LDFLAGS= $(LIBS)  -lusb -lz -lm #-lhdf5
-CXXFLAGS=-Wall -O2
+CXXFLAGS=-Wall -Werror -O2
 
-INC= -I./include/ 
+INC= -I./include/
 #-I/usr/src/linux-headers-2.6.38-12/include/ \
 #-I/usr/src/linux-headers-2.6.38-12/include/linux
 
@@ -59,7 +59,7 @@ bin/setConfig	: obj/setConfig.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/dumpData	: obj/dumpData.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/oScope	: obj/oScope.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
 bin/makeLUT	: obj/makeLUT.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/usbResetDevice: 
+bin/usbResetDevice:
 	g++ -o bin/usbResetDevice src/usb/usbResetDevice.C
 #############################################################################
 clean:
