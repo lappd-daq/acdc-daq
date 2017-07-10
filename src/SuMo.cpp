@@ -51,7 +51,7 @@ void SuMo::cleanup(){
   }
   //for(int i=0; i<numFrontBoards; i++) delete [] adcDat[i];
 }
-  
+//this function puts data on the board 
 void SuMo::dump_data(void){
   bool all[numFrontBoards];
   for(int i=0; i<numFrontBoards; i++) all[i] = true;
