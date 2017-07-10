@@ -78,7 +78,11 @@ vector<packet_t>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_
 
   load_ped();
 
+  int number_of_frontend_cards = 0;
 
+  for( int board = 0; board < numFrontBoards; board++){
+    if(DC_ACTIVE[board]) number_of_frontend_cards++;
+  }
 
   cout << "--------------------------------------------------------------" << endl;
   cout << "number of front-end boards detected = " << number_of_frontend_cards
@@ -283,7 +287,7 @@ vector<packet_t>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_
   return events;
 }
 
-int SuMo::log_data(const char* log_filename, vector<packet_t>* event_data){
+int SuMo::log_data(const char* log_filename, vector<packet_t>* event_data, int trig_mode){
   char logDataFilename[300];
   int numEvents = sizeof(event_data[0])/sizeof(event_data[0][0]);
   // 'scalar' mode
