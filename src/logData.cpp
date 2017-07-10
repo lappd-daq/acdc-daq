@@ -51,7 +51,7 @@ int main(int argc, char* argv[]){
     if(command.check_active_boards(num_checks))
     return 1;
 
-    events = command.get_data(num_events, trig_mode, 0)
+    vector<packet_t>* events = command.get_data(num_events, trig_mode, 0);
     command.log_data(log_data_filename, events);
 
     return 0;

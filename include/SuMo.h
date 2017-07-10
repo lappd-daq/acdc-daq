@@ -13,6 +13,7 @@ author: eric oberla
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <vector>
 
 #include "stdUSB.h"
 #include "Definitions.h"
@@ -92,7 +93,9 @@ class SuMo{
   int  make_count_to_voltage(void);                     //make count-to-voltage LUT for each active board (# active boards * 6 channels * 1536 cells * 4096 !!)
   int  make_count_to_voltage(bool COPY, bool* range);
   int  load_ped();
-  int  log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate);
+  std::vector<packet_t>* get_data(unsigned int NUM_READS, int trig_mode, int acq_rate);
+  int log_data(const char* log_filename, std::vector<packet_t>* event_data);
+
 
   int  check_active_boards(void);
   int  check_active_boards(bool print);
