@@ -51,14 +51,14 @@ int main(int argc, char* argv[]){
     if(command.check_active_boards(num_checks))
     return 1;
 
-    vector<packet_t*>* events = command.get_data(num_events, trig_mode, 0);
+    vector<packet_t**> events = command.get_data(num_events, trig_mode, 0);
     command.log_data(log_data_filename, events, trig_mode);
 
     return 0;
   }
 }
 
-vector<packet_t*>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_rate){
+vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_rate){
   int check_event;
   int asic_baseline[psecSampleCells];
   int count = 0;
@@ -69,7 +69,7 @@ vector<packet_t*>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
   time_t now;
   unsigned short sample;
   int* Meta;
-  vector<packet_t*>* event_data;
+  vector<packet_t**> event_data;
 
   // read all front end cards
   bool all[numFrontBoards];
@@ -265,9 +265,8 @@ vector<packet_t*>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
           adcDat[targetAC]->Data[AC_CHANNELS][j] =0;
         }
       }
-
-      event_data[targetAC].push_back(adcDat[targetAC]);
     }
+    event_data.push_back(adcDat);
 
     last_k = k;
   }
@@ -283,7 +282,7 @@ vector<packet_t*>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
   return event_data;
 }
 
-int SuMo::log_data(const char* log_filename, vector<packet_t*>* event_data, int trig_mode){
+int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int trig_mode){
   int asic_baseline[psecSampleCells];
   float  _now_, t = 0.;
   Timer timer = Timer();
@@ -340,16 +339,16 @@ int SuMo::log_data(const char* log_filename, vector<packet_t*>* event_data, int 
     asic_baseline[j] = baseline[j];
   }
 
-  for(int k = 0; k < event_data[0].size(); k++){
+  for(int k = 0; k < event_data.size(); k++){
+    packet_t** events = event_data[k];
     for(int i=0; i < psecSampleCells; i++){
       ofs << i << " " << asic_baseline[i] << " ";
       for(int board=0; board<numFrontBoards; board++){
         // Get the event vector for the given board
-        vector<packet_t*> events = event_data[board];
         if(BOARDS_READOUT[board]){
-          for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << events[k]->Data[channel][i] << " ";
+          for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << events[board]->Data[channel][i] << " ";
         } else if(BOARDS_TIMEOUT[board]) {
-          for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << events[k]->Data[channel][i] << " ";
+          for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << events[board]->Data[channel][i] << " ";
         }
       }
       ofs <<endl;
@@ -358,12 +357,11 @@ int SuMo::log_data(const char* log_filename, vector<packet_t*>* event_data, int 
     if(trig_mode == 2){
       for(int board=0; board<numFrontBoards; board++){
         // Get the event vector for the given board
-        vector<packet_t*> events = event_data[board];
         if(BOARDS_READOUT[board]){
 
           rate_fs << k << "\t" << board << "\t" << t << "\t";
 
-          for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[k]->self_trig_scalar[channel] << "\t";
+          for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[board]->self_trig_scalar[channel] << "\t";
 
           rate_fs << endl;
         }
