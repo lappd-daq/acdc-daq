@@ -93,8 +93,8 @@ class SuMo{
   int  make_count_to_voltage(void);                     //make count-to-voltage LUT for each active board (# active boards * 6 channels * 1536 cells * 4096 !!)
   int  make_count_to_voltage(bool COPY, bool* range);
   int  load_ped();
-  std::vector<packet_t>* get_data(unsigned int NUM_READS, int trig_mode, int acq_rate);
-  int log_data(const char* log_filename, std::vector<packet_t>* event_data);
+  std::vector<packet_t*>* get_data(unsigned int NUM_READS, int trig_mode, int acq_rate);
+  int log_data(const char* log_filename, std::vector<packet_t*>* event_data, int trig_mode);
 
 
   int  check_active_boards(void);

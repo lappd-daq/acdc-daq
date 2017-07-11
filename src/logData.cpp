@@ -51,14 +51,14 @@ int main(int argc, char* argv[]){
     if(command.check_active_boards(num_checks))
     return 1;
 
-    vector<packet_t>* events = command.get_data(num_events, trig_mode, 0);
-    command.log_data(log_data_filename, events);
+    vector<packet_t*>* events = command.get_data(num_events, trig_mode, 0);
+    command.log_data(log_data_filename, events, trig_mode);
 
     return 0;
   }
 }
 
-vector<packet_t>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_rate){
+vector<packet_t*>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_rate){
   int check_event;
   int asic_baseline[psecSampleCells];
   int count = 0;
@@ -69,12 +69,11 @@ vector<packet_t>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_
   time_t now;
   unsigned short sample;
   int* Meta;
-  vector<packet_t> events[numFrontBoards];
-  // packet_t events[numFrontBoards][NUM_READS];
+  vector<packet_t*>* event_data;
 
   // read all front end cards
   bool all[numFrontBoards];
-  for(int i=0;i<numFrontBoards; i++) all[i] = true;
+  for(int i = 0; i < numFrontBoards; i++) all[i] = true;
 
   load_ped();
 
@@ -94,7 +93,6 @@ vector<packet_t>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_
   usleep(100000);
 
   /* cpu time zero */
-  //t0 = time(NULL);
   timer.start();
 
   bool reset_event = true;
@@ -123,8 +121,6 @@ vector<packet_t>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_
     }
 
     // trig_mode = 1 is external source or PSEC4 self trigger
-
-
     // trig_mode = 0 is over software (USB), i.e. calibration logging
     if(trig_mode == 0){
       manage_cc_fifo(1);
@@ -270,26 +266,29 @@ vector<packet_t>* SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_
         }
       }
 
-      events[targetAC].push_back(adcDat[targetAC]);
+      event_data[targetAC].push_back(adcDat[targetAC]);
     }
 
     last_k = k;
   }
 
   cout << endl;
-  cout << "Done on readout:  " << last_k+1 << " :: @time " <<t<< " sec" << endl;
+  cout << "Done on readout:  " << last_k+1 << " :: @time " << t << " sec" << endl;
 
   cleanup();
 
 
   dump_data();
 
-  return events;
+  return event_data;
 }
 
-int SuMo::log_data(const char* log_filename, vector<packet_t>* event_data, int trig_mode){
+int SuMo::log_data(const char* log_filename, vector<packet_t*>* event_data, int trig_mode){
+  int asic_baseline[psecSampleCells];
+  float  _now_, t = 0.;
+  Timer timer = Timer();
+  time_t now;
   char logDataFilename[300];
-  int numEvents = sizeof(event_data[0])/sizeof(event_data[0][0]);
   // 'scalar' mode
   ofstream rate_fs;
   if(trig_mode == 2){
@@ -334,27 +333,37 @@ int SuMo::log_data(const char* log_filename, vector<packet_t>* event_data, int t
     ofs << endl;
   }
 
-  for(int k = 0; k < numEvents; k++){
-    event = event_data[k]
+  /* wraparound_correction, if desired: */
+  int baseline[psecSampleCells];
+  unwrap_baseline(baseline, 2);
+  for (int j = 0; j < psecSampleCells; j++){
+    asic_baseline[j] = baseline[j];
+  }
+
+  for(int k = 0; k < event_data[0].size(); k++){
     for(int i=0; i < psecSampleCells; i++){
-
       ofs << i << " " << asic_baseline[i] << " ";
-      for(int board=0; board<numFrontBoards; board++)
-      if(BOARDS_READOUT[board])
-      for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << event[board]->Data[channel][i] << " ";
-      else if(BOARDS_TIMEOUT[board])
-      for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << event[board]->Data[channel][i] << " ";
-
+      for(int board=0; board<numFrontBoards; board++){
+        // Get the event vector for the given board
+        vector<packet_t*> events = event_data[board];
+        if(BOARDS_READOUT[board]){
+          for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << events[k]->Data[channel][i] << " ";
+        } else if(BOARDS_TIMEOUT[board]) {
+          for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << events[k]->Data[channel][i] << " ";
+        }
+      }
       ofs <<endl;
     }
 
     if(trig_mode == 2){
       for(int board=0; board<numFrontBoards; board++){
+        // Get the event vector for the given board
+        vector<packet_t*> events = event_data[board];
         if(BOARDS_READOUT[board]){
 
           rate_fs << k << "\t" << board << "\t" << t << "\t";
 
-          for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  event[board]->self_trig_scalar[channel] << "\t";
+          for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[k]->self_trig_scalar[channel] << "\t";
 
           rate_fs << endl;
         }
@@ -362,14 +371,14 @@ int SuMo::log_data(const char* log_filename, vector<packet_t>* event_data, int t
     }
   }
   /* add whitespace to end of file */
-    ofs <<endl<<endl;
-    ofs.close();
+  ofs << endl << endl;
+  ofs.close();
 
-    if(trig_mode == 2) rate_fs.close();
+  if(trig_mode == 2) rate_fs.close();
 
-    cout << "Data saved in file: " << logDataFilename << endl << "*****" << endl;
+  cout << "Data saved in file: " << logDataFilename << endl << "*****" << endl;
 
-    return 0;
+  return 0;
 }
 
 
