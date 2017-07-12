@@ -50,13 +50,17 @@ int main(int argc, char* argv[]){
     if(command.check_active_boards(num_checks))
       return 1;
 
-    command.log_data(log_data_filename, num_events, trig_mode, 0);
+
+    vector<packet_t**> events = command.get_data(num_events, trig_mode, 0);
+    command.log_data(log_data_filename, events, trig_mode);
 
     return 0;
   }
 }
 
-int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate){
+
+vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq_rate){
+
   int check_event;
   int asic_baseline[psecSampleCells];
   int count = 0;
@@ -69,55 +73,19 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   unsigned short sample;
   int* Meta;
 
-  /* handle filename */
-  // 'scalar' mode
-  ofstream rate_fs;
-  if(trig_mode == 2){
-    char logRateFilename[300];
-    sprintf(logRateFilename, "%s.acdc.rate", log_filename);
-    rate_fs.open(logRateFilename, ios::trunc);
-  }
-
-  // full waveform, standard mode
-  time(&now);
-  char timestring[100];
-  strftime(timestring, 80, "%Y-%m-%d-%H-%M", localtime(&now));
-  //sprintf(logDataFilename, "%s-%s.acdc.dat", timestring, log_filename);
-  sprintf(logDataFilename, "%s.acdc.dat", log_filename);
-
-  // check if file exists, inquire whether to overwrite
-  // shouldn't be an issue now since file timestamped in filename ^^
-  string temp;
-  while(fileExists(logDataFilename)){
-    cout << "file already exists, try new filename: (or enter to overwrite / ctrl-C to quit): ";
-    getline(cin, temp);
-    if(temp.empty()) break;
-    sprintf(logDataFilename, "%s.acdc.dat", temp.c_str());
-  }
-
-  ofstream ofs;
-  ofs.open(logDataFilename, ios::trunc);
+  vector<packet_t**> event_data;
 
   // read all front end cards
   bool all[numFrontBoards];
-  for(int i=0;i<numFrontBoards; i++) all[i] = true;
+  for(int i = 0; i < numFrontBoards; i++) all[i] = true;
 
   load_ped();
 
   int number_of_frontend_cards = 0;
-  // save pedestal data to file header for reference, easy access
-  // zero pad to match data format
-  for(int i=0; i < psecSampleCells; i++){
 
-    ofs << i << " " << 0 << " ";
-    for(int board=0; board<numFrontBoards; board++){
-      if(DC_ACTIVE[board]){
-	if(i == 0) number_of_frontend_cards++;
-	for(int channel=0; channel < AC_CHANNELS; channel++) ofs << PED_DATA[board][channel][i]<< " ";
-	ofs << 0 << " ";
-      }
-    }
-    ofs << endl;
+  for( int board = 0; board < numFrontBoards; board++){
+    if(DC_ACTIVE[board]) number_of_frontend_cards++;
+
   }
 
   cout << "--------------------------------------------------------------" << endl;
@@ -130,7 +98,6 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   usleep(100000);
 
   /* cpu time zero */
-  //t0 = time(NULL);
   timer.start();
 
   bool reset_event = true;
@@ -159,8 +126,6 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
     }
 
     // trig_mode = 1 is external source or PSEC4 self trigger
-
-
     // trig_mode = 0 is over software (USB), i.e. calibration logging
     if(trig_mode == 0){
       manage_cc_fifo(1);
@@ -306,26 +271,106 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
 	}
       }
     }
+    event_data.push_back(adcDat);
 
+
+    last_k = k;
+  }
+
+  cout << endl;
+  cout << "Done on readout:  " << last_k+1 << " :: @time " << t << " sec" << endl;
+
+  cleanup();
+
+
+  dump_data();
+
+  return event_data;
+}
+
+int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int trig_mode){
+  int asic_baseline[psecSampleCells];
+  float  _now_, t = 0.;
+  Timer timer = Timer();
+  time_t now;
+  char logDataFilename[300];
+  // 'scalar' mode
+  ofstream rate_fs;
+  if(trig_mode == 2){
+    char logRateFilename[300];
+    sprintf(logRateFilename, "%s.acdc.rate", log_filename);
+    rate_fs.open(logRateFilename, ios::trunc);
+  }
+
+  // full waveform, standard mode
+  time(&now);
+  char timestring[100];
+  strftime(timestring, 80, "%Y-%m-%d-%H-%M", localtime(&now));
+  // sprintf(logDataFilename, "%s-%s.acdc.dat", timestring, log_filename);
+  sprintf(logDataFilename, "%s.acdc.dat", log_filename);
+
+  // check if file exists, inquire whether to overwrite
+  // shouldn't be an issue now since file timestamped in filename ^^
+  string temp;
+  while(fileExists(logDataFilename)){
+    cout << "file already exists, try new filename: (or enter to overwrite / ctrl-C to quit): ";
+    getline(cin, temp);
+    if(temp.empty()) break;
+    sprintf(logDataFilename, "%s.acdc.dat", temp.c_str());
+  }
+
+  ofstream ofs;
+  ofs.open(logDataFilename, ios::trunc);
+
+  // save pedestal data to file header for reference, easy access
+  // zero pad to match data format
+  int number_of_frontend_cards = 0;
+  for(int i=0; i < psecSampleCells; i++){
+
+    ofs << i << " " << 0 << " ";
+    for(int board=0; board<numFrontBoards; board++){
+      if(DC_ACTIVE[board]){
+        if(i == 0) number_of_frontend_cards++;
+        for(int channel=0; channel < AC_CHANNELS; channel++) ofs << PED_DATA[board][channel][i]<< " ";
+        ofs << 0 << " ";
+      }
+    }
+    ofs << endl;
+  }
+
+  /* wraparound_correction, if desired: */
+  int baseline[psecSampleCells];
+  unwrap_baseline(baseline, 2);
+  for (int j = 0; j < psecSampleCells; j++){
+    asic_baseline[j] = baseline[j];
+  }
+
+  for(int k = 0; k < event_data.size(); k++){
+    packet_t** events = event_data[k];
     for(int i=0; i < psecSampleCells; i++){
-
       ofs << i << " " << asic_baseline[i] << " ";
-      for(int board=0; board<numFrontBoards; board++)
-	if(BOARDS_READOUT[board])
-	  for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << adcDat[board]->Data[channel][i] << " ";
-        else if(BOARDS_TIMEOUT[board])
-  	  for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << adcDat[board]->Data[channel][i] << " ";
+
+      for(int board=0; board<numFrontBoards; board++){
+        // Get the event vector for the given board
+        if(BOARDS_READOUT[board]){
+          for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << events[board]->Data[channel][i] << " ";
+        } else if(BOARDS_TIMEOUT[board]) {
+          for(int channel=0; channel < AC_CHANNELS+1; channel++) ofs << std::dec << events[board]->Data[channel][i] << " ";
+        }
+      }
 
       ofs <<endl;
     }
 
     if(trig_mode == 2){
       for(int board=0; board<numFrontBoards; board++){
-	if(BOARDS_READOUT[board]){
+        // Get the event vector for the given board
+        if(BOARDS_READOUT[board]){
 
 	  rate_fs << k << "\t" << board << "\t" << t << "\t";
 
-	  for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  adcDat[board]->self_trig_scalar[channel] << "\t";
+
+          for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[board]->self_trig_scalar[channel] << "\t";
 
 	  rate_fs << endl;
 	}
@@ -340,14 +385,14 @@ int SuMo::log_data(const char* log_filename, unsigned int NUM_READS, int trig_mo
   cleanup();
 
   /* add whitespace to end of file */
-  ofs <<endl<<endl;
+  ofs << endl << endl;
   ofs.close();
 
   if(trig_mode == 2) rate_fs.close();
 
-  dump_data();
-
   cout << "Data saved in file: " << logDataFilename << endl << "*****" << endl;
+
+
   return 0;
 }
 
