@@ -87,3 +87,4 @@ $ ./bin/takePed
 $ ./bin/setConfig -trig config/trig-laserstand.config
 $ ./bin/readACDC
 ```
+There is a shell script provided that does exactly this, called config.sh.
