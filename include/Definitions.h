@@ -1,8 +1,8 @@
 #ifndef __DEFINITIONS_H__
 #define __DEFINITIONS_H__
 
-#define numFrontBoards        4        //max number of plugged boards
-#define boardsPerCC           4        //max number of AC/DC cards per central card
+#define numFrontBoards        8        //max number of plugged boards
+#define boardsPerCC           8        //max number of AC/DC cards per central card
 #define cc_buffersize         31       //Central-card meta-data size
 #define ac_buffersize         8100     //firmware packet size should not exceed this
 #define AC_CHANNELS           30       //number of channels per AC/DC board

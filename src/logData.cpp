@@ -48,7 +48,7 @@ int main(int argc, char* argv[]){
     int trig_mode = atoi(argv[3]);
 
     if(command.check_active_boards(num_checks))
-      return 1;
+    return 1;
 
 
     vector<packet_t**> events = command.get_data(num_events, trig_mode, 0);
@@ -90,9 +90,9 @@ vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
 
   cout << "--------------------------------------------------------------" << endl;
   cout << "number of front-end boards detected = " << number_of_frontend_cards
-       << " of " << numFrontBoards << " address slots in system" << endl;
+  << " of " << numFrontBoards << " address slots in system" << endl;
   cout << "Trying for " << NUM_READS << " events logged to disk, in a timeout window of "
-       << MAX_INT_TIMER << " seconds" << endl;
+  << MAX_INT_TIMER << " seconds" << endl;
   cout << "--------------------------------------------------------------" << endl << endl;
 
   usleep(100000);
@@ -149,8 +149,8 @@ vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
       if(mode==USB2x) manage_cc_fifo_slaveDevice(1);
       usleep(100);
       for(int iii=0; iii<2; iii++){
-	system_card_trig_valid(false);
-	if(mode==USB2x) system_slave_card_trig_valid(false);
+        system_card_trig_valid(false);
+        if(mode==USB2x) system_slave_card_trig_valid(false);
       }
 
       //send in trig 'valid' signal
@@ -171,8 +171,8 @@ vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
       read_CC(false, false, 100);
       board_trigger = CC_EVENT_COUNT_FROMCC0;
       cout << "waiting for trigger...     on system event: "
-    	   << board_trigger << " & readout attempt " << k
-    	   << " @time " << t << "                        \r";
+      << board_trigger << " & readout attempt " << k
+      << " @time " << t << "                        \r";
       cout.flush();
       usleep(1000);
       t = timer.stop();
@@ -187,13 +187,13 @@ vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
     //set_usb_read_mode_slaveDevice(0), set_usb_read_mode(0);
     evts = read_CC(false, false, 0);
     for(int chkdig=0; chkdig<numFrontBoards; chkdig++)
-      digs+=DIGITIZING_START_FLAG[chkdig];
+    digs+=DIGITIZING_START_FLAG[chkdig];
 
     //if(evts == 0){
-      //reset_event = true;
-      //k = k-1;
-      //continue;
-      //}
+    //reset_event = true;
+    //k = k-1;
+    //continue;
+    //}
     //condition for dumping event and trying again.
     //else if( DIGITIZING_START_FLAG[2] == 0 || evts < 6 || evts != digs){
     if( evts == 0 || evts != digs){
@@ -208,9 +208,9 @@ vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
     // show event number at terminal
     else{
       if((k+1) % 1 == 0 || k==0){
-	print_to_terminal(k, NUM_READS, CC_EVENT_COUNT_FROMCC0, board_trigger, t);
-	cout << "          \r";
-	cout.flush();
+        print_to_terminal(k, NUM_READS, CC_EVENT_COUNT_FROMCC0, board_trigger, t);
+        cout << "          \r";
+        cout.flush();
       }
     }
     /**************************************/
@@ -232,43 +232,43 @@ vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
     // form data for filesave
     for(int targetAC = 0; targetAC < numFrontBoards; targetAC++){
       if(BOARDS_READOUT[targetAC] && numBoards > 0){
-	psec_cnt = 0;
-	// assign meta data
-	Meta=get_AC_info(false, targetAC, false,k, t, t, evts);
+        psec_cnt = 0;
+        // assign meta data
+        Meta=get_AC_info(false, targetAC, false,k, t, t, evts);
 
-	check_event = 0;
+        check_event = 0;
 
-	for(int i = 0; i < AC_CHANNELS; i++){
-	  if(i>0 && i % 6 == 0) psec_cnt ++;
+        for(int i = 0; i < AC_CHANNELS; i++){
+          if(i>0 && i % 6 == 0) psec_cnt ++;
 
-	  for(int j = 0; j < psecSampleCells; j++){
-	    sample = adcDat[targetAC]->AC_RAW_DATA[psec_cnt][i%6*256+j];
-	    if(PED_SUBTRCT) sample -= PED_DATA[targetAC][i][j];
+          for(int j = 0; j < psecSampleCells; j++){
+            sample = adcDat[targetAC]->AC_RAW_DATA[psec_cnt][i%6*256+j];
+            if(PED_SUBTRCT) sample -= PED_DATA[targetAC][i][j];
 
-	    adcDat[targetAC]->Data[i][j] = (unsigned int) sample;
-	  }
-	}
-	/* wraparound_correction, if desired: */
-	int baseline[psecSampleCells];
-	unwrap_baseline(baseline, 2);
-	for (int j = 0; j < psecSampleCells; j++){
-	  asic_baseline[j] = baseline[j];
-	  adcDat[targetAC]->Data[AC_CHANNELS][j] = Meta[j];
-	}
+            adcDat[targetAC]->Data[i][j] = (unsigned int) sample;
+          }
+        }
+        /* wraparound_correction, if desired: */
+        int baseline[psecSampleCells];
+        unwrap_baseline(baseline, 2);
+        for (int j = 0; j < psecSampleCells; j++){
+          asic_baseline[j] = baseline[j];
+          adcDat[targetAC]->Data[AC_CHANNELS][j] = Meta[j];
+        }
       }
       //if timeout on only some, but not all boards
       else if( numBoards > 0 && BOARDS_TIMEOUT[targetAC] && DC_ACTIVE[targetAC]){
-	for(int i = 0; i < AC_CHANNELS; i++){
-	  if(i>0 && i % 6 == 0) psec_cnt ++;
+        for(int i = 0; i < AC_CHANNELS; i++){
+          if(i>0 && i % 6 == 0) psec_cnt ++;
 
-	  for(int j = 0; j < psecSampleCells; j++){
-	    sample = 0xFF;
-	    adcDat[targetAC]->Data[i][j] = sample;
-	  }
-	}
-	for(int j = 0; j < psecSampleCells; j++){
-	  adcDat[targetAC]->Data[AC_CHANNELS][j] =0;
-	}
+          for(int j = 0; j < psecSampleCells; j++){
+            sample = 0xFF;
+            adcDat[targetAC]->Data[i][j] = sample;
+          }
+        }
+        for(int j = 0; j < psecSampleCells; j++){
+          adcDat[targetAC]->Data[AC_CHANNELS][j] =0;
+        }
       }
     }
     event_data.push_back(adcDat);
@@ -293,6 +293,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
   float  _now_, t = 0.;
   Timer timer = Timer();
   time_t now;
+  int last_k;
   char logDataFilename[300];
   // 'scalar' mode
   ofstream rate_fs;
@@ -367,13 +368,13 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
         // Get the event vector for the given board
         if(BOARDS_READOUT[board]){
 
-	  rate_fs << k << "\t" << board << "\t" << t << "\t";
+          rate_fs << k << "\t" << board << "\t" << t << "\t";
 
 
           for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[board]->self_trig_scalar[channel] << "\t";
 
-	  rate_fs << endl;
-	}
+          rate_fs << endl;
+        }
       }
     }
     last_k = k;

@@ -44,7 +44,7 @@ private:
 
     /* USBFX2 device descriptions */
     static const uint16_t USBFX2_VENDOR_ID = VID1; //0x090c;
-    static const uint16_t USBFX2_PRODUCT_ID = PID1; //0x1000;
+    static const uint16_t USBFX2_PRODUCT_ID = PID2; //0x1000;
 
 protected:
     /* The handle to the usb device. Needed by write & read operations. */
@@ -80,7 +80,7 @@ private:
 
     /* USBFX2 device descriptions */
     static const uint16_t USBFX2_VENDOR_ID = VID2; //0x090c;
-    static const uint16_t USBFX2_PRODUCT_ID = PID2; //0x1000;
+    static const uint16_t USBFX2_PRODUCT_ID = PID1; //0x1000;
 
 protected:
     /* The handle to the usb device. Needed by write & read operations. */
