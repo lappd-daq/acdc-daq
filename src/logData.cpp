@@ -338,7 +338,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     char delim = ' ';
     ofs << "Event" << delim << "Board" << delim << "Sample";
     for(int c=1; c <= AC_CHANNELS; c++){
-        ofs << delim << "Ch " << c;
+        ofs << delim << "Ch" << c;
     }
 
     /* Record events */
@@ -350,21 +350,19 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
             for(int board=0; board<numFrontBoards; board++){
                 // Get the event vector for the given board
                 for(int channel=0; channel < AC_CHANNELS; channel++){
-                    cout << "on board " << board << endl;
                     if (DC_ACTIVE[board]){
-                        cout << "board " << board << " is active" << endl;
-                        if(BOARDS_READOUT[board]){
                             ofs << k << delim << board << delim << i;
                             int ped_subtracted =  events[board]->Data[channel][i] - PED_DATA[board][channel][i];
                             // DEBUG
                             std::cout << ped_subtracted;
                             ofs << delim << std::dec << ped_subtracted;
-                        }
+
                     }
                 }
-                ofs <<endl;
             }
+            ofs <<endl;
         }
+
 
         if(trig_mode == 2){
             for(int board=0; board<numFrontBoards; board++){
