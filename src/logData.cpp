@@ -344,24 +344,23 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
 
     /* Record events */
     // For each event
-    for(int k = 0; k < event_data.size(); k++){
-        packet_t** events = event_data[k];
-
-        for(int i=0; i < psecSampleCells; i++){
-            for(int board=0; board<numFrontBoards; board++){
-                // Get the event vector for the given board
-                ofs << k << delim << board << delim << i;
-                for(int channel=0; channel < AC_CHANNELS; channel++){
-                    if (DC_ACTIVE[board]){
-                            int ped_subtracted =  events[board]->Data[channel][i] - PED_DATA[board][channel][i];
-                            ofs << delim << std::dec << ped_subtracted;
-
-                    }
+    for(int event = 0; event < event_data.size(); event++){
+        packet_t** events = event_data[event];
+        // For each board
+        for (int board = 0; board < numFrontBoards; board++){
+            if (!DC_ACTIVE[board]) continue;
+            // For each channels
+            for (int ch = 0; ch < AC_CHANNELS; ch++){
+                ofs << event << delim << board << delim << ch;
+                // For each sample
+                for (int i = 0; i < psecSampleCells; i++) {
+                    int ped_subtracted = events[board]->Data[ch][i] - PED_DATA[board][ch][i];
+                    ofs << delim << dec << ped_subtracted; // std::dec
                 }
+                ofs << endl;
             }
-            ofs <<endl;
-        }
 
+        }
 
         if(trig_mode == 2){
             for(int board=0; board<numFrontBoards; board++){
@@ -369,7 +368,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
                 if (DC_ACTIVE[board]){
                     if(BOARDS_READOUT[board]){
 
-                        rate_fs << k << "\t" << board << "\t" << t << "\t";
+                        rate_fs << event << "\t" << board << "\t" << t << "\t";
 
 
                         for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[board]->self_trig_scalar[channel] << "\t";
@@ -379,7 +378,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
                 }
             }
         }
-        last_k = k;
+        last_k = event;
     }
 
     cout << endl;
