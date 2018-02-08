@@ -299,7 +299,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     ofstream rate_fs;
     if(trig_mode == 2){
         char logRateFilename[300];
-        sprintf(logRateFilename, "%s.rate.dat", log_filename);
+        sprintf(logRateFilename, "%s.rate", log_filename);
         rate_fs.open(logRateFilename, ios::trunc);
     }
 
@@ -308,7 +308,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     char timestring[100];
     strftime(timestring, 80, "%Y-%m-%d-%H-%M", localtime(&now));
     // sprintf(logDataFilename, "%s-%s.acdc.dat", timestring, log_filename);
-    sprintf(logDataFilename, "%s.dat", log_filename);
+    sprintf(logDataFilename, "%s.acdc", log_filename);
 
     // check if file exists, inquire whether to overwrite
     // shouldn't be an issue now since file timestamped in filename ^^
@@ -317,7 +317,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
         cout << "file already exists, try new filename: (or enter to overwrite / ctrl-C to quit): ";
         getline(cin, temp);
         if(temp.empty()) break;
-        sprintf(logDataFilename, "%s.dat", temp.c_str());
+        sprintf(logDataFilename, "%s.acdc", temp.c_str());
     }
 
     ofstream ofs;
@@ -336,11 +336,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
 
     /* Create header */
     char delim = ' ';
-    ofs << "Event" << delim << "Board" << delim << "Sample";
-    for(int c=1; c <= AC_CHANNELS; c++){
-        ofs << delim << "Ch" << c;
-    }
-    ofs << delim << endl;
+    ofs << "Event" << delim << "Board" << delim << "Channel" << delim << "Samples" << endl;
 
     /* Record events */
     // For each event
@@ -351,7 +347,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
             if (!DC_ACTIVE[board]) continue;
             // For each channels
             for (int ch = 0; ch < AC_CHANNELS; ch++){
-                ofs << event << delim << board << delim << ch;
+                ofs << event << delim << board << delim << ch + 1;
                 // For each sample
                 for (int i = 0; i < psecSampleCells; i++) {
                     int ped_subtracted = events[board]->Data[ch][i] - PED_DATA[board][ch][i];
