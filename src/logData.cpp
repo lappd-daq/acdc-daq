@@ -345,16 +345,17 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     // For each event
     for(int k = 0; k < event_data.size(); k++){
         packet_t** events = event_data[k];
-        for(int board=0; board<numFrontBoards; board++){
-            for(int i=0; i < psecSampleCells; i++){
+
+        for(int i=0; i < psecSampleCells; i++){
+            for(int board=0; board<numFrontBoards; board++){
                 // Get the event vector for the given board
-                ofs << k << delim << board << delim << i;
                 for(int channel=0; channel < AC_CHANNELS; channel++){
                     if(BOARDS_READOUT[board]){
+                        ofs << k << delim << board << delim << i;
                         int ped_subtracted =  events[board]->Data[channel][i] - PED_DATA[board][channel][i];
+                        // DEBUG
+                        std::cout << ped_subtracted;
                          ofs << delim << std::dec << ped_subtracted;
-                    } else if(BOARDS_TIMEOUT[board]) {
-                         ofs << delim << "NaN";
                     }
                 }
                 ofs <<endl;
