@@ -350,12 +350,16 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
             for(int board=0; board<numFrontBoards; board++){
                 // Get the event vector for the given board
                 for(int channel=0; channel < AC_CHANNELS; channel++){
-                    if(BOARDS_READOUT[board]){
-                        ofs << k << delim << board << delim << i;
-                        int ped_subtracted =  events[board]->Data[channel][i] - PED_DATA[board][channel][i];
-                        // DEBUG
-                        std::cout << ped_subtracted;
-                         ofs << delim << std::dec << ped_subtracted;
+                    cout << "on board " << board << endl;
+                    if (DC_ACTIVE[board]){
+                        cout << "board " << board << " is active" << endl;
+                        if(BOARDS_READOUT[board]){
+                            ofs << k << delim << board << delim << i;
+                            int ped_subtracted =  events[board]->Data[channel][i] - PED_DATA[board][channel][i];
+                            // DEBUG
+                            std::cout << ped_subtracted;
+                            ofs << delim << std::dec << ped_subtracted;
+                        }
                     }
                 }
                 ofs <<endl;
@@ -365,14 +369,16 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
         if(trig_mode == 2){
             for(int board=0; board<numFrontBoards; board++){
                 // Get the event vector for the given board
-                if(BOARDS_READOUT[board]){
+                if (DC_ACTIVE[board]){
+                    if(BOARDS_READOUT[board]){
 
-                    rate_fs << k << "\t" << board << "\t" << t << "\t";
+                        rate_fs << k << "\t" << board << "\t" << t << "\t";
 
 
-                    for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[board]->self_trig_scalar[channel] << "\t";
+                        for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[board]->self_trig_scalar[channel] << "\t";
 
-                    rate_fs << endl;
+                        rate_fs << endl;
+                    }
                 }
             }
         }
