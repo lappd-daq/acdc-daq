@@ -336,7 +336,11 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
 
     /* Create header */
     char delim = ' ';
-    ofs << "Event" << delim << "Board" << delim << "Channel" << delim << "Samples" << endl;
+    ofs << "Event" << delim << "Board" << delim << "Cell";
+    for(int ch = 1; ch <= AC_CHANNELS; ch++){
+        ofs << delim << "Ch" << ch;
+    }
+    ofs << endl;
 
     /* Record events */
     // For each event
@@ -345,11 +349,11 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
         // For each board
         for (int board = 0; board < numFrontBoards; board++){
             if (!DC_ACTIVE[board]) continue;
-            // For each channels
-            for (int ch = 0; ch < AC_CHANNELS; ch++){
-                ofs << event << delim << board << delim << ch + 1;
-                // For each sample
-                for (int i = 0; i < psecSampleCells; i++) {
+            // For each sample
+            for (int i = 0; i < psecSampleCells; i++){
+                ofs << event << delim << board << delim << i;
+                // For each channel
+                for (int ch = 0; ch < AC_CHANNELS; ch++) {
                     int ped_subtracted = events[board]->Data[ch][i] - PED_DATA[board][ch][i];
                     ofs << delim << dec << ped_subtracted; // std::dec
                 }
