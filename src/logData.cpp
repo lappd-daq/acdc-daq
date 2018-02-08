@@ -299,7 +299,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     ofstream rate_fs;
     if(trig_mode == 2){
         char logRateFilename[300];
-        sprintf(logRateFilename, "%s.acdc.rate", log_filename);
+        sprintf(logRateFilename, "%s.rate.dat", log_filename);
         rate_fs.open(logRateFilename, ios::trunc);
     }
 
@@ -308,7 +308,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     char timestring[100];
     strftime(timestring, 80, "%Y-%m-%d-%H-%M", localtime(&now));
     // sprintf(logDataFilename, "%s-%s.acdc.dat", timestring, log_filename);
-    sprintf(logDataFilename, "%s.acdc.dat", log_filename);
+    sprintf(logDataFilename, "%s.dat", log_filename);
 
     // check if file exists, inquire whether to overwrite
     // shouldn't be an issue now since file timestamped in filename ^^
@@ -317,7 +317,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
         cout << "file already exists, try new filename: (or enter to overwrite / ctrl-C to quit): ";
         getline(cin, temp);
         if(temp.empty()) break;
-        sprintf(logDataFilename, "%s.acdc.dat", temp.c_str());
+        sprintf(logDataFilename, "%s.dat", temp.c_str());
     }
 
     ofstream ofs;
