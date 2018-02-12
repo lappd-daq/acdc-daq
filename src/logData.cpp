@@ -433,19 +433,19 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     ofs << "time_from_valid_to_trig" << delim << "firmware_reset_time" << delim
       << "last_coincidence_num_chans" << endl;
 
-      for(int event = 0; event < event_data.size(); event++){
-          packet_t** events = event_data[event];
-          // For each board
-          for (int board = 0; board < numFrontBoards; board++){
-              if (!DC_ACTIVE[board]) continue;
-                ofs << event << delim << board;
-              // For each sample
-              for (int i = 0; i < psecSampleCells; i++){
-                    ofs << delim << events[board]->Meta[i];
-              }
-              ofs << endl;
-          }
-      }
+    for(int event = 0; event < event_data.size(); event++){
+        packet_t** events = event_data[event];
+        // For each board
+        for (int board = 0; board < numFrontBoards; board++){
+            if (!DC_ACTIVE[board]) continue;
+            ofs << event << delim << board;
+
+            for (int i = 0; i < psecSampleCells; i++){
+                  ofs << delim << events[board]->Meta[i];
+            }
+            ofs << endl;
+        }
+    }
     cout << endl;
     cout << "Done on readout:  " << last_k+1 << " :: @time " <<t<< " sec" << endl;
 
