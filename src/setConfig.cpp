@@ -27,9 +27,9 @@ bool         trig_enable[numFrontBoards];
 unsigned int pedestal[numFrontBoards][numChipsOnBoard];
 unsigned int threshold[numFrontBoards][numChipsOnBoard];
 unsigned int cal_en[numFrontBoards];
-bool         trig_sign[numFrontBoards];             
+bool         trig_sign[numFrontBoards];
 bool         wait_for_sys;
-bool         rate_only;   
+bool         rate_only;
 bool         sma_trig_on_fe[numFrontBoards];
 bool         hrdw_trig;
 bool         hrdw_trig_sl;
@@ -72,22 +72,22 @@ int main(int argc, char* argv[]){
 
     if(argc == 3 && std::string(argv[1]) == "-trig"){
       strcpy(paramsFile, argv[2]);
-      parse_trig_setup_file(paramsFile); 
+      parse_trig_setup_file(paramsFile);
       write_config_to_hardware(Sumo, true, false);
       return 0;
     }
     if(argc == 3 && std::string(argv[1]) == "-acdc"){
       strcpy(paramsFile, argv[2]);
-      parse_acdc_setup_file(paramsFile); 
+      parse_acdc_setup_file(paramsFile);
       write_config_to_hardware(Sumo, false, true);
       return 0;
     }
-    else if(argc == 1){ 
+    else if(argc == 1){
       set_default_values();
       write_config_to_hardware(Sumo, true, true);
       return 0;
     }
-            
+
     else{ cout << "error, nothing was done" << endl;
       return -1;}
 
@@ -101,14 +101,14 @@ void set_default_values(){
       pedestal[i][j]       = 0x800;
       threshold[i][j]      = 0x000;
     }
-    
+
     trig_mask[i]      = 0x00000000;  // 32 bit
     trig_enable[i]    = false;
     sma_trig_on_fe[i] = false;
     trig_sign[i]      = 0;
 
   }
-     
+
   wait_for_sys   = false;
   rate_only      = false;
   hrdw_trig      = false;
@@ -129,59 +129,59 @@ int write_config_to_hardware(SuMo& Sumo, bool WRITETRIG, bool WRITEACDC){
   cout << "__________________________" << endl;
 
   Sumo.set_usb_read_mode(16);
-    
+
   int mode = Sumo.check_readout_mode();
   if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
     Sumo.set_usb_read_mode_slaveDevice(16);
   }
-  
+
   Sumo.dump_data();
-  
+
   for(int jj=0; jj<2; jj++){
     for(int i=0; i<numFrontBoards; i++){
       //Sumo.reset_self_trigger();
       unsigned int boardAddress = pow(2, i % 4);
-      if(i >= 4)   device = 1;  
-    
+      if(i >= 4)   device = 1;
+
       if(jj==1){
 	if(Sumo.DC_ACTIVE[i] == false){
-	  cout << "no board = " << i << " addressed at device " 
+	  cout << "no board = " << i << " addressed at device "
 	       << device << ":0x" << hex << boardAddress << endl;
 	  //cout << "__________________________" << std::dec << endl;
 	  continue;
 	}
-	
-	cout << "writing settings to board " << i << " addressed at device " 
+
+	cout << "writing settings to board " << i << " addressed at device "
 	     << device << ":0x" << hex << boardAddress << endl;
       }
-   
+
       if(WRITETRIG){
 	/* send trig mask to boards in 2 sets of 16 bit words */
 	Sumo.set_self_trigger_mask(0x00007FFF&trig_mask[i], 0, boardAddress, device);
 	Sumo.set_self_trigger_mask((0x3FFF8000&trig_mask[i]) >> 15, 1, boardAddress, device);
-	
-	
-	Sumo.set_self_trigger_lo( trig_enable[i], 
-				  wait_for_sys, 
-				  rate_only, trig_sign[i], 
+
+
+	Sumo.set_self_trigger_lo( trig_enable[i],
+				  wait_for_sys,
+				  rate_only, trig_sign[i],
 				  sma_trig_on_fe[i],
 				  use_coinc,      //use channel coincidence
 				  use_trig_valid, // use trig valid flag as a reset on AC/DC
 				  coinc_window,     //system coincidence window < 15
-				  boardAddress, 
+				  boardAddress,
 				  device);
 	usleep(100);
 	Sumo.set_self_trigger_hi( coinc_pulsew,   //coinc pulse width < 7
 				  coinc_num_asic,   //num. asics < 5
 				  coinc_num_ch,   //num. channels < 30
-				  boardAddress, 
+				  boardAddress,
 				  device);
 
       }
       if(WRITEACDC){
 	for(int j=0; j<numChipsOnBoard; j++){
 	  unsigned int chipAddress = pow(2, j % numChipsOnBoard);
-	  
+
 	  Sumo.set_pedestal_value(pedestal[i][j], boardAddress, device, chipAddress);
 	  usleep(100);
 	  Sumo.set_trig_threshold(threshold[i][j], boardAddress, device, chipAddress);
@@ -193,25 +193,25 @@ int write_config_to_hardware(SuMo& Sumo, bool WRITETRIG, bool WRITEACDC){
     //Sumo.dump_data();
     if(WRITETRIG){
       if(hrdw_trig){
-	unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trigsrc << 13;
+	unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trigsrc << 12;
 	if(jj==1)cout << "setting trig mode to master device " << ext_trig_mode << endl;
 	Sumo.set_usb_read_mode(ext_trig_mode);
       }
-	
+
       if(hrdw_trig_sl){
-	unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trig_slsrc << 13;
+	unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trig_slsrc << 12;
 	if(jj==1)cout << "setting trig mode to slave device " << ext_trig_mode << endl;
 	Sumo.set_usb_read_mode_slaveDevice(ext_trig_mode);
       }
-    }      
+    }
   }
-  
+
 
 
   return 0;
 }
 
-  
+
 /* parse parameter file */
 int parse_acdc_setup_file(const char* file, bool verbose){
   bool tt = verbose;
@@ -219,7 +219,7 @@ int parse_acdc_setup_file(const char* file, bool verbose){
   ifstream in;
   in.open(file, ios::in);
   string line, data;
-  
+
   unsigned int tmp1, tmp2, tmp3;
   bool bool_tmp1;
 
@@ -243,14 +243,14 @@ int parse_acdc_setup_file(const char* file, bool verbose){
 
   }
   return 0;
-}  
+}
 int parse_trig_setup_file(const char* file, bool verbose){
   //bool tt = verbose;
   bool tt = true;
   ifstream in;
   in.open(file, ios::in);
   string line, data;
-  
+
   unsigned int tmp1, tmp2, tmp3;
   bool bool_tmp1;
 
@@ -264,57 +264,57 @@ int parse_trig_setup_file(const char* file, bool verbose){
     if(data.find("trig_mask")==0){
       linestream >> tmp1 >> hex >> tmp2;
       trig_mask[tmp1] = tmp2;
-      if(tt) 
+      if(tt)
 	cout << data << " on board " << tmp1 << " set to 0x" << hex << tmp2 << dec << endl;
-    }      
+    }
     else if(data.find("trig_enable")==0){
       linestream >> tmp1 >> bool_tmp1;
       trig_enable[tmp1] = bool_tmp1;
       if(tt)
 	cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
-    } 
+    }
     else if(data.find("trig_sign")==0){
       linestream >> tmp1 >>  bool_tmp1;
-      trig_sign[tmp1] = bool_tmp1;  
+      trig_sign[tmp1] = bool_tmp1;
       if(tt)
 	cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
-    } 
+    }
     else if(data.find("wait_for_sys")==0){
       linestream >> bool_tmp1;
       wait_for_sys = bool_tmp1;
       cout << data << " set to " << bool_tmp1 << endl;
-    } 
+    }
     else if(data.find("rate_only")==0){
       linestream >> bool_tmp1;
       rate_only = bool_tmp1;
       if(tt)
 	cout << data << " set to " << bool_tmp1 << endl;
-    } 
+    }
     else if(data.find("hrdw_trig")==0){
       linestream >> bool_tmp1;
       hrdw_trig = bool_tmp1;
       if(tt)	cout << data << " set to " << hrdw_trig << endl;
-    } 
+    }
     else if(data.find("hrdw_sl_trig")==0){
       linestream >> bool_tmp1;
       hrdw_trig_sl = bool_tmp1;
       if(tt) cout << data << " set to " << bool_tmp1 << endl;
-    } 
+    }
     else if(data.find("hrdw_src_trig")==0){
       linestream >> tmp1;
       hrdw_trigsrc = tmp1;
       if(tt) cout << data << " set to " << tmp1 << endl;
-    } 
+    }
     else if(data.find("hrdw_slsrc_trig")==0){
       linestream >> tmp1;
       hrdw_trig_slsrc = tmp1;
       if(tt) cout << data << " set to " << tmp1 << endl;
-    } 
+    }
    else if(data.find("sma_trig_on_fe")==0){
       linestream >> tmp1 >> bool_tmp1;
       sma_trig_on_fe[tmp1]= bool_tmp1;
       if(tt) cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
-    } 
+    }
    else if(data.find("coinc_window")==0){
      linestream >> tmp1;
      coinc_window = tmp1;
@@ -347,4 +347,4 @@ int parse_trig_setup_file(const char* file, bool verbose){
    }
   }
   return 0;
-}  
+}

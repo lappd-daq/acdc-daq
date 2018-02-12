@@ -21,7 +21,7 @@
 using namespace std;
 
 SuMo::SuMo()
-{    
+{
   check_readout_mode();
   for(int i=0; i<numFrontBoards; i++){
     DC_ACTIVE[i] = false;
@@ -65,7 +65,7 @@ void SuMo::dump_data(void){
 
 int SuMo::check_readout_mode(void){
   if(usb2.createHandles() == stdUSB::SUCCEED && usb.createHandles() == stdUSB::SUCCEED){
-    mode = USB2x;  
+    mode = USB2x;
     usb.freeHandles();
     usb2.freeHandles();
     //cout << "mode is " << mode << endl;
@@ -76,30 +76,29 @@ int SuMo::check_readout_mode(void){
   }
   else
     mode = UNK;
-  
   return mode;
 }
 
 int SuMo::check_active_boards(bool print){
-  
+
   int num_boards_active = 0;
   for(int targetAC = 0; targetAC < numFrontBoards; targetAC++){
     if(DC_ACTIVE[targetAC] == true){
       num_boards_active ++;
       if(print) cout << "Board at address " << targetAC << " of " << numFrontBoards-1 << " found" << endl;
     }
-  }   
+  }
   return num_boards_active;
 }
 /* slave USB device checks */
 int SuMo::check_active_boards_slaveDevice(void){
-  
+
   int num_boards_active = 0;
   for(int targetAC = 4; targetAC < numFrontBoards; targetAC++){
     if(DC_ACTIVE[targetAC] == true){
       num_boards_active ++;
     }
-  }   
+  }
   return num_boards_active;
 }
 
@@ -148,7 +147,7 @@ void SuMo::unwrap_baseline(int *baseline, int ASIC){
   for(int i = 0; i < 256; i++){
     start_baseline[i] = i;
   }
-  
+
   int wraparound = unwrap(ASIC);
 
   if((wraparound+WRAP_CONSTANT) < 257)
