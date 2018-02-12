@@ -253,7 +253,7 @@ vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
                 unwrap_baseline(baseline, 2);
                 for (int j = 0; j < psecSampleCells; j++){
                     asic_baseline[j] = baseline[j];
-                    adcDat[targetAC]->Data[AC_CHANNELS][j] = Meta[j];
+                    adcDat[targetAC]->Meta[j] = Meta[j];
                 }
             }
             //if timeout on only some, but not all boards
@@ -295,6 +295,10 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     time_t now;
     int last_k;
     char logDataFilename[300];
+    char logMetaFilename[300];
+    char logPedFilename[300];
+    char delim = ' ';
+
     // 'scalar' mode
     ofstream rate_fs;
     if(trig_mode == 2){
@@ -303,29 +307,24 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
         rate_fs.open(logRateFilename, ios::trunc);
     }
 
-    // full waveform, standard mode
-    time(&now);
-    char timestring[100];
-    strftime(timestring, 80, "%Y-%m-%d-%H-%M", localtime(&now));
-    // sprintf(logDataFilename, "%s-%s.acdc.dat", timestring, log_filename);
     sprintf(logDataFilename, "%s.acdc", log_filename);
+    sprintf(logMetaFilename, "%s.meta", log_filename);
+    sprintf(logPedFilename, "%s.ped", log_filename);
 
     // check if file exists, inquire whether to overwrite
-    // shouldn't be an issue now since file timestamped in filename ^^
     string temp;
     while(fileExists(logDataFilename)){
         cout << "file already exists, try new filename: (or enter to overwrite / ctrl-C to quit): ";
         getline(cin, temp);
         if(temp.empty()) break;
         sprintf(logDataFilename, "%s.acdc", temp.c_str());
+        sprintf(logMetaFilename, "%s.meta", temp.c_str());
+        sprintf(logPedFilename, "%s.ped", temp.c_str());
     }
 
+    /* open up file stream */
     ofstream ofs;
     ofs.open(logDataFilename, ios::trunc);
-
-    // save pedestal data to file header for reference, easy access
-    // zero pad to match data format
-
 
     /* wraparound_correction, if desired: */
     int baseline[psecSampleCells];
@@ -335,7 +334,6 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     }
 
     /* Create header */
-    char delim = ' ';
     ofs << "Event" << delim << "Board" << delim << "Cell";
     for(int ch = 1; ch <= AC_CHANNELS; ch++){
         ofs << delim << "Ch" << ch;
@@ -381,6 +379,73 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
         last_k = event;
     }
 
+    /* Print out pedestal data */
+    ofs.close();
+    ofs.open(logPedFilename, ios::trunc);
+
+    // Create Header
+    ofs << "Board" << delim << "Cell";
+    for(int ch = 1; ch <= AC_CHANNELS; ch++){
+        ofs << delim << "Ch" << ch;
+    }
+    ofs << endl;
+
+    for (int board=0; board<numFrontBoards; board++){
+      if (!DC_ACTIVE[board]) continue;
+      for (int i=0; i < psecSampleCells; i++){
+        ofs << board << delim << i;
+        for (int channel=0; channel < AC_CHANNELS; channel++){
+          ofs << delim << PED_DATA[board][channel][i];
+        }
+        ofs << endl;
+      }
+    }
+
+    /* Print out meta data */
+    ofs.close();
+    ofs.open(logMetaFilename, ios::trunc);
+
+    /* Create header */
+    ofs << "Event" << delim << "Board" << delim << "Cell" << delim;
+    ofs << "count" << delim << "aa" << delim << "time" << delim << "datetime" << delim
+      << "events" << delim << "bin_count_rise" << delim << "self_trig_settings_2" << delim
+      << "sys_coincidence_width" << delim << "coincidence_num_chips" << delim
+      << "coincidence_num_chans" << delim << "self_trig_settings" << delim
+      << "trig_en" << delim << "trig_wait_for_sys" << delim << "trig_rate_only" << delim
+      << "trig_sign" << delim << "use_sma_trig_input" << delim
+      << "use_coincidence_settings" << delim << "use_trig_valid_as_reset" << delim
+      << "coinc_window" << delim << "reg_self_trig" << delim
+      << "counts_of_sys_no_local" << delim << "sys_trig_count" << delim
+      << "resets_from_firmw" << delim << "firmware_version" << delim
+      << "self_trig_mask" << delim << "dig_timestamp_lo" << delim
+      << "dig_timestamp_mid" << delim << "dig_timestamp_hi" << delim
+      << "dig_event_count" << delim << "event_count" << delim
+      << "timestamp_hi" << delim << "timestamp_mid" << delim
+      << "timestamp_lo" << delim << "CC_BIN_COUNT" << delim
+      << "CC_EVENT_COUNT" << delim << "CC_TIMESTAMP_LO" << delim
+      << "CC_TIMESTAMP_MID" << delim << "CC_TIMESTAMP_HI" << delim;
+    for (int n = 0; n < 5; n++) ofs << "ro_cnt_chip_" << n << delim;
+    for (int n = 0; n < 5; n++) ofs << "ro_target_cnt_chip_" << n << delim;
+    for (int n = 0; n < 5; n++) ofs << "vbias_chip_" << n << delim;
+    for (int n = 0; n < 5; n++) ofs << "trigger_threshold_chip_" << n << delim;
+    for (int n = 0; n < 5; n++) ofs << "ro_dac_value_chip_" << n << delim;
+    for (int n = 0; n < AC_CHANNELS; n++) ofs << "self_trig_scalar_ch_" << n << delim;
+    ofs << "time_from_valid_to_trig" << delim << "firmware_reset_time" << delim
+      << "last_coincidence_num_chans" << endl;
+
+      for(int event = 0; event < event_data.size(); event++){
+          packet_t** events = event_data[event];
+          // For each board
+          for (int board = 0; board < numFrontBoards; board++){
+              if (!DC_ACTIVE[board]) continue;
+              // For each sample
+              for (int i = 0; i < psecSampleCells; i++){
+                  ofs << event << delim << board << delim
+                    << events[board]->Meta[i];
+              }
+              ofs << endl;
+          }
+      }
     cout << endl;
     cout << "Done on readout:  " << last_k+1 << " :: @time " <<t<< " sec" << endl;
 
