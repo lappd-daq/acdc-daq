@@ -139,3 +139,6 @@ ENV/
 # Data files
 *.acdc.dat
 data
+
+#bin directory
+bin
