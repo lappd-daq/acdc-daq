@@ -438,10 +438,10 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
           // For each board
           for (int board = 0; board < numFrontBoards; board++){
               if (!DC_ACTIVE[board]) continue;
+                ofs << event << delim << board;
               // For each sample
               for (int i = 0; i < psecSampleCells; i++){
-                  ofs << event << delim << board << delim
-                    << events[board]->Meta[i];
+                    ofs << delim << events[board]->Meta[i];
               }
               ofs << endl;
           }
