@@ -406,7 +406,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     ofs.open(logMetaFilename, ios::trunc);
 
     /* Create header */
-    ofs << "Event" << delim << "Board" << delim << "Cell" << delim;
+    ofs << "Event" << delim << "Board" << delim;
     ofs << "count" << delim << "aa" << delim << "time" << delim << "datetime" << delim
       << "events" << delim << "bin_count_rise" << delim << "self_trig_settings_2" << delim
       << "sys_coincidence_width" << delim << "coincidence_num_chips" << delim
