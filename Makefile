@@ -29,14 +29,13 @@ OBJS= 	obj/stdUSBl.o obj/stdUSBl_Slave.o\
 #	obj/log_data_hd5.o
 #############################################################################
 default:
-	if [ ! -e bin	]; then mkdir	bin; fi
-	if [ ! -e obj	]; then mkdir   obj; fi
+	if [ ! -e bin	]; then mkdir -p bin; fi
+	if [ ! -e obj	]; then mkdir -p obj; fi
+	if [ ! -e tests ]; then mkdir -p tests; fi
 	if [ ! -e calibrations	]; then mkdir   calibrations; fi
 	$(MAKE) all
 
-all : $(EXE) #tests
-
-tests : $(TESTS)
+all : $(EXE) $(TESTS)
 
 obj/%.o : src/%.cpp
 	$(CC) $(INC) -c $< -o $@
@@ -52,7 +51,7 @@ bin/% : obj/%.o $(OBJS)
 
 #############################################################################
 tests/test_% : src/tests/test_%.cpp
-	$(CC) $^ $(LDFLAGS) -o $@
+	$(CC) $(INC) $^ $(LDFLAGS) -o $@
 
 #############################################################################
 clean:
