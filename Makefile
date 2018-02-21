@@ -18,7 +18,9 @@ EXE=	bin/logData \
 	bin/readCC   bin/readACDC bin/Reset \
 	bin/calEn    bin/resetDll bin/setConfig \
 	bin/dumpData bin/oScope   bin/usbResetDevice \
-	bin/makeLUT
+	bin/makeLUT \
+
+TESTS= tests/test_logData
 #############################################################################
 OBJS= 	obj/stdUSBl.o obj/stdUSBl_Slave.o\
 		obj/SuMo.o \
@@ -32,7 +34,9 @@ default:
 	if [ ! -e calibrations	]; then mkdir   calibrations; fi
 	$(MAKE) all
 
-all : $(EXE)
+all : $(EXE) #tests
+
+tests : $(TESTS)
 
 obj/%.o : src/%.cpp
 	$(CC) $(INC) -c $< -o $@
@@ -43,30 +47,19 @@ obj/%.o : src/calibrations/%.cpp
 obj/%.o : src/usb/%.cpp
 	$(CC) $(INC) -c $< -o $@
 #############################################################################
-#SuMo_driver  	: obj/SuMo_driver.o $(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/logData 	: obj/logData.o		$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-#bin/logH5Data 	: obj/logH5Data.o   	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/takePed 	: obj/takePed.o     	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/setPed 	: obj/setPed.o      	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/readCC   	: obj/readCC.o      	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/readACDC 	: obj/readACDC.o    	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/ledEn	: obj/ledEn.o       	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/calEn	: obj/calEn.o    	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/setupLVDS	: obj/setupLVDS.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/Reset	: obj/Reset.o  		$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/resetDll	: obj/resetDll.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/setConfig	: obj/setConfig.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/dumpData	: obj/dumpData.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/oScope	: obj/oScope.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/makeLUT	: obj/makeLUT.o  	$(OBJS); $(CC) $^ $(LDFLAGS) -o $@
-bin/usbResetDevice:
-	g++ -o bin/usbResetDevice src/usb/usbResetDevice.C
+bin/% : obj/%.o $(OBJS)
+	$(CC) $^ $(LDFLAGS) -o $@
+
+#############################################################################
+tests/test_% : src/tests/test_%.cpp
+	$(CC) $^ $(LDFLAGS) -o $@
+
 #############################################################################
 clean:
-	@ rm -f $(OBJS) *~ *.o src/*~ include/*~ src/functions/*~ -rf obj/
+	@ rm -f $(OBJS) *~ *.o src/*~ include/*~ src/functions/*~ -rf obj/ tests/
 
 cleanall:
-	@ rm -f $(OBJS) *~ *.o src/*~ include/*~ src/functions/*~ -rf bin/ obj/
+	@ rm -f $(OBJS) *~ *.o src/*~ include/*~ src/functions/*~ -rf bin/ obj/ tests/
 
 .PHONY: clean
 #############################################################################
