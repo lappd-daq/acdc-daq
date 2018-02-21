@@ -335,8 +335,8 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
 
     /* Create header */
     ofs << "Event" << delim << "Board" << delim << "Cell";
-    for(int ch = 1; ch <= AC_CHANNELS; ch++){
-        ofs << delim << "Ch" << ch;
+    for(int i = 0; i < psecSampleCells; i++){
+        ofs << delim << "C" << i;
     }
     ofs << endl;
 
@@ -347,11 +347,11 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
         // For each board
         for (int board = 0; board < numFrontBoards; board++){
             if (!DC_ACTIVE[board]) continue;
-            // For each sample
-            for (int i = 0; i < psecSampleCells; i++){
-                ofs << event << delim << board << delim << i;
-                // For each channel
-                for (int ch = 0; ch < AC_CHANNELS; ch++) {
+            // For each channel
+            for (int ch = 0; ch < AC_CHANNELS; ch++) {
+                ofs << event << delim << board << delim << ch + 1;
+                // For each sample
+                for (int i = 0; i < psecSampleCells; i++){
                     int ped_subtracted = events[board]->Data[ch][i] - PED_DATA[board][ch][i];
                     ofs << delim << dec << ped_subtracted; // std::dec
                 }
@@ -360,15 +360,13 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
 
         }
 
+        /* I don't know what this is supposed to do */
         if(trig_mode == 2){
             for(int board=0; board<numFrontBoards; board++){
                 // Get the event vector for the given board
                 if (DC_ACTIVE[board]){
                     if(BOARDS_READOUT[board]){
-
                         rate_fs << event << "\t" << board << "\t" << t << "\t";
-
-
                         for(int channel=0; channel < AC_CHANNELS; channel++)  rate_fs <<  events[board]->self_trig_scalar[channel] << "\t";
 
                         rate_fs << endl;
@@ -384,17 +382,18 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     ofs.open(logPedFilename, ios::trunc);
 
     // Create Header
-    ofs << "Board" << delim << "Cell";
-    for(int ch = 1; ch <= AC_CHANNELS; ch++){
-        ofs << delim << "Ch" << ch;
+    ofs << "Board" << delim << "Ch";
+    for(int i = 0; i < psecSampleCells; i++){
+        ofs << delim << "C" << i;
     }
     ofs << endl;
 
     for (int board=0; board<numFrontBoards; board++){
+        // Skip inactive boards
       if (!DC_ACTIVE[board]) continue;
-      for (int i=0; i < psecSampleCells; i++){
-        ofs << board << delim << i;
-        for (int channel=0; channel < AC_CHANNELS; channel++){
+      for (int channel=0; channel < AC_CHANNELS; channel++){
+        ofs << board << delim << channel + 1;
+        for (int i=0; i < psecSampleCells; i++){
           ofs << delim << PED_DATA[board][channel][i];
         }
         ofs << endl;
@@ -405,7 +404,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     ofs.close();
     ofs.open(logMetaFilename, ios::trunc);
 
-    /* Create header */
+    // Create header
     ofs << "Event" << delim << "Board" << delim;
     ofs << "count" << delim << "aa" << delim << "time" << delim << "datetime" << delim
       << "events" << delim << "bin_count_rise" << delim << "self_trig_settings_2" << delim
@@ -429,7 +428,7 @@ int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int 
     for (int n = 0; n < 5; n++) ofs << "vbias_chip_" << n << delim;
     for (int n = 0; n < 5; n++) ofs << "trigger_threshold_chip_" << n << delim;
     for (int n = 0; n < 5; n++) ofs << "ro_dac_value_chip_" << n << delim;
-    for (int n = 0; n < AC_CHANNELS; n++) ofs << "self_trig_scalar_ch_" << n << delim;
+    for (int n = 1; n <= AC_CHANNELS; n++) ofs << "self_trig_scalar_ch_" << n << delim;
     ofs << "time_from_valid_to_trig" << delim << "firmware_reset_time" << delim
       << "last_coincidence_num_chans" << endl;
 
