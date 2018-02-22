@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
         data.push_back(sumo.adcDat);
     }
 
-    sumo.log_data("tests/testdata/test", data, 0);
+    sumo.log_data("tests/data/test", data, 0);
 
     return 0;
 }

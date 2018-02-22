@@ -24,13 +24,14 @@ OBJS= 	obj/stdUSBl.o obj/stdUSBl_Slave.o\
 		obj/SuMo.o \
 		obj/ScopePipe.o \
 		obj/oscilloscope.o \
+		obj/getData.o
 #	obj/log_data_hd5.o
 #############################################################################
 default:
 	if [ ! -e bin	]; then mkdir -p bin; fi
 	if [ ! -e obj	]; then mkdir -p obj; fi
 	if [ ! -e tests ]; then mkdir -p tests; fi
-	if [ ! -e tests/data ]; then mkdir -p tests/testdata; fi
+	if [ ! -e tests/data ]; then mkdir -p tests/data; fi
 	if [ ! -e calibrations	]; then mkdir -p calibrations; fi
 	$(MAKE) all
 
