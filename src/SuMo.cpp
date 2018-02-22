@@ -64,7 +64,7 @@ void SuMo::dump_data(void){
 }
 
 int SuMo::check_readout_mode(void){
-  if(usb2.createHandles() == stdUSB::SUCCEED && usb.createHandles() == stdUSB::SUCCEED){
+  if(usb.createHandles() == stdUSB::SUCCEED && usb2.createHandles() == stdUSB::SUCCEED){
     mode = USB2x;
     usb.freeHandles();
     usb2.freeHandles();

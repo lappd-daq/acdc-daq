@@ -1,0 +1,70 @@
+FLAGS := -O2 -g -fPIC
+CC := g++ $(FLAGS)
+
+INC := -I ./include/
+
+LIB := -lusb -lz -lm
+
+EXE := logData \
+	takePed \
+	setPed \
+	ledEn \
+	setupLVDS \
+	readCC \
+	readACDC \
+	Reset \
+	calEn \
+	resetDll \
+	setConfig \
+	dumpData \
+	oScope \
+	usbResetDevice \
+	makeLUT
+
+TESTS := test_logData
+
+SRCDIR := src
+BUILDDIR := build
+BINDIR := bin
+TESTDIR := tests
+
+SOURCES := $(shell find $(SRCDIR) -type f -name *.cpp)
+OBJS := $(patsubst $(SRCDIR), $(BUILDDIR), $(SOURCES:.CPP=.O))
+
+#############################################################
+all: $(EXE) $(TESTS)
+
+default:
+	mkdir -p $(BINDIR)
+	mkdir -p $(BUILDDIR)
+	all
+
+
+$(EXE): $(OBJS)
+	$(CC) $(INC) -o $(BINDIR)/$@ $^ $(LIB)
+
+$(TEST): $(OBJS)
+	mkdir -p $(TESTDIR)
+	mkdir -p $(TESTDIR)/data
+	$(CC) $(INC) -o $(TESTDIR)/$@ $^ $(LIB)
+
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CC) $(INC) -o $@ $< $(LIB)
+
+$(BUILDDIR)/%.o: $(SRCDIR)/functions/%.cpp
+	$(CC) $(INC) -o $@ $< $(LIB)
+
+$(BUILDDIR)/%.o: $(SRCDIR)/tests/%.cpp
+	$(CC) $(INC) -o $@ $< $(LIB)
+
+$(BUILDDIR)/%.o: $(SRCDIR)/calibration/%.cpp
+	$(CC) $(INC) -o $@ $< $(LIB)
+
+$(BUILDDIR)/%.o: $(SRCDIR)/usb/%.cpp
+	$(CC) $(INC) -o $@ $< $(LIB)
+
+#############################################################
+clean:
+	rm -rf $(BINDDIR) $(TESTDIR) $(BUILDDIR)
+
+.PHONY: clean

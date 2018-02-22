@@ -1,10 +1,10 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <stdio.h>
 #include <sstream>
-#include <time.h>
+#include <ctime>
 
 #include "SuMo.h"
 #include "Timer.h"
@@ -288,7 +288,7 @@ vector<packet_t**> SuMo::get_data(unsigned int NUM_READS, int trig_mode, int acq
     return event_data;
 }
 
-int SuMo::log_data(const char* log_filename, vector<packet_t**> event_data, int trig_mode){
+int SuMo::log_data(const char* log_filename, std::vector<packet_t**> event_data, int trig_mode){
     int asic_baseline[psecSampleCells];
     float  _now_, t = 0.;
     Timer timer = Timer();
