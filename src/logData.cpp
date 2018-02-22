@@ -1,8 +1,8 @@
-#include <string.h>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
-#include <stdio.h>
+#include <cstdio>
 #include <sstream>
 #include <ctime>
 
