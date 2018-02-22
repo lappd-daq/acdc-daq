@@ -33,14 +33,12 @@ OBJS := $(patsubst $(SRCDIR)/%.cpp, $(BUILDDIR)/%.o, $(SOURCES))
 
 
 #############################################################
-all: $(TESTS)
 
-default:
+all: setup $(TESTS)
+
+setup:
 	mkdir -p $(BINDIR)
 	mkdir -p $(BUILDDIR)
-	echo $(OBJS)
-	all
-
 
 $(EXE): $(OBJS)
 	$(CC) $(INC) -o $(BINDIR)/$@ $^ $(LIB)
