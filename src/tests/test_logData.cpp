@@ -9,7 +9,7 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
     SuMo sumo;
-    int num_events = 100;
+    int num_events = 10;
     int boards[] = {2, 4};
     vector<packet_t**> data;
     srand((unsigned)time(0));
@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
     for (int e = 0; e < num_events; e++) {
         for (int b = 0; b < 2; b++) {
             int board = boards[b];
+            sumo.DC_ACTIVE[board] = true;
             for (int j = 0; j < psecSampleCells; j++){
                 sumo.adcDat[board]->Meta[j] = rand() % 600;
             }

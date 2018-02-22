@@ -292,7 +292,7 @@ int SuMo::log_data(const char* log_filename, std::vector<packet_t**> event_data,
     }
 
     /* Create header */
-    ofs << "Event" << delim << "Board" << delim << "Cell";
+    ofs << "Event" << delim << "Board" << delim << "Ch";
     for(int i = 0; i < psecSampleCells; i++){
         ofs << delim << "C" << i;
     }
@@ -315,7 +315,6 @@ int SuMo::log_data(const char* log_filename, std::vector<packet_t**> event_data,
                 }
                 ofs << endl;
             }
-
         }
 
         /* I don't know what this is supposed to do */
