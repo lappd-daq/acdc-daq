@@ -38,6 +38,7 @@ all: $(TESTS)
 default:
 	mkdir -p $(BINDIR)
 	mkdir -p $(BUILDDIR)
+	echo $(OBJS)
 	all
 
 
@@ -50,22 +51,11 @@ $(TESTS): $(OBJS)
 	$(CC) -o $(TESTDIR)/$@ $^ $(LIB)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CC) $(INC) -o $@ $< $(LIB)
+	$(CC) $(INC) -o $@ -c $< $(LIB)
 
-$(BUILDDIR)/%.o: $(SRCDIR)/functions/%.cpp
-	$(CC) $(INC) -o $@ $< $(LIB)
-
-$(BUILDDIR)/%.o: $(SRCDIR)/tests/%.cpp
-	$(CC) $(INC) -o $@ $< $(LIB)
-
-$(BUILDDIR)/%.o: $(SRCDIR)/calibration/%.cpp
-	$(CC) $(INC) -o $@ $< $(LIB)
-
-$(BUILDDIR)/%.o: $(SRCDIR)/usb/%.cpp
-	$(CC) $(INC) -o $@ $< $(LIB)
 
 #############################################################
 clean:
-	rm -rf $(BINDDIR) $(TESTDIR) $(BUILDDIR)
+	rm -rf $(BINDIR) $(TESTDIR) $(BUILDDIR)
 
 .PHONY: clean
