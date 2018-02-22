@@ -29,10 +29,11 @@ BINDIR := bin
 TESTDIR := tests
 
 SOURCES := $(shell find $(SRCDIR) -type f -name *.cpp)
-OBJS := $(patsubst $(SRCDIR), $(BUILDDIR), $(SOURCES:.CPP=.O))
+OBJS := $(patsubst $(SRCDIR)/%.cpp, $(BUILDDIR)/%.o, $(SOURCES))
+
 
 #############################################################
-all: $(EXE) $(TESTS)
+all: $(TESTS)
 
 default:
 	mkdir -p $(BINDIR)
@@ -43,10 +44,10 @@ default:
 $(EXE): $(OBJS)
 	$(CC) $(INC) -o $(BINDIR)/$@ $^ $(LIB)
 
-$(TEST): $(OBJS)
+$(TESTS): $(OBJS)
 	mkdir -p $(TESTDIR)
 	mkdir -p $(TESTDIR)/data
-	$(CC) $(INC) -o $(TESTDIR)/$@ $^ $(LIB)
+	$(CC) -o $(TESTDIR)/$@ $^ $(LIB)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CC) $(INC) -o $@ $< $(LIB)
