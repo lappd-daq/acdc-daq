@@ -14,6 +14,7 @@ author: eric oberla
 #include <unistd.h>
 #include <time.h>
 #include <vector>
+#include <string>
 
 #include "stdUSB.h"
 #include "Definitions.h"
