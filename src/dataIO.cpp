@@ -337,7 +337,6 @@ int SuMo::log_data(const char* log_filename, std::vector<packet_t**> event_data,
     /* Print out pedestal data */
     ofs.close();
     ofs.open(logPedFilename, ios::trunc);
-
     // Create Header
     ofs << "Board" << delim << "Ch";
     for(int i = 0; i < psecSampleCells; i++){
@@ -405,9 +404,9 @@ int SuMo::log_data(const char* log_filename, std::vector<packet_t**> event_data,
     cout << endl;
     cout << "Done on readout:  " << last_k+1 << " :: @time " <<t<< " sec" << endl;
 
+    ofs.close();
     cleanup();
 
-    ofs.close();
 
     if(trig_mode == 2) rate_fs.close();
 

@@ -24,15 +24,14 @@ int main(int argc, char *argv[]) {
             }
             for(int i = 0; i < AC_CHANNELS; i++){
                 for(int j = 0; j < psecSampleCells; j++){
-                    int sample = rand() % 3000;
+                    int sample = rand() % 100 + 3000;
                     sumo.adcDat[board]->Data[i][j] = sample;
                 }
             }
         }
         data.push_back(sumo.adcDat);
     }
-
     sumo.log_data("tests/data/test", data, 0);
-
+    cout << "Made it to end of file" << endl;
     return 0;
 }
