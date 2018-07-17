@@ -8,21 +8,26 @@
 // 
 //  Revision History:
 //     01/2012-ejo--minor modifications
-//         
+
+//     07/2017- John Podczerwinski
+//     Added a message to printed upon success
+//     Added extra error messages to help with
+//     trouble shooting. 
 //////////////////////////////////////////////////////
 
 #include <string.h>
 #include <stdio.h>
 #include "stdUSB.h"
-
+#include <iostream>
 stdUSB::stdUSB(void) {
-    stdUSB::stdHandle = INVALID_HANDLE_VALUE;
+  stdUSB::stdHandle = INVALID_HANDLE_VALUE; //This function stdUSB(void) is executed whenever stdUSB
+  //object is created. It makes stdHandle null when initialized.
     //printf("stdUSB initiated\n");
     //createHandles();
 }
 
-stdUSB::~stdUSB(void) {
-  if(stdHandle != INVALID_HANDLE_VALUE){
+stdUSB::~stdUSB(void) { 
+  if (stdHandle != INVALID_HANDLE_VALUE){
     //printf("usb closed from destructor\n");  
     freeHandle();
   }
@@ -40,41 +45,62 @@ bool stdUSB::createHandles(int num) {
    
     if (stdHandle != INVALID_HANDLE_VALUE)
         goto ok;
-    
+    //    std::cout << " Vendor ID is " << USBFX2_VENDOR_ID << "\n";
+    // std::cout << " Product ID is " << USBFX2_PRODUCT_ID << "\n";
     dev = stdUSB::init(num);
     retval = (long)dev;
-
+    //    std::cout << retval;
+    //std::cout << "\n";
     if (retval == 0)
-        goto fail;
-
+        goto failretval;
+       
     stdHandle = usb_open(dev);
     if (stdHandle == INVALID_HANDLE_VALUE)
-        goto fail;
+        goto failstdHandle;
 
     retval = usb_set_configuration(stdHandle, USBFX2_CNFNO);
     if (retval != 0)
-        goto fail;
-
+        goto fail_usbsetconfig;
+        
+    
     retval = usb_claim_interface(stdHandle, USBFX2_INTFNO);
     if (retval != 0)
-        goto fail;
+        goto fail_usbclaiminterface;
 
     retval = usb_set_altinterface(stdHandle, USBFX2_INTFNO);
     if (retval != 0)
-        goto fail;
-
+        goto fail_usbsetalt;
+    
     goto ok;
     printf("handle created successfully\n");
     /* on ok */
  ok:
-//printf("createhandles: OK\n");
+    //    printf("createhandles: OK\n");
     return SUCCEED;
 
     /* on failure*/
- fail:
-    printf("create USB handle: FAILED\n");
+ failretval:
+    printf("Retval == 0: FAILED\n");
+   
     return FAILED; // Unable to open usb device. No handle.
+ failstdHandle:
+    printf("Fail std handle\n");
+    return FAILED;
+ fail_usbsetconfig:
+    printf("Failed usb set config \n");
+    //  std::cout << retval;
+    
+    return FAILED;
+ fail_usbclaiminterface:
+    printf("Failed usb claim interface \n");
+    return FAILED;
+ fail_usbsetalt:
+    printf("Failed usbsetalt \n");
+    return FAILED;
+ 
+    
 }
+
 /**
  * Internal function.
  *  Initialises libusb and finds the correct usb device.
@@ -82,7 +108,7 @@ bool stdUSB::createHandles(int num) {
  * @return usb_device* -- A pointer to USBFX2 libusb dev entry, 
  * or INVALID_HANDLE_VALUE on failure.
  */
-struct usb_device* stdUSB::init(int num) {
+struct usb_device* stdUSB::init(int num) { //init is a function that returns a structure called usb_device. 
     struct usb_bus *usb_bus;
     struct usb_device *dev;
 

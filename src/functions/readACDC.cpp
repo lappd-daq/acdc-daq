@@ -1,4 +1,4 @@
-/////////////////////////////////
+////////////////////////////////
 // created: 31-10-2014
 // AC/DC system software
 // readACDC.cpp
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
 	   << endl << "**" << endl;
       int device = 0;
       Sumo.read_CC(true, true, device);    
-
+      //Sumo.set_ro_target_count(0xFFF,15,0,1);
       int mode = Sumo.check_readout_mode();
       if(mode == 1 && Sumo.check_active_boards_slaveDevice() > 0){
 	cout << "Slave board detected " << endl;
@@ -73,9 +73,8 @@ int main(int argc, char* argv[]){
       }
     }
   
-    Sumo.sys_wait(10000);
+    Sumo.sys_wait(1000);
     Sumo.dump_data();
     return 0;
   }
 } 
-            

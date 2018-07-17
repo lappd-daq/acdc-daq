@@ -34,7 +34,6 @@ int main(int argc, char* argv[]){
     SuMo sumo;
     sumo.align_lvds();
     sumo.align_lvds();
-
     cout << "aligning LVDS SERDES interface...\n";
     return 0;    
   }

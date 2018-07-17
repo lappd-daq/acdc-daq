@@ -14,18 +14,18 @@ void SuMo::closeUSBHandles()
   if(mode == USB2x) usb2.freeHandles();
 }
 
-void SuMo::sync_usb(bool SYNC)
+void SuMo::sync_usb(bool SYNC) //A function called sync_usb that takes a boolean input called SYNC. 
 {
-  createUSBHandles();
-  if(SYNC != false)
+  createUSBHandles(); //Most likely opens up communications through USB. 
+  if(SYNC != false) //If SYNC is not false..
     {   //enable USB_SYNC
-      usb.sendData((unsigned int)0x000F0001);    
-      if(mode == USB2x) usb2.sendData((unsigned int)0x000F0001);
-    }
-  else
-    {  //disable USB_SYNC
-      usb.sendData((unsigned int)0x000F0000);
-      if(mode == USB2x) usb2.sendData((unsigned int)0x000F0000);
+      usb.sendData((unsigned int)0x000F0001); //send this data through USB.     
+      if(mode == USB2x) usb2.sendData((unsigned int)0x000F0001); //if the mode is USB2x, then we apply sendData to the usb2 object. 
+   }
+  else //otherwise (SYNC is false....)
+    {  //disable USB_SYNC 
+      usb.sendData((unsigned int)0x000F0000); //we disable synchronization. 
+      if(mode == USB2x) usb2.sendData((unsigned int)0x000F0000); //if mode is USB2x, then we use this function on the usb2 object. 
       
     }
   closeUSBHandles();
@@ -58,6 +58,7 @@ void SuMo::software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK, bool set_bi
  */
 void SuMo::align_lvds()
 {
+ 
   createUSBHandles();
   usb.sendData((unsigned int)0x000D0000);  //toggle align process
   if(mode == USB2x) usb2.sendData((unsigned int)0x000D0000);
@@ -107,7 +108,7 @@ void SuMo::toggle_CAL(bool EN,  int device)
   unsigned int send_word = 0x00020000;
   unsigned int channels  = 0x7FFF; 
   unsigned int boardAdr  = 15;
-  
+  //cout << "HELLO";
   if(EN != false){							
 
     send_word = send_word | boardAdr << boardAdrOffset | channels;
@@ -257,6 +258,7 @@ void SuMo::set_usb_read_mode(unsigned int READ_MODE)
   usb.sendData(send_word);
   usb.freeHandles();
   
+  
 }
 void SuMo::set_usb_read_mode_slaveDevice(unsigned int READ_MODE)
 {
@@ -281,9 +283,10 @@ void SuMo::set_ro_target_count(unsigned int TARGET_RO_COUNT,
                                   | psec_mask << psecAdrOffset;
 
   usb.sendData(send_word);
+  std::cout << "hello";
   if(mode==USB2x) usb2.sendData(send_word);
-
   closeUSBHandles();
+  
 }
 /*
  *
@@ -363,6 +366,8 @@ void SuMo::manage_cc_fifo(bool VALUE)
   unsigned int send_word = hi_cmd | VALUE | 15 << boardAdrOffset;
   usb.sendData(send_word);
   usb.freeHandles();
+  //cout << send_word << endl;
+  //cout << send_word << endl;
 }
 
 void SuMo::manage_cc_fifo_slaveDevice(bool VALUE)

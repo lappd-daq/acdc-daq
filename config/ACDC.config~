@@ -21,11 +21,11 @@ pedestal	2	2	2930
 pedestal	2	3	2930
 pedestal	2	4	2930
 
-pedestal	3	0	2930
-pedestal	3	1	2930
-pedestal	3	2	2930
-pedestal	3	3	2930
-pedestal	3	4	2930
+pedestal	3	0	0 
+pedestal	3	1	500
+pedestal	3	2	1000
+pedestal	3	3	1500
+pedestal	3	4	2000
 
 pedestal	4	0	3000
 pedestal	4	1	3000

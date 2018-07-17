@@ -31,7 +31,7 @@ trig_sign	6	0
 trig_sign	7	0
 #
 wait_for_sys	0
-rate_only	1#Scalar Mode.
+rate_only	0#Scalar Mode.
 #
 # external trig settings
 # src, 0=ext, 3 = board0, 4=b1, 6=b2, 7=b3

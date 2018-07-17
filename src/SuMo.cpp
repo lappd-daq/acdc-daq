@@ -20,8 +20,8 @@
 
 using namespace std;
 
-SuMo::SuMo()
-{
+SuMo::SuMo() //Double Colons indicate that the thing coming before the colons is a class. 
+{    
   check_readout_mode();
   for(int i=0; i<numFrontBoards; i++){
     DC_ACTIVE[i] = false;
@@ -64,41 +64,43 @@ void SuMo::dump_data(void){
 }
 
 int SuMo::check_readout_mode(void){
-  if(usb.createHandles() == stdUSB::SUCCEED && usb2.createHandles() == stdUSB::SUCCEED){
-    mode = USB2x;
+  if(usb2.createHandles() == stdUSB::SUCCEED && usb.createHandles() == stdUSB::SUCCEED){
+    mode = USB2x;  
     usb.freeHandles();
     usb2.freeHandles();
-    //cout << "mode is " << mode << endl;
+    cout << "mode is " << mode << endl;
   }
-  else if(usb.createHandles() == stdUSB::SUCCEED){
+  if(usb.createHandles() == stdUSB::SUCCEED){
     mode = USB;
+    //    cout << "worked on else if" << "\n" << endl;
     usb.freeHandles();
   }
   else
     mode = UNK;
+  
   return mode;
 }
 
 int SuMo::check_active_boards(bool print){
-
+  
   int num_boards_active = 0;
   for(int targetAC = 0; targetAC < numFrontBoards; targetAC++){
     if(DC_ACTIVE[targetAC] == true){
       num_boards_active ++;
       if(print) cout << "Board at address " << targetAC << " of " << numFrontBoards-1 << " found" << endl;
     }
-  }
+  }   
   return num_boards_active;
 }
 /* slave USB device checks */
 int SuMo::check_active_boards_slaveDevice(void){
-
+  
   int num_boards_active = 0;
   for(int targetAC = 4; targetAC < numFrontBoards; targetAC++){
     if(DC_ACTIVE[targetAC] == true){
       num_boards_active ++;
     }
-  }
+  }   
   return num_boards_active;
 }
 
@@ -147,7 +149,7 @@ void SuMo::unwrap_baseline(int *baseline, int ASIC){
   for(int i = 0; i < 256; i++){
     start_baseline[i] = i;
   }
-
+  
   int wraparound = unwrap(ASIC);
 
   if((wraparound+WRAP_CONSTANT) < 257)
@@ -158,5 +160,39 @@ void SuMo::unwrap_baseline(int *baseline, int ASIC){
   //printf("%d", wraparound);
   for(int i = 0; i < 256; i++){
     baseline[i] = start_baseline[ (wraparound + i) % 256];
+  }
+}
+
+int SuMo::measure_rate(bool* AC_read_mask){
+  set_usb_read_mode(0); //Allow messages to be passed to ACDC, allow for triggers.
+  manage_cc_fifo(1); //Reset some stuff in the tranceivers.
+  usleep(100); //sleep for 100usec.
+  
+  prep_sync(); //Get ready to start triggering.
+  system_card_trig_valid(true); //send in trig valid signal (allow psec4 to send self trig signals).
+  make_sync(); //commence.
+  
+  usleep(3e6); //sleep for 3 seconds.
+  
+  prep_sync(); //get ready to send trigger.
+  software_trigger((unsigned int) 15); //send over a software trigger. 
+  make_sync(); //
+  
+  usleep(100); //sleep and let the data roll on in.
+  read_CC(false,false,0); //read the ACC to update the list of active boards ACDC boards.
+  int num_boards = read_AC(1,AC_read_mask,false); //trig mode 1, read all the boards, don't save to a file.
+  usleep(4000); //wait 4000usec.
+  system_card_trig_valid(false); //don't allow triggers while we work with the data.
+  return(num_boards);
+}
+
+void SuMo::adjust_thresh(int threshold, unsigned int board_number){
+  unsigned int chipAddress;
+  unsigned int boardAddress;
+  boardAddress = pow(2,board_number);
+  for (int k =0;k<5;k++){ //Adjust the thresholds on each chip to the one we want to use.
+    chipAddress = pow(2,k); //generate chip adress
+    set_trig_threshold(threshold,boardAddress,0,chipAddress); //set threshold to new value.
+    usleep(100); //sleep 100usec.
   }
 }

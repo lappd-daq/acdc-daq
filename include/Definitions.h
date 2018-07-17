@@ -23,7 +23,7 @@
 
 #define VID1                  0x6672
 #define VID2                  0x6672
-#define PID1                  0x2921
-#define PID2                  0x2920
+#define PID1                  0x2920
+#define PID2                  0x2921
 
 #endif

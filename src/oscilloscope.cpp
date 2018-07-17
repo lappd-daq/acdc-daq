@@ -148,7 +148,7 @@ int log_from_scope(SuMo& Sumo,  int boardID, int pdat[AC_CHANNELS][psecSampleCel
         for(int j = 0; j < psecSampleCells; j++){	
 	sample  = Sumo.adcDat[boardID]->AC_RAW_DATA[psec_cnt][i%6*256+j];
 	sample -= Sumo.PED_DATA[boardID][i][j];
-	
+	//	cout << " " << sample;
 	pdat[i][j] = sample;
 	if(fabs(pdat[i][j]) >= SCOPE_AUTOSCALE) maxADC_count = fabs(pdat[i][j]);
       }

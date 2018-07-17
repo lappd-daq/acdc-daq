@@ -41,7 +41,6 @@ int main(int argc, char* argv[]){
     Sumo.set_usb_read_mode(0);
     int device = atoi(argv[2]);
     if(device == 1) Sumo.set_usb_read_mode_slaveDevice(0);
-
     if( atoi(argv[1]) == 1 || std::string(argv[1]) == "ON" || 
 	std::string(argv[1]) == "on"){
       Sumo.toggle_CAL(true, device);

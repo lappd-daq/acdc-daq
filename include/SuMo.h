@@ -13,8 +13,6 @@ author: eric oberla
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
-#include <vector>
-#include <string>
 
 #include "stdUSB.h"
 #include "Definitions.h"
@@ -80,10 +78,12 @@ class SuMo{
   //readout functions
   int  check_readout_mode();
   int  read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device = 0, int triGmode = 0);
+  int  measure_rate(bool* AC_read_mask); //To be used in Automation function.
+  void  adjust_thresh(int threshold,unsigned int board_number); 
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for additional retval handling: */
   int  read_AC(unsigned int trig_mode, bool* mask, bool FILESAVE,
 	       bool sync = false, bool set_bin=false, unsigned int bin=0);
-
+  
   void dump_data();
 
   //int  get_AC_info(bool PRINT, int AC_adr);
@@ -94,9 +94,7 @@ class SuMo{
   int  make_count_to_voltage(void);                     //make count-to-voltage LUT for each active board (# active boards * 6 channels * 1536 cells * 4096 !!)
   int  make_count_to_voltage(bool COPY, bool* range);
   int  load_ped();
-  std::vector<packet_t**> get_data(unsigned int NUM_READS, int trig_mode, int acq_rate);
-  int log_data(const char* log_filename, std::vector<packet_t**> event_data, int trig_mode);
-
+  int  log_data(const char* log_filename, unsigned int NUM_READS, int trig_mode, int acq_rate);
 
   int  check_active_boards(void);
   int  check_active_boards(bool print);
