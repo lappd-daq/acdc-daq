@@ -45,8 +45,7 @@ bool stdUSB::createHandles(int num) {
    
     if (stdHandle != INVALID_HANDLE_VALUE)
         goto ok;
-    //    std::cout << " Vendor ID is " << USBFX2_VENDOR_ID << "\n";
-    // std::cout << " Product ID is " << USBFX2_PRODUCT_ID << "\n";
+    
     dev = stdUSB::init(num);
     retval = (long)dev;
     //    std::cout << retval;
