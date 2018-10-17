@@ -7,23 +7,23 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 add_library(SuMo
-        src/SuMo.cpp
-        src/DAQinstruction.cpp
-        src/form_meta_data.cpp
-        src/GetAcdcPackets.cpp
-        src/GetSysPackets.cpp
-        src/oscilloscope.cpp
-        src/ScopePipe.cpp
-        src/dataIO.cpp)
+        lib/SuMo.cpp
+        lib/DAQinstruction.cpp
+        lib/form_meta_data.cpp
+        lib/GetAcdcPackets.cpp
+        lib/GetSysPackets.cpp
+        lib/oscilloscope.cpp
+        lib/ScopePipe.cpp
+        lib/dataIO.cpp)
 
 add_library(myusb
-        src/usb/stdUSBl.cpp
-        src/usb/stdUSBl_Slave.cpp
-        src/usb/usbResetDevice.C)
+        lib/usb/stdUSBl.cpp
+        lib/usb/stdUSBl_Slave.cpp
+        lib/usb/usbResetDevice.C)
 
 add_library(calibration
-        src/calibration/loadPedandLin.cpp
-        src/calibration/makePedandLin.cpp)
+        lib/calibration/loadPedandLin.cpp
+        lib/calibration/makePedandLin.cpp)
 
 
 
@@ -37,23 +37,23 @@ target_link_libraries(SuMo PRIVATE myusb)
 target_link_libraries(SuMo PRIVATE calibration)
 
 
-add_executable(Automated_selfTrig src/functions/Automated_SelfTrig.cpp)
-add_executable(Automated_selfTrig_Cutoffs src/functions/Automated_SelfTrig_Cutoffs.cpp)
-add_executable(Automation src/functions/Automation.cpp)
-add_executable(ledEn src/functions/ledEn.cpp)
-add_executable(calEn src/functions/calEn.cpp)
-add_executable(dumpData src/functions/dumpData.cpp)
-add_executable(logData src/functions/logData.cpp)
-add_executable(makeLUT src/functions/makeLUT.cpp)
-add_executable(oScope src/functions/oScope.cpp)
-add_executable(readACDC src/functions/readACDC.cpp)
-add_executable(readCC src/functions/readCC.cpp)
-add_executable(Reset src/functions/Reset.cpp)
-add_executable(resetDLL src/functions/resetDll.cpp)
-add_executable(setPed src/functions/setPed.cpp)
-add_executable(setupLVDS src/functions/setupLVDS.cpp)
-add_executable(takePed src/functions/takePed.cpp)
-add_executable(toggle_led src/functions/toggle_led.cpp)
+add_executable(Automated_selfTrig src/Automated_SelfTrig.cpp)
+add_executable(Automated_selfTrig_Cutoffs src/Automated_SelfTrig_Cutoffs.cpp)
+add_executable(Automation src/Automation.cpp)
+add_executable(ledEn src/ledEn.cpp)
+add_executable(calEn src/calEn.cpp)
+add_executable(dumpData src/dumpData.cpp)
+add_executable(logData src/logData.cpp)
+add_executable(makeLUT src/makeLUT.cpp)
+add_executable(oScope src/oScope.cpp)
+add_executable(readACDC src/readACDC.cpp)
+add_executable(readCC src/readCC.cpp)
+add_executable(Reset src/Reset.cpp)
+add_executable(resetDLL src/resetDll.cpp)
+add_executable(setPed src/setPed.cpp)
+add_executable(setupLVDS src/setupLVDS.cpp)
+add_executable(takePed src/takePed.cpp)
+add_executable(toggle_led src/toggle_led.cpp)
 
 target_link_libraries(Automated_selfTrig PUBLIC SuMo)
 target_link_libraries(Automated_selfTrig_Cutoffs PUBLIC SuMo)

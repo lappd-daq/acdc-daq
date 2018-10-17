@@ -1,6 +1,42 @@
 # acdc-daq
 ISU testbench code using Eric Oberla's original acdc-daq teststand code.
-# acdc-daq_testing-codes
+
+## Prerequisites
+This code depends on three libraries
+* libusb
+* libz
+* cmake
+
+To install on a debian-based machine
+
+```bash
+$ sudo apt install libusb-dev zlib1g-dev
+```
+
+## Usage
+
+To make and use the functions, issue the following commands
+```bash
+$ cmake -H. -Bbuild
+$ cmake --build build -- -j4
+```
+
+Where `-j4` specifies the number of cores available to multithread the rpocess
+
+After this any command can be issued, for example
+
+```bash
+$ ./bin/readACDC
+```
+
+If you ever need to remake without having changed to CMakeLists file, issue
+```bash
+$ cmake --build build -- -j4
+```
+again.
+
+## acdc-daq_testing-codes
+
 Automation.cpp:
 Measures noise trigger rates as a function of threshold pin voltage for the channels on the board.
 Takes Pedestal in DAC counts, Board Number, and savefile name as inputs.
