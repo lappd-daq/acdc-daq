@@ -13,7 +13,8 @@ add_library(SuMo
         src/GetAcdcPackets.cpp
         src/GetSysPackets.cpp
         src/oscilloscope.cpp
-        src/ScopePipe.cpp)
+        src/ScopePipe.cpp
+        src/dataIO.cpp)
 
 add_library(myusb
         src/usb/stdUSBl.cpp
@@ -42,6 +43,7 @@ add_executable(Automation src/functions/Automation.cpp)
 add_executable(ledEn src/functions/ledEn.cpp)
 add_executable(calEn src/functions/calEn.cpp)
 add_executable(dumpData src/functions/dumpData.cpp)
+add_executable(logData src/functions/logData.cpp)
 add_executable(makeLUT src/functions/makeLUT.cpp)
 add_executable(oScope src/functions/oScope.cpp)
 add_executable(readACDC src/functions/readACDC.cpp)
@@ -59,6 +61,7 @@ target_link_libraries(Automation PUBLIC SuMo)
 target_link_libraries(ledEn PUBLIC SuMo)
 target_link_libraries(calEn PUBLIC SuMo)
 target_link_libraries(dumpData PUBLIC SuMo)
+target_link_libraries(logData PUBLIC SuMo)
 target_link_libraries(makeLUT PUBLIC SuMo)
 target_link_libraries(oScope PUBLIC SuMo)
 target_link_libraries(readACDC PUBLIC SuMo)

@@ -25,7 +25,7 @@ struct packet_t{
   bool                   trig_rate_only;
   bool                   trig_wait_for_sys;
   bool                   trig_en;
-  bool                   use_sma_trig_input; 
+  bool                   use_sma_trig_input;
   bool                   use_coincidence_settings;
   bool                   use_trig_valid_as_reset;
   unsigned int           coincidence_window;
@@ -40,8 +40,8 @@ struct packet_t{
   unsigned int           self_trig_settings_2;
   unsigned int           reg_self_trig;
   unsigned int           self_trig_mask;
-  unsigned int           self_trig_scalar[AC_CHANNELS];  
-  
+  unsigned int           self_trig_scalar[AC_CHANNELS];
+
   unsigned int           counts_of_sys_no_local;
   unsigned int           sys_trig_count;
   unsigned int           resets_from_firmw;
@@ -66,7 +66,8 @@ struct packet_t{
   unsigned int           DATA_FOOTER[numChipsOnBoard];
   /* raw data saved here */
   unsigned short         AC_RAW_DATA[numChipsOnBoard][psec_buffersize];
-  unsigned int           Data[AC_CHANNELS+1][psecSampleCells]; /* AC_CHANNELS waveforms + 1 metadata */
+  unsigned int           Data[AC_CHANNELS][psecSampleCells]; /* AC_CHANNELS waveforms + 1 metadata */
+  unsigned int           Meta[psecSampleCells];
   unsigned short         AC_INFO[numChipsOnBoard][infoBuffersize];
 };
 
