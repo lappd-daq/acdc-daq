@@ -29,7 +29,7 @@ add_library(calibration
 target_include_directories(SuMo PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(myusb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(calibration PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(myusb PUBLIC usb)
+target_link_libraries(myusb PRIVATE usb)
 target_link_libraries(SuMo PRIVATE z)
 target_link_libraries(SuMo PRIVATE m)
 target_link_libraries(SuMo PRIVATE myusb)
