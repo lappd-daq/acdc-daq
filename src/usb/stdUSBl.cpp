@@ -8,7 +8,7 @@
 // 
 //  Revision History:
 //     01/2012-ejo--minor modifications
-
+//
 //     07/2017- John Podczerwinski
 //     Added a message to printed upon success
 //     Added extra error messages to help with
@@ -19,6 +19,9 @@
 #include <stdio.h>
 #include "stdUSB.h"
 #include <iostream>
+
+using namespace std;
+
 stdUSB::stdUSB(void) {
   stdUSB::stdHandle = INVALID_HANDLE_VALUE; //This function stdUSB(void) is executed whenever stdUSB
   //object is created. It makes stdHandle null when initialized.
@@ -33,6 +36,7 @@ stdUSB::~stdUSB(void) {
   }
   
 }
+
 /**
  * Finds USBFX2 device, opens it, sets configuration, and claims interface.
  *  Using of goto is mad bad. Check out linux kernel sources.
@@ -43,61 +47,52 @@ bool stdUSB::createHandles(int num) {
     int retval;
     struct usb_device *dev;
    
-    if (stdHandle != INVALID_HANDLE_VALUE)
-        goto ok;
+    if (stdHandle != INVALID_HANDLE_VALUE) {
+        // cout << "The handle " << stdHandle << " is already valid." << endl;
+        return SUCCEED;
+    }
     
     dev = stdUSB::init(num);
-    retval = (long)dev;
-    //    std::cout << retval;
-    //std::cout << "\n";
-    if (retval == 0)
-        goto failretval;
-       
-    stdHandle = usb_open(dev);
-    if (stdHandle == INVALID_HANDLE_VALUE)
-        goto failstdHandle;
+    retval = (long) dev;
 
+    // cout << "Device made " << dev << endl;
+
+    if (retval == 0) {
+        cout << "Retval == 0: FAILED" << endl;
+        return FAILED;
+    }
+
+    stdHandle = usb_open(dev);
+
+    if (stdHandle == INVALID_HANDLE_VALUE) {
+        cout << "Failed to open device. handle=" << stdHandle << endl;
+        return FAILED;
+    }
+     
     retval = usb_set_configuration(stdHandle, USBFX2_CNFNO);
-    if (retval != 0)
-        goto fail_usbsetconfig;
-        
+
+    if (retval != 0) {
+        cout << "Failed to set USB Configuration " << USBFX2_CNFNO << ". Return value: " << retval << endl;
+        return FAILED;
+    }        
     
     retval = usb_claim_interface(stdHandle, USBFX2_INTFNO);
-    if (retval != 0)
-        goto fail_usbclaiminterface;
+
+    if (retval != 0) {
+        cout << "Failed to claim USB interface " << USBFX2_INTFNO << ". Return value: " << retval << endl;
+        return FAILED;
+    }
 
     retval = usb_set_altinterface(stdHandle, USBFX2_INTFNO);
-    if (retval != 0)
-        goto fail_usbsetalt;
-    
-    goto ok;
-    printf("handle created successfully\n");
-    /* on ok */
- ok:
-    //    printf("createhandles: OK\n");
-    return SUCCEED;
 
-    /* on failure*/
- failretval:
-    printf("Retval == 0: FAILED\n");
-   
-    return FAILED; // Unable to open usb device. No handle.
- failstdHandle:
-    printf("Fail std handle\n");
-    return FAILED;
- fail_usbsetconfig:
-    printf("Failed usb set config \n");
-    //  std::cout << retval;
-    
-    return FAILED;
- fail_usbclaiminterface:
-    printf("Failed usb claim interface \n");
-    return FAILED;
- fail_usbsetalt:
-    printf("Failed usbsetalt \n");
-    return FAILED;
- 
-    
+    if (retval != 0) {
+        cout << "Failed to set alt USB interface " << USBFX2_INTFNO << ". Return value: " << retval << endl;
+        return FAILED;
+    }
+
+    // cout << "Handle created successfully" << endl;
+
+
 }
 
 /**

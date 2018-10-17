@@ -11,6 +11,7 @@ author: eric oberla
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string>
 #include <unistd.h>
 #include <time.h>
 

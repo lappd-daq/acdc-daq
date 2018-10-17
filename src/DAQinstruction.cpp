@@ -1,4 +1,5 @@
 #include "SuMo.h"
+#include <iostream>
 
 const unsigned int boardAdrOffset = 25;
 const unsigned int psecAdrOffset  = 20;
@@ -10,6 +11,7 @@ void SuMo::createUSBHandles()
 }
 void SuMo::closeUSBHandles()
 {
+
   usb.freeHandles();
   if(mode == USB2x) usb2.freeHandles();
 }

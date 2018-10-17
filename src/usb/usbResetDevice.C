@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <string>
 
 #include <linux/usbdevice_fs.h>
 

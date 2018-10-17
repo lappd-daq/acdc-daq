@@ -9,6 +9,7 @@
 //  Author: ejo
 //////////////////////////////////////////////////////
 #include "SuMo.h"
+#include <string>
 
 void SuMo::sync_usb(bool SYNC)
 {

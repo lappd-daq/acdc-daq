@@ -1,6 +1,9 @@
 #include "SuMo.h"
 #include <iostream>
 #include <fstream>
+#include <string.h>
+#include <stdio.h>
+#include <algorithm>
 
 using namespace std;
 
