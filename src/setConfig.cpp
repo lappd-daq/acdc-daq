@@ -293,8 +293,8 @@ int parse_trig_setup_file(const char* file, bool verbose){
     else if(data.find("hrdw_trig")==0){
       linestream >> bool_tmp1;
       hrdw_trig = bool_tmp1;
-      cout << "Setting hrdw_trig"
-      if(tt)	cout << data << " set to " << hrdw_trig << endl;
+      cout << "Setting hrdw_trig";
+    if(tt)	cout << data << " set to " << hrdw_trig << endl;
     } 
     else if(data.find("hrdw_sl_trig")==0){
       linestream >> bool_tmp1;

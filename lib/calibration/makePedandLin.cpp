@@ -3,6 +3,7 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -84,6 +85,7 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE){
       /*save to file, if specified*/
       if(ENABLE_FILESAVE){
 	char ped_filename[200], ped_rms_filename[200];
+	mkdir("calibrations", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	sprintf(ped_filename, "calibrations/PED_DATA_%d.txt", board);
 	sprintf(ped_rms_filename, "calibrations/PED_DATA_RMS_%d.txt", board);
 
