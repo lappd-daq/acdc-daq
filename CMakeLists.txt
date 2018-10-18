@@ -14,7 +14,8 @@ add_library(SuMo
         lib/GetSysPackets.cpp
         lib/oscilloscope.cpp
         lib/ScopePipe.cpp
-        lib/dataIO.cpp)
+        lib/dataIO.cpp
+        lib/config.cpp)
 
 add_library(myusb
         lib/usb/stdUSBl.cpp
