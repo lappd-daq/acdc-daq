@@ -1,5 +1,4 @@
-#ifndef __DEFINITIONS_H__
-#define __DEFINITIONS_H__
+#pragma once
 
 #define numFrontBoards        8        //max number of plugged boards
 #define boardsPerCC           8        //max number of AC/DC cards per central card
@@ -25,5 +24,3 @@
 #define VID2                  0x6672
 #define PID1                  0x2920
 #define PID2                  0x2921
-
-#endif

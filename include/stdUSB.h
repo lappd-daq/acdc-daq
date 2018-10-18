@@ -1,5 +1,4 @@
-#ifndef __STDUSB_H__
-#define __STDUSB_H__
+#pragma once
 
 #include "Definitions.h"
 /*****
@@ -87,4 +86,4 @@ protected:
     struct usb_dev_handle* stdHandle;
 };
 
-#endif
+

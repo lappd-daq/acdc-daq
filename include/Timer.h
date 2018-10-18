@@ -1,4 +1,5 @@
-/* source: 
+#pragma once
+ /* source:
 http://stackoverflow.com/questions/588307/
 c-obtaining-milliseconds-time-on-linux-
 clock-doesnt-seem-to-work-properl */

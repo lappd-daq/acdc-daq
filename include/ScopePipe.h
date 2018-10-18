@@ -9,8 +9,7 @@
 //                to separate from main program)
 //  Author: ejo
 ////////////////////////////////////////////////////// 
-#ifndef SCOPEPIPE_H
-#define SCOPEPIPE_H
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -43,5 +42,3 @@ class ScopePipe
 
   string plot_cmd;
 };
-
-#endif

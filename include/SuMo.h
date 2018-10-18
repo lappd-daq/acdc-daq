@@ -6,8 +6,7 @@ author: eric oberla
 */
 ///////////////////////////////////////////////////////////////////
 
-#ifndef __SUMO_H__
-#define __SUMO_H__
+#pragma once
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -123,6 +122,10 @@ class SuMo{
   }
   bool fileExists(const std::string& filename);
   unsigned int       PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
+void set_default_values();
+int  parse_acdc_setup_file(const char* file, bool verbose=false);
+int  parse_trig_setup_file(const char* file, bool verbose=false);
+int  write_config_to_hardware(SuMo&, bool WRITETRIG, bool WRITEACDC);
 
 private:
   void createUSBHandles();
@@ -168,4 +171,3 @@ private:
   stdUSBSlave    usb2;       //object to handle USB slave device
 
 };
-#endif

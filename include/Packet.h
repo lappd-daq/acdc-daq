@@ -1,5 +1,4 @@
-#ifndef __PACKET_H__
-#define __PACKET_H__
+#pragma once
 
 #include "Definitions.h"
 
@@ -70,5 +69,3 @@ struct packet_t{
   unsigned int           Meta[psecSampleCells];
   unsigned short         AC_INFO[numChipsOnBoard][infoBuffersize];
 };
-
-#endif

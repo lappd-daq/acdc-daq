@@ -1,5 +1,4 @@
-#ifndef __OSCILLOSCOPE_H__
-#define __OSCILLOSCOPE_H__
+#pragma once
 #include "Definitions.h"
 #include "SuMo.h"
 #include "ScopePipe.h"
@@ -11,4 +10,3 @@ int log_from_scope(SuMo&, int boardID, int pdat[AC_CHANNELS][psecSampleCells], b
 int plot_scope(ScopePipe&, int pdat[AC_CHANNELS][psecSampleCells], int* range);
 int oscilloscope(SuMo&, int trig_mode, int numFrames, int boardID, int range[2]);
 
-#endif
