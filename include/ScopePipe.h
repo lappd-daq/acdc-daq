@@ -14,31 +14,39 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
 using std::string;
 
-class ScopePipe
-{
- public:
-  ScopePipe();
-  ~ScopePipe();
+class ScopePipe {
+public:
+    ScopePipe();
 
-  int init();
-  int plot_init();
-  int plot_lut_data(int AC_adr);
-  int notrigger();
-  int plot();
-  int multiplot();
-  int send_cmd(const string &plot_cmd);
-  int finish();
+    ~ScopePipe();
 
- private:
-  FILE *gp_cmd;
-  string filename;
-  string filename_lut;
-  string filename_lut_0;
-  string filename_lut_1;
-  string filename_lut_2;
-  string filename_lut_3;
+    int init();
 
-  string plot_cmd;
+    int plot_init();
+
+    int plot_lut_data(int AC_adr);
+
+    int notrigger();
+
+    int plot();
+
+    int multiplot();
+
+    int send_cmd(const string &plot_cmd);
+
+    int finish();
+
+private:
+    FILE *gp_cmd;
+    string filename;
+    string filename_lut;
+    string filename_lut_0;
+    string filename_lut_1;
+    string filename_lut_2;
+    string filename_lut_3;
+
+    string plot_cmd;
 };
