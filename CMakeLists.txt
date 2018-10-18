@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(acdc-daq VERSION 2.0 DESCRIPTION "Software to run the PSEC electronics")
+project(acdc-daq VERSION 2.0 LANGUAGES C CXX DESCRIPTION "Software to run the PSEC electronics")
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
