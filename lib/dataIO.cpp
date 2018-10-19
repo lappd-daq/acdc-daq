@@ -253,7 +253,6 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
             digs += DIGITIZING_START_FLAG[chkdig];
 
         if (evts == 0 || evts != digs) {
-            print_to_terminal(event, NUM_READS, CC_EVENT_COUNT_FROMCC0, board_trigger, t);
             cout << "    --NULL--       " << endl;
             reset_event = true;
             event = event - 1;             //repeat event
@@ -264,8 +263,6 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
         else {
             if ((event + 1) % 1 == 0 || event == 0) {
                 print_to_terminal(event, NUM_READS, CC_EVENT_COUNT_FROMCC0, board_trigger, t);
-                cout << "          \r";
-                cout.flush();
             }
         }
         /**************************************/
@@ -356,12 +353,11 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
 
 
 void SuMo::print_to_terminal(int k, int NUM_READS, int cc_event, int board_trig, double t) {
-    cout << "Readout:  " << k + 1 << " of " << NUM_READS;
+    cout << "\r" << "Readout:  " << k + 1 << " of " << NUM_READS;
     cout << " :: system|sw evt-" << cc_event << "|" << board_trig;
     cout << " :: evtflags-";
     for (int evt_flag = 0; evt_flag < numFrontBoards; evt_flag++) cout << EVENT_FLAG[evt_flag];
     cout << " :: digflags-";
     for (int dig_flag = 0; dig_flag < numFrontBoards; dig_flag++) cout << DIGITIZING_START_FLAG[dig_flag];
-    cout << " :: @time " << t << " sec ";
-    //cout.flush();
+    cout << " :: @time " << t << " sec " << flush;
 }
