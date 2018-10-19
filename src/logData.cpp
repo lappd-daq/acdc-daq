@@ -36,9 +36,6 @@ int main(int argc, char* argv[]){
             return 1;
 
 
-        vector<packet_t**> events = command.get_data(num_events, trig_mode, 0);
-        command.log_data(log_data_filename, events, trig_mode);
-
-        return 0;
+        return command.log_data(num_events, trig_mode, 0, log_data_filename);
     }
 }

@@ -69,3 +69,4 @@ struct packet_t {
     unsigned int Meta[psecSampleCells];
     unsigned short AC_INFO[numChipsOnBoard][infoBuffersize];
 };
+
