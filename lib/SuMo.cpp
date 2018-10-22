@@ -132,14 +132,14 @@ bool SuMo::fileExists(const string& filename)
     return false;
 }
 int SuMo::unwrap(int ASIC){
-  int last_sampling_bin = CC_BIN_COUNT;
+  int last_sampling_bin = adcDat[ASIC]->bin_count_rise;
   //int last_sampling_bin = 0;
-  unsigned int BIN_40[4];
+  unsigned int BIN_40[16];
 
   //note BIN_40 assuming 160MHz triggering clock
 
   for(int k=0; k<4; k++){
-    BIN_40[k] = (int)256/4*k;
+    BIN_40[k] = (int)256/16*k;
   }
   return BIN_40[last_sampling_bin];
 }

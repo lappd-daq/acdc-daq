@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <algorithm>
 
 #include "SuMo.h"
 #include "Timer.h"
@@ -27,7 +28,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
     float _now_, t = 0.;
     Timer timer = Timer();
     time_t now;
-    unsigned short sample;
+    short sample;
     int *Meta;
 
 
@@ -64,12 +65,6 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
     ofstream dataofs, pedofs, metaofs;
     dataofs.open(logDataFilename, ios::trunc);
 
-    /* wraparound_correction, if desired: */
-    int baseline[psecSampleCells];
-    unwrap_baseline(baseline, 2);
-    for (int j = 0; j < psecSampleCells; j++) {
-        asic_baseline[j] = baseline[j];
-    }
 
     /* Create header */
     dataofs << "Event" << delim << "Board" << delim << "Ch";
@@ -131,8 +126,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
     metaofs << "time_from_valid_to_trig" << delim << "firmware_reset_time" << delim
             << "last_coincidence_num_chans" << endl;
 
-
-
+    int meta_skip[] = {5, 6, 65, 66, 67, 68, 69, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109};
 
 
 
@@ -287,29 +281,35 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
                 psec_cnt = 0;
                 // assign meta data
                 Meta = get_AC_info(false, board, false, event, t, t, evts);
+                // wraparound_correction
+                int baseline[psecSampleCells];
+                unwrap_baseline(baseline, board);
                 for (int ch = 0; ch < AC_CHANNELS; ch++) {
                     dataofs << event << delim << board << delim << ch + 1;
-                    metaofs << event << delim << board;
 
                     if (ch > 0 && ch % 6 == 0) psec_cnt++;
 
                     for (int cell = 0; cell < psecSampleCells; cell++) {
+                        asic_baseline[cell] = baseline[cell];
                         sample = adcDat[board]->AC_RAW_DATA[psec_cnt][ch % 6 * 256 + cell];
-                        int ped_subtracted = sample - PED_DATA[board][ch][cell];
-                        dataofs << delim << dec << ped_subtracted; // std::dec
-                        metaofs << delim << adcDat[board]->Meta[cell];
-                        adcDat[board]->Data[ch][cell] = (unsigned int) sample;
+                        sample -= PED_DATA[board][ch][cell];
+                        adcDat[board]->Data[ch][baseline[cell]] = (unsigned int) sample;
+                    }
+                    for (int wrap: adcDat[board]->Data[ch]) {
+                        dataofs << delim << dec << wrap; // std::dec
                     }
                     dataofs << endl;
-                    metaofs << endl;
                 }
-                /* wraparound_correction, if desired: */
-                int baseline[psecSampleCells];
-                unwrap_baseline(baseline, 2);
-                for (int j = 0; j < psecSampleCells; j++) {
-                    asic_baseline[j] = baseline[j];
-                    adcDat[board]->Meta[j] = Meta[j];
+
+                metaofs << event << delim << board;
+                for (int cell = 0; cell < psecSampleCells; cell++) {
+                    adcDat[board]->Meta[cell] = Meta[cell];
+                    // Only log the meaningful meta values
+                    if (cell <= 112 && find(begin(meta_skip), end(meta_skip), cell) == end(meta_skip)) {
+                        metaofs << delim << Meta[cell];
+                    }
                 }
+                metaofs << endl;
             }
             // if timeout on only some, but not all boards
             else if (numBoards > 0 && BOARDS_TIMEOUT[board] && DC_ACTIVE[board]) {
