@@ -15,7 +15,7 @@
 #include "Timer.h"
 
 /* specific to file */
-const int NUM_ARGS =      5;
+const int NUM_ARGS =      4;
 const char* filename =     "oScope";
 const char* description =  "pipe data to gnuplot window.";
 
@@ -32,10 +32,8 @@ int main(int argc, char* argv[]){
     return 1; 
   }
   else if(argc < NUM_ARGS  || argc > NUM_ARGS+1) {
-    if (argc != 4) {
       cout << "error: wrong number of arguments" << endl;
       return -1;
-    }
   }
   /* function defined below */
   else{

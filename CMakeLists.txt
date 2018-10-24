@@ -26,7 +26,8 @@ add_library(calibration
         lib/calibration/loadPedandLin.cpp
         lib/calibration/makePedandLin.cpp)
 
-
+add_library(yaml-cpp SHARED IMPORTED)
+set_target_properties(yaml-cpp PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.a)
 
 target_include_directories(SuMo PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(myusb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -36,6 +37,7 @@ target_link_libraries(SuMo PRIVATE z)
 target_link_libraries(SuMo PRIVATE m)
 target_link_libraries(SuMo PRIVATE myusb)
 target_link_libraries(SuMo PRIVATE calibration)
+target_link_libraries(SuMo PRIVATE yaml-cpp)
 
 
 add_executable(Automated_selfTrig src/Automated_SelfTrig.cpp)

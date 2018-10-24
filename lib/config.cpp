@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <math.h>
+#include "yaml-cpp/yaml.h"
 
 using namespace std;
 
@@ -17,9 +18,9 @@ bool wait_for_sys;
 bool rate_only;
 bool sma_trig_on_fe[numFrontBoards];
 bool hrdw_trig;
-bool hrdw_trig_sl;
-unsigned int hrdw_trigsrc;
-unsigned int hrdw_trig_slsrc;
+bool hrdw_sl_trig;
+unsigned int hrdw_trig_src;
+unsigned int hrdw_sl_trig_src;
 
 // programmability for 'wait_for_sys' self-trig coincidence mode
 unsigned int coinc_window;
@@ -47,9 +48,9 @@ void set_default_values() {
     wait_for_sys = false;
     rate_only = false;
     hrdw_trig = false;
-    hrdw_trig_sl = false;
-    hrdw_trigsrc = 0;
-    hrdw_trig_slsrc = 0;
+    hrdw_sl_trig = false;
+    hrdw_trig_src = 0;
+    hrdw_sl_trig_src = 0;
     use_coinc = false;
     use_trig_valid = false;
     coinc_num_ch = 0;
@@ -128,13 +129,13 @@ int write_config_to_hardware(SuMo &Sumo, bool WRITETRIG, bool WRITEACDC) {
         //Sumo.dump_data();
         if (WRITETRIG) {
             if (hrdw_trig) {
-                unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trigsrc << 13;
+                unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trig_src << 13;
                 if (jj == 1)cout << "setting trig mode to master device " << ext_trig_mode << endl;
                 Sumo.set_usb_read_mode(ext_trig_mode);
             }
 
-            if (hrdw_trig_sl) {
-                unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_trig_slsrc << 13;
+            if (hrdw_sl_trig) {
+                unsigned int ext_trig_mode = 0x0 | 1 << 3 | 1 << 4 | hrdw_sl_trig_src << 13;
                 if (jj == 1)cout << "setting trig mode to slave device " << ext_trig_mode << endl;
                 Sumo.set_usb_read_mode_slaveDevice(ext_trig_mode);
             }
@@ -146,122 +147,203 @@ int write_config_to_hardware(SuMo &Sumo, bool WRITETRIG, bool WRITEACDC) {
 }
 
 
+int parse_setup_file(const char *file, bool verbose) {
+    // ACDC Settings
+    YAML::Node config = YAML::LoadFile(file);
+    int retval = 0;
+    if (config["acdc_settings"]) {
+        retval = parse_acdc_setup_yaml(config["acdc_settings"], verbose);
+
+    }
+    if (retval != 0) {
+        return retval;
+    }
+    if (config["trigger_settings"]) {
+        retval = parse_trig_setup_yaml(config["trigger_settings"], verbose);
+
+    }
+    return retval;
+}
+
 // parse parameter file
-int parse_acdc_setup_file(const char *file, bool verbose) {
-    bool tt = verbose;
+int parse_acdc_setup_yaml(YAML::Node config, bool verbose) {
+    int board, chip;
+    if (verbose) {
+        cout << "__________________________" << endl;
+    }
+    if (config["pedestal"]) {
+        YAML::Node pedestals = config["pedestal"];
+        for (YAML::const_iterator ped = pedestals.begin(); ped != pedestals.end(); ++ped) {
+            board = ped->first.as<int>();
+            for (YAML::const_iterator chips = ped->second.begin(); chips != ped->second.end(); ++chips) {
+                if (chips->first.as<string>() == "all") {
+                    for (int c = 0; c < numChipsOnBoard; c++) {
+                        pedestal[board][c] = chips->second.as<unsigned int>();
+                        if (verbose) {
+                            cout << "Pedestal  on " << board << ":" << c << " set to " << pedestal[board][c] << endl;
+                        }
+                    }
+                    break; // short-circuit
+                } else {
+                    chip = chips->first.as<int>();
+                    pedestal[board][chip] = chips->second.as<unsigned int>();
+                    if (verbose) {
+                        cout << "Pedestal  on " << board << ":" << chip << " set to " << pedestal[board][chip] << endl;
+                    }
+                }
+            }
 
-    ifstream in;
-    in.open(file, ios::in);
-    string line, data;
-
-    unsigned int tmp1, tmp2, tmp3;
-    bool bool_tmp1;
-
-    while (getline(in, line)) {
-        stringstream linestream(line);
-        getline(linestream, data, '\t');
-        if (data.find("#") == 0)
-            continue;
-        else if (data.find("pedestal") == 0) {
-            linestream >> tmp1 >> tmp3 >> tmp2;
-            pedestal[tmp1][tmp3] = tmp2;
-            if (tt)
-                cout << data << " on board:chip " << tmp1 << ":" << tmp3 << " set to 0x" << hex << tmp2 << endl;
-        } else if (data.find("thresh") == 0) {
-            linestream >> tmp1 >> tmp3 >> tmp2;
-            threshold[tmp1][tmp3] = tmp2;
-            if (tt)
-                cout << data << " on board:chip " << tmp1 << ":" << tmp3 << " set to 0x" << hex << tmp2 << endl;
         }
+    }
 
+    if (verbose) {
+        cout << "__________________________" << endl;
+    }
+
+    if (config["threshold"]) {
+        YAML::Node thresholds = config["threshold"];
+        for (YAML::const_iterator thresh = thresholds.begin(); thresh != thresholds.end(); ++thresh) {
+            board = thresh->first.as<int>();
+            for (YAML::const_iterator chips = thresh->second.begin(); chips != thresh->second.end(); ++chips) {
+                if (chips->first.as<string>() == "all") {
+                    for (int c = 0; c < numChipsOnBoard; c++) {
+                        threshold[board][c] = chips->second.as<unsigned int>();
+                        if (verbose) {
+                            cout << "Threshold on " << board << ":" << c << " set to " << threshold[board][c] << endl;
+                        }
+                    }
+                    break; // Short-circuit
+                } else {
+                    chip = chips->first.as<int>();
+                    threshold[board][chip] = chips->second.as<unsigned int>();
+                    if (verbose) {
+                        cout << "Threshold on " << board << ":" << chip << " set to " << pedestal[board][chip] << endl;
+                    }
+                }
+            }
+
+        }
+    }
+    if (verbose) {
+        cout << "__________________________" << endl;
     }
     return 0;
 }
 
-int parse_trig_setup_file(const char *file, bool verbose) {
-    ifstream in;
-    in.open(file, ios::in);
-    string line, data;
-
-    unsigned int tmp1, tmp2, tmp3;
-    bool bool_tmp1;
-
-    while (getline(in, line)) {
-        stringstream linestream(line);
-        getline(linestream, data, '\t');
-
-        if (data.find("#") == 0)
-            continue;
-
-        if (data.find("trig_mask") == 0) {
-            linestream >> tmp1 >> hex >> tmp2;
-            trig_mask[tmp1] = tmp2;
-            if (verbose)
-                cout << data << " on board " << tmp1 << " set to 0x" << hex << tmp2 << dec << endl;
-        } else if (data.find("trig_enable") == 0) {
-            linestream >> tmp1 >> bool_tmp1;
-            trig_enable[tmp1] = bool_tmp1;
-            if (verbose)
-                cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
-        } else if (data.find("trig_sign") == 0) {
-            linestream >> tmp1 >> bool_tmp1;
-            trig_sign[tmp1] = bool_tmp1;
-            if (verbose)
-                cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
-        } else if (data.find("wait_for_sys") == 0) {
-            linestream >> bool_tmp1;
-            wait_for_sys = bool_tmp1;
-            cout << data << " set to " << bool_tmp1 << endl;
-        } else if (data.find("rate_only") == 0) {
-            linestream >> bool_tmp1;
-            rate_only = bool_tmp1;
-            if (verbose)
-                cout << data << " set to " << bool_tmp1 << endl;
-        } else if (data.find("hrdw_trig") == 0) {
-            linestream >> bool_tmp1;
-            hrdw_trig = bool_tmp1;
-            cout << "Setting hrdw_trig";
-            if (verbose) cout << data << " set to " << hrdw_trig << endl;
-        } else if (data.find("hrdw_sl_trig") == 0) {
-            linestream >> bool_tmp1;
-            hrdw_trig_sl = bool_tmp1;
-            if (verbose) cout << data << " set to " << bool_tmp1 << endl;
-        } else if (data.find("hrdw_src_trig") == 0) {
-            linestream >> tmp1;
-            hrdw_trigsrc = tmp1;
-            if (verbose) cout << data << " set to " << tmp1 << endl;
-        } else if (data.find("hrdw_slsrc_trig") == 0) {
-            linestream >> tmp1;
-            hrdw_trig_slsrc = tmp1;
-            if (verbose) cout << data << " set to " << tmp1 << endl;
-        } else if (data.find("sma_trig_on_fe") == 0) {
-            linestream >> tmp1 >> bool_tmp1;
-            sma_trig_on_fe[tmp1] = bool_tmp1;
-            if (verbose) cout << data << " on board " << tmp1 << " set to " << bool_tmp1 << endl;
-        } else if (data.find("coinc_window") == 0) {
-            linestream >> tmp1;
-            coinc_window = tmp1;
-            if (verbose) cout << data << " set to " << tmp1 << endl;
-        } else if (data.find("coinc_pulsew") == 0) {
-            linestream >> tmp1;
-            coinc_pulsew = tmp1;
-            if (verbose) cout << data << " set to " << tmp1 << endl;
-        } else if (data.find("coinc_num_ch") == 0) {
-            linestream >> tmp1;
-            coinc_num_ch = tmp1;
-            if (verbose) cout << data << " set to " << tmp1 << endl;
-        } else if (data.find("coinc_num_asic") == 0) {
-            linestream >> tmp1;
-            coinc_num_asic = tmp1;
-            if (verbose) cout << data << " set to " << tmp1 << endl;
-        } else if (data.find("use_coinc") == 0) {
-            linestream >> bool_tmp1;
-            use_coinc = bool_tmp1;
-            if (verbose) cout << data << " set to " << bool_tmp1 << endl;
-        } else if (data.find("use_trig_valid") == 0) {
-            linestream >> bool_tmp1;
-            use_trig_valid = bool_tmp1;
-            if (verbose) cout << data << " set to " << bool_tmp1 << endl;
+int parse_trig_setup_yaml(YAML::Node config, bool verbose) {
+    if (verbose) {
+        cout << "__________________________" << endl;
+    }
+    if (config["trig_mask"]) {
+        YAML::Node masks = config["trig_mask"];
+        for (YAML::const_iterator board = masks.begin(); board != masks.end(); ++board) {
+            trig_mask[board->first.as<int>()] = board->second.as<unsigned int>();
+            if (verbose) {
+                cout << "trig_mask on board " << board->first.as<int>() << " set to 0x" << hex
+                     << board->second.as<unsigned int>() << endl;
+            }
+        }
+    }
+    if (config["trig_enable"]) {
+        YAML::Node flags = config["trig_enable"];
+        for (YAML::const_iterator board = flags.begin(); board != flags.end(); ++board) {
+            trig_enable[board->first.as<int>()] = board->second.as<bool>();
+            if (verbose) {
+                cout << "trig_enable on board " << board->first.as<int>() << " set to " << board->second.as<bool>()
+                     << endl;
+            }
+        }
+    }
+    if (config["trig_sign"]) {
+        YAML::Node signs = config["trig_sign"];
+        for (YAML::const_iterator board = signs.begin(); board != signs.end(); ++board) {
+            string sign = board->second.as<string>();
+            trig_sign[board->first.as<int>()] = sign == "rising";
+            if (verbose) {
+                cout << "trig_sign on board " << board->first.as<int>() << " set to " << sign << endl;
+            }
+        }
+    }
+    if (config["wait_for_sys"]) {
+        wait_for_sys = config["wait_for_sys"].as<bool>();
+        if (verbose) {
+            cout << "wait_for_sys set to " << wait_for_sys << endl;
+        }
+    }
+    if (config["rate_only"]) {
+        rate_only = config["rate_only"].as<bool>();
+        if (verbose) {
+            cout << "rate_only set to " << rate_only << endl;
+        }
+    }
+    if (config["hrdw_trig"]) {
+        hrdw_trig = config["hrdw_trig"].as<bool>();
+        if (verbose) {
+            cout << "hrdw_trig set to " << hrdw_trig << endl;
+        }
+    }
+    if (config["hrdw_trig_src"]) {
+        hrdw_trig_src = config["hrdw_trig_src"].as<unsigned int>();
+        if (verbose) {
+            cout << "hrdw_trig_src set to " << hrdw_trig_src << endl;
+        }
+    }
+    if (config["hrdw_sl_trig"]) {
+        hrdw_sl_trig = config["hrdw_sl_trig"].as<bool>();
+        if (verbose) {
+            cout << "hrdw_sl_trig set to " << hrdw_sl_trig << endl;
+        }
+    }
+    if (config["hrdw_sl_trig_src"]) {
+        hrdw_sl_trig_src = config["hrdw_sl_trig_src"].as<unsigned int>();
+        if (verbose) {
+            cout << "hrdw_sl_trig_src set to " << hrdw_sl_trig_src << endl;
+        }
+    }
+    if (config["sma_trig_on_fe"]) {
+        YAML::Node flags = config["sma_trig_on_fe"];
+        for (YAML::const_iterator board = flags.begin(); board != flags.end(); ++board) {
+            sma_trig_on_fe[board->first.as<int>()] = board->second.as<bool>();
+            if (verbose) {
+                cout << "sma_trig_on_fe on board " << board->first.as<int>() << " set to " << board->second.as<bool>()
+                     << endl;
+            }
+        }
+    }
+    if (config["use_coinc"]) {
+        use_coinc = config["use_coinc"].as<bool>();
+        if (verbose) {
+            cout << "use_coinc set to " << use_coinc << endl;
+        }
+    }
+    if (config["coinc_window"]) {
+        coinc_window = config["coinc_window"].as<unsigned int>();
+        if (verbose) {
+            cout << "coinc_window set to " << coinc_window << endl;
+        }
+    }
+    if (config["coinc_pulsew"]) {
+        coinc_pulsew = config["coinc_pulsew"].as<unsigned int>();
+        if (verbose) {
+            cout << "coinc_pulsew set to " << coinc_pulsew << endl;
+        }
+    }
+    if (config["coinc_num_ch"]) {
+        coinc_num_ch = config["coinc_num_ch"].as<unsigned int>();
+        if (verbose) {
+            cout << "coinc_num_ch set to " << coinc_num_ch << endl;
+        }
+    }
+    if (config["coinc_num_asic"]) {
+        coinc_num_asic = config["coinc_num_asic"].as<unsigned int>();
+        if (verbose) {
+            cout << "coinc_num_asic set to " << coinc_num_asic << endl;
+        }
+    }
+    if (config["use_trig_valid"]) {
+        use_trig_valid = config["use_trig_valid"].as<bool>();
+        if (verbose) {
+            cout << "use_trig_valid set to " << use_trig_valid << endl;
         }
     }
     return 0;
