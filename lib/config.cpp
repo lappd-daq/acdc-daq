@@ -55,7 +55,6 @@ void set_default_values() {
     use_trig_valid = false;
     coinc_num_ch = 0;
     coinc_num_asic = 0;
-    cout << "self-trigger disabled" << endl;
 }
 
 // write registers
@@ -148,6 +147,9 @@ int write_config_to_hardware(SuMo &Sumo, bool WRITETRIG, bool WRITEACDC) {
 
 
 int parse_setup_file(const char *file, bool verbose) {
+    // Start with defaults
+    set_default_values()
+    
     // ACDC Settings
     YAML::Node config = YAML::LoadFile(file);
     int retval = 0;
