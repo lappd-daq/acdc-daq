@@ -69,7 +69,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
     /* Create header */
     dataofs << "Event" << delim << "Board" << delim << "Ch";
     for (int i = 0; i < psecSampleCells; i++) {
-        dataofs << delim << "C" << i;
+        dataofs << delim << i;
     }
     dataofs << endl;
 
@@ -77,7 +77,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
     // Create Header
     pedofs << "Board" << delim << "Ch";
     for (int i = 0; i < psecSampleCells; i++) {
-        pedofs << delim << "C" << i;
+        pedofs << delim << i;
     }
     pedofs << endl;
 
