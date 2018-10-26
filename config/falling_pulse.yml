@@ -3,11 +3,11 @@
 acdc_settings:
   pedestal:
     1:
-      all: 3000
+      all: 2000
 
   threshold:
     1:
-      all: 2800
+      all: 1850
 
 trigger_settings:
   trig_mask:

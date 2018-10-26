@@ -55,6 +55,8 @@ void set_default_values() {
     use_trig_valid = false;
     coinc_num_ch = 0;
     coinc_num_asic = 0;
+    coinc_window = 0;
+    coinc_pulsew = 0;
 }
 
 // write registers
