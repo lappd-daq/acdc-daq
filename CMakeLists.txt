@@ -10,16 +10,21 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_SOURCE_DIR "${CMAKE_SOURCE_DIR}/lib")
 set(EXECUTABLE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 
-#include(ExternalProject)
-#ExternalProject_Add(project_yaml-cpp
-#        GIT_REPOSITORY "https://github.com/jbeder/yaml-cpp"
-#        GIT_TAG "0.6.2")
-#
-#add_library(yaml-cpp STATIC IMPORTED)
-#
-#add_dependencies(yaml-cpp project_yaml-cpp)
+include(ExternalProject)
+ExternalProject_Add(project_yaml_cpp
+        GIT_REPOSITORY "https://github.com/jbeder/yaml-cpp"
+        GIT_TAG "yaml-cpp-0.6.2"
+        INSTALL_COMMAND ""
+        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/yaml-cpp)
+ExternalProject_Get_Property(project_yaml_cpp source_dir)
+ExternalProject_Get_Property(project_yaml_cpp binary_dir)
 
+add_library(yaml-cpp SHARED IMPORTED)
+add_dependencies(yaml-cpp project_yaml_cpp)
+set_property(TARGET yaml-cpp PROPERTY IMPORTED_LOCATION ${binary_dir}/libyaml-cpp.a)
 
+include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${source_dir}/include)
 
 add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/SuMo.cpp
@@ -41,15 +46,9 @@ add_library(calibration
         ${LIBRARY_SOURCE_DIR}/calibration/loadPedandLin.cpp
         ${LIBRARY_SOURCE_DIR}/calibration/makePedandLin.cpp)
 
-target_include_directories(SuMo PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(myusb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(calibration PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 target_link_libraries(myusb PRIVATE usb)
-target_link_libraries(SuMo z)
-target_link_libraries(SuMo m)
-target_link_libraries(SuMo myusb)
-target_link_libraries(SuMo calibration)
-target_link_libraries(SuMo yaml-cpp)
+target_link_libraries(SuMo z m myusb calibration yaml-cpp)
 
 
 
