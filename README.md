@@ -2,15 +2,12 @@
 ISU testbench code using Eric Oberla's original acdc-daq teststand code.
 
 ## Prerequisites
-This code depends on three libraries
-* libusb
-* libz
-* cmake
+This code is built using `cmake` and requires `libusb` headeras (which usually come prepackaged with your os-- you may want to double-check).
 
 To install on a debian-based machine
 
 ```bash
-$ sudo apt install libusb-dev zlib1g-dev
+$ sudo apt install libusb-dev cmake
 ```
 
 ## Usage

@@ -48,7 +48,7 @@ add_library(calibration
 
 
 target_link_libraries(myusb PRIVATE usb)
-target_link_libraries(SuMo z m myusb calibration yaml-cpp)
+target_link_libraries(SuMo myusb calibration yaml-cpp)
 
 
 
