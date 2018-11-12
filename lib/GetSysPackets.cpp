@@ -119,6 +119,11 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
             else cout << "AC/DC connection status: \n";
         }
 
+        // Initialize DC_ACTIVE to false
+        for (int ac = 0; ac < numFrontBoards; ac++) {
+            DC_ACTIVE[ac] = false;
+        }
+
         int slave_index = loop_cc * boardsPerCC;
         /* look for ACDC boards, set global variable DC_ACTIVE[numFrontBoards] */
         // add second handle for DC_ACTIVE
@@ -138,6 +143,9 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
             DC_ACTIVE[3 + slave_index] = true;
             if (SHOW_CC_STATUS) cout << "* DC 3 detected!! \n";
         }
+
+        // TODO the above will have to be extended when switching to ACC
+
 
         //check for events in CC RAM
         if (buffer[4] & 0x1) EVENT_FLAG[0 + slave_index] = true;
@@ -176,11 +184,12 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
 
 
             read_AC(triggerMode, tmp_active, false);
-            for (int board = 0; board < boardsPerCC; board++)
+            for (int board = 0; board < boardsPerCC; board++) {
                 if (DC_ACTIVE[board]) {
                     cout << endl << "AC/DC #" << board << ":";
                     get_AC_info(true, board);
                 }
+            }
             //manage_cc_fifo(1);
         } else if (device == 100) {          //all devices
 
