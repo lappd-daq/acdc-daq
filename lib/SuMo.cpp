@@ -85,7 +85,7 @@ int SuMo::check_active_boards(bool print){
   
   int num_boards_active = 0;
   for(int targetAC = 0; targetAC < numFrontBoards; targetAC++){
-    if(DC_ACTIVE[targetAC] == true){
+    if(DC_ACTIVE[targetAC]){
       num_boards_active ++;
       if(print) cout << "Board at address " << targetAC << " of " << numFrontBoards-1 << " found" << endl;
     }
@@ -97,7 +97,7 @@ int SuMo::check_active_boards_slaveDevice(void){
   
   int num_boards_active = 0;
   for(int targetAC = 4; targetAC < numFrontBoards; targetAC++){
-    if(DC_ACTIVE[targetAC] == true){
+    if(DC_ACTIVE[targetAC]){
       num_boards_active ++;
     }
   }   
