@@ -14,6 +14,7 @@ const  int SCOPE_TIMEOUT   = 40;
 
 using namespace std;
 
+/* If numFrames is a negative number, set the oscope up in "infinity" mode were it will run until manually stopped */
 int oscilloscope(SuMo& Sumo, int trig_mode, int numFrames, int boardID, int range[2] ){
   
   Timer timer = Timer();
@@ -34,18 +35,28 @@ int oscilloscope(SuMo& Sumo, int trig_mode, int numFrames, int boardID, int rang
 
   for(int i=0; i<numFrontBoards; i++) scopeBoard[i] = false;
   scopeBoard[boardID] = true;
-  
-  int frameCount = 0;
-  while(frameCount < numFrames && t < SCOPE_TIMEOUT){
-    t = timer.stop();
-    if(prime_scope(Sumo, trig_mode, device, boardID, scopeRefresh) == 0) continue;
-    max_pdat = log_from_scope(Sumo, boardID, pdat, scopeBoard);
-      
-    if(max_pdat < SCOPE_AUTOSCALE) myPipe.send_cmd("set zrange [-200:200]");
-    else                           myPipe.send_cmd("set auto z");
-  
-    plot_scope(myPipe, pdat, range); 
-    frameCount++;
+  if (numFrames < 0) {
+    while(t < SCOPE_TIMEOUT) {
+      t = timer.stop();
+      if (prime_scope(Sumo, trig_mode, device, boardID, scopeRefresh) == 0) continue;
+      max_pdat = log_from_scope(Sumo, boardID, pdat, scopeBoard);
+
+      if (max_pdat < SCOPE_AUTOSCALE) myPipe.send_cmd("set zrange [-200:200]");
+      else myPipe.send_cmd("set auto z");
+
+      plot_scope(myPipe, pdat, range);
+    }
+  } else {
+    for (int frameCount = 0; frameCount < numFrames && t < SCOPE_TIMEOUT; frameCount++) {
+      t = timer.stop();
+      if (prime_scope(Sumo, trig_mode, device, boardID, scopeRefresh) == 0) continue;
+      max_pdat = log_from_scope(Sumo, boardID, pdat, scopeBoard);
+
+      if (max_pdat < SCOPE_AUTOSCALE) myPipe.send_cmd("set zrange [-200:200]");
+      else myPipe.send_cmd("set auto z");
+
+      plot_scope(myPipe, pdat, range);
+    }
   }
   Sumo.cleanup();
   cout << "press enter to quit";
