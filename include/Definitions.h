@@ -22,5 +22,5 @@
 
 #define VID1                  0x6672
 #define VID2                  0x6672 //usb device code for slave device
-#define PID1                  0x2921 
-#define PID2                  0x2920 //usb device code for slave device
+#define PID1                  0x2920 
+#define PID2                  0x2921 //usb device code for slave device
