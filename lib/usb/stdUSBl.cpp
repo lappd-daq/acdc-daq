@@ -90,9 +90,8 @@ bool stdUSB::createHandles(int num) {
         return FAILED;
     }
 
-    // cout << "Handle created successfully" << endl;
-
-
+    // If we pass everything, we succeed!
+    return SUCCEED;
 }
 
 /**
