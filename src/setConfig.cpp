@@ -16,7 +16,7 @@ using namespace std;
 const int NUM_ARGS = 2;
 const char *filename = "setTrig";
 const char *description = "setup trigger, parse trigger parms file (argv[1])";
-const char *arg_desc = "[<configfile.yml>] [-v]"
+const char *arg_desc = "[<configfile.yml>] [-v]";
 
 
 int main(int argc, char *argv[]) {

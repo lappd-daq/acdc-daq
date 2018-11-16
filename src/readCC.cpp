@@ -14,7 +14,7 @@
 const int NUM_ARGS =      1;
 const char* filename =     "readCC";
 const char* description =  "show central card status";
-const char* arg_desc = "[sync]"
+const char* arg_desc = "[sync]";
 
 using namespace std;
 

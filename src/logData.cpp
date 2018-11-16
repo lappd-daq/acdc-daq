@@ -8,7 +8,7 @@
 const int NUM_ARGS = 4;
 const char* filename = "logData";
 const char* description = "log data from DAQ";
-const char* arg_desc = " <output filename prefix> <num events> <trigger mode 0/1/2>"
+const char* arg_desc = " <output filename prefix> <num events> <trigger mode 0/1/2>";
 using namespace std;
 /********************/
 
