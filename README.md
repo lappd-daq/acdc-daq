@@ -76,7 +76,8 @@ $ ./bin/oScope <board> <num_events> <trigger_mode> [<channel>]
 ```
 **Parameters**
 1. board - The ADC board to show output for
-2. num_events - The number of triggered events to show
+2. num_events - The number of triggered events to show. If you want to show a continuous output until manualy stopped 
+(ctrl-c) set num_events to a value less than 0 (e.g. -1) 
 3. trigger_mode - 0 for software triggering, 1 for hardware triggering
 4. (optional) channel - If set, will plot the given channel and the 5 after it. For example, 
 if channel is 10, channels 10-14 will be plotted. If the channel provided is
