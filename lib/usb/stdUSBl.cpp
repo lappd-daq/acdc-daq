@@ -48,14 +48,14 @@ bool stdUSB::createHandles(int num) {
     struct usb_device *dev;
    
     if (stdHandle != INVALID_HANDLE_VALUE) {
-        // cout << "The handle " << stdHandle << " is already valid." << endl;
+        //cout << "The handle " << stdHandle << " is already valid." << endl;
         return SUCCEED;
     }
     
     dev = stdUSB::init(num);
     retval = (long) dev;
 
-    // cout << "Device made " << dev << endl;
+     //cout << "Device made " << dev << endl;
 
     if (retval == 0) {
         cout << "Retval == 0: FAILED" << endl;
@@ -90,9 +90,9 @@ bool stdUSB::createHandles(int num) {
         return FAILED;
     }
 
-    // cout << "Handle created successfully" << endl;
+    //cout << "Handle created successfully" << endl;
 
-
+    return SUCCEED;
 }
 
 /**

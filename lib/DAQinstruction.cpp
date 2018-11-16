@@ -60,11 +60,17 @@ void SuMo::software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK, bool set_bi
  */
 void SuMo::align_lvds()
 {
- 
-  createUSBHandles();
-  if(mode == USB) usb.sendData((unsigned int)0x000D0000);  //toggle align process
-  else if(mode == USB2x) usb2.sendData((unsigned int)0x000D0000);
-  closeUSBHandles();
+
+	createUSBHandles();
+	if(mode == USB)
+	{
+		usb.sendData((unsigned int)0x000D0000);  //toggle align process
+	}
+	else if(mode == USB2x)
+	{
+		usb2.sendData((unsigned int)0x000D0000);
+	}
+	closeUSBHandles();
 }
 /*
  *

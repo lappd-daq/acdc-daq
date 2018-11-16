@@ -21,8 +21,10 @@
 using namespace std;
 
 SuMo::SuMo() //Double Colons indicate that the thing coming before the colons is a class. 
-{    
+{   
+  //cout << "checking readout mode" << endl;	
   check_readout_mode();
+  //cout << "got " << mode << endl;
   for(int i=0; i<numFrontBoards; i++){
     DC_ACTIVE[i] = false;
     EVENT_FLAG[i] = false;
@@ -72,7 +74,7 @@ int SuMo::check_readout_mode(void){
   }
   if(usb.createHandles() == stdUSB::SUCCEED){
     mode = USB;
-    //    cout << "worked on else if" << "\n" << endl;
+    //cout << "mode is " << mode << endl;
     usb.freeHandles();
   }
   else
