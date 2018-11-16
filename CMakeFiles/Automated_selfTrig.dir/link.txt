@@ -1,1 +1,0 @@
-/usr/bin/c++    -std=c++11   CMakeFiles/Automated_selfTrig.dir/src/Automated_SelfTrig.cpp.o  -o bin/Automated_selfTrig -Wl,-rpath,/home/pi/test-acdcdaq-git/yaml-cpp/src/project_yaml_cpp-build -rdynamic bin/libSuMo.a bin/libmyusb.a -lusb bin/libcalibration.a yaml-cpp/src/project_yaml_cpp-build/libyaml-cpp.a 

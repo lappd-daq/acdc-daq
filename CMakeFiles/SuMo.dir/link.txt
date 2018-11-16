@@ -1,2 +1,0 @@
-/usr/bin/ar qc bin/libSuMo.a  CMakeFiles/SuMo.dir/lib/SuMo.cpp.o CMakeFiles/SuMo.dir/lib/DAQinstruction.cpp.o CMakeFiles/SuMo.dir/lib/form_meta_data.cpp.o CMakeFiles/SuMo.dir/lib/GetAcdcPackets.cpp.o CMakeFiles/SuMo.dir/lib/GetSysPackets.cpp.o CMakeFiles/SuMo.dir/lib/oscilloscope.cpp.o CMakeFiles/SuMo.dir/lib/ScopePipe.cpp.o CMakeFiles/SuMo.dir/lib/dataIO.cpp.o CMakeFiles/SuMo.dir/lib/config.cpp.o
-/usr/bin/ranlib bin/libSuMo.a

@@ -1,2 +1,0 @@
-/usr/bin/ar qc bin/libcalibration.a  CMakeFiles/calibration.dir/lib/calibration/loadPedandLin.cpp.o CMakeFiles/calibration.dir/lib/calibration/makePedandLin.cpp.o
-/usr/bin/ranlib bin/libcalibration.a
