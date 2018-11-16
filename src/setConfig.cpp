@@ -16,6 +16,7 @@ using namespace std;
 const int NUM_ARGS = 2;
 const char *filename = "setTrig";
 const char *description = "setup trigger, parse trigger parms file (argv[1])";
+const char *arg_desc = "[<configfile.yml>] [-v]"
 
 
 int main(int argc, char *argv[]) {
@@ -23,9 +24,11 @@ int main(int argc, char *argv[]) {
         cout << endl;
         cout << filename << " :: " << description << endl;
         cout << filename << " :: takes " << NUM_ARGS - 1 << " arguments" << endl;
+        cout << "Usage: ./bin/" << filename << " " << arg_desc << endl;
         return 1;
     } else if (argc > NUM_ARGS + 1) {
         cout << "error: wrong number of arguments" << endl;
+        cout << "Usage: ./bin/" << filename << " " << arg_desc << endl;
         return -1;
     }
         /* function defined below */

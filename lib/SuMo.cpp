@@ -108,8 +108,12 @@ int SuMo::check_active_boards(int NUM){
 
   for(int i=0; i<NUM; i++){
     int device = 0;
-    read_CC(false, false, device);
-    if(mode==USB2x){
+    if(mode==USB)
+    {
+      read_CC(false, false, device);
+    }
+    else if(mode==USB2x)
+    {
       device=1;
       read_CC(false, false, device);
     }

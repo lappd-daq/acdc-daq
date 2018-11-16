@@ -14,6 +14,7 @@
 const int NUM_ARGS =      1;
 const char* filename =     "setupLVDS";
 const char* description =  "setup lvds SERDES interface";
+const char* arg_desc = "";
 
 using namespace std;
 
@@ -23,10 +24,12 @@ int main(int argc, char* argv[]){
     cout << endl;
     cout << filename << " :: " << description << endl;
     cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
+    cout << "Usage: ./bin/" << filename << arg_desc << endl;
     return 1; 
   }
   else if(argc != NUM_ARGS){
     cout << "error: wrong number of arguments" << endl;
+    cout << "Usage: ./bin/" << filename << arg_desc << endl;
     return -1;
   }
   /* function defined below */

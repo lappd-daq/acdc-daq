@@ -6,8 +6,8 @@ const unsigned int psecAdrOffset  = 20;
 
 void SuMo::createUSBHandles()
 {
-  usb.createHandles();
-  if(mode == USB2x) usb2.createHandles();
+  if(mode == USB) usb.createHandles();
+  else if(mode == USB2x) usb2.createHandles();
 }
 void SuMo::closeUSBHandles()
 {
@@ -62,8 +62,8 @@ void SuMo::align_lvds()
 {
  
   createUSBHandles();
-  usb.sendData((unsigned int)0x000D0000);  //toggle align process
-  if(mode == USB2x) usb2.sendData((unsigned int)0x000D0000);
+  if(mode == USB) usb.sendData((unsigned int)0x000D0000);  //toggle align process
+  else if(mode == USB2x) usb2.sendData((unsigned int)0x000D0000);
   closeUSBHandles();
 }
 /*

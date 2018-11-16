@@ -26,114 +26,114 @@ enum cc_readout_mode {
 class SuMo {
 
 public:
-  SuMo();
+  SuMo(); //SuMo.cpp
 
-  ~SuMo();
+  ~SuMo();//SuMo.cpp
 
-  void sync_usb(bool SYNC);
+  void sync_usb(bool SYNC); //DAQinstruction.cpp
 
   //instructions to hardware
-  void reset_dll(bool sync = false);
+  void reset_dll(bool sync = false); //DAQinstruction.cpp
 
-  void reset_self_trigger(unsigned int mask, int device = 0);
+  void reset_self_trigger(unsigned int mask, int device = 0); //DAQinstruction.cpp
 
-  void reset_time_stamp(bool sync = false);
+  void reset_time_stamp(bool sync = false); //DAQinstruction.cpp
 
-  void reset_acdc();
+  void reset_acdc(); //DAQinstruction.cpp
 
-  void align_lvds();
+  void align_lvds(); //DAQinstruction.cpp
 
   //front-end card specific instructions
-  void toggle_LED(bool EN);
+  void toggle_LED(bool EN); //DAQinstruction.cpp
 
-  void toggle_CAL(bool EN, int device = 0);
+  void toggle_CAL(bool EN, int device = 0); //DAQinstruction.cpp
 
   void set_self_trigger_lo(bool ENABLE_TRIG, bool SYS_TRIG_OPTION,
                            bool RATE_ONLY, bool TRIG_SIGN, bool USE_SMA,
                            bool USE_COINCIDENCE, bool USE_FAST_COINCIDENCE,
                            unsigned int coinc_window,
-                           unsigned int mask, int device = 0);
+                           unsigned int mask, int device = 0); //DAQinstruction.cpp
 
   void set_self_trigger_hi(unsigned int coinc_pulse_width,
                            unsigned int asic_coincidence_min,
                            unsigned int channel_coincidence_min,
-                           unsigned int mask, int device = 0);
+                           unsigned int mask, int device = 0); //DAQinstruction.cpp
 
-  void set_self_trigger_mask(int mask, bool HILO, unsigned int board_mask, int device = 0);
+  void set_self_trigger_mask(int mask, bool HILO, unsigned int board_mask, int device = 0); //DAQinstruction.cpp
 
   //chip-level instructions
-  void set_pedestal_value(unsigned int PED_VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
+  void set_pedestal_value(unsigned int PED_VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31); //DAQinstruction.cpp
 
-  void set_dll_vdd(unsigned int VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
+  void set_dll_vdd(unsigned int VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31); //DAQinstruction.cpp
 
-  void set_trig_threshold(unsigned int TRIG_VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
+  void set_trig_threshold(unsigned int TRIG_VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31); //DAQinstruction.cpp
 
   void
-  set_ro_target_count(unsigned int TARGET_RO_COUNT, unsigned int mask, int device = 0, unsigned int psec_mask = 31);
+  set_ro_target_count(unsigned int TARGET_RO_COUNT, unsigned int mask, int device = 0, unsigned int psec_mask = 31); //DAQinstruction.cpp
 
   //manage PC interface
-  void set_usb_read_mode(unsigned int READ_MODE);
+  void set_usb_read_mode(unsigned int READ_MODE); //DAQinstruction.cpp
 
-  void set_usb_read_mode_slaveDevice(unsigned int READ_MODE);
+  void set_usb_read_mode_slaveDevice(unsigned int READ_MODE); //DAQinstruction.cpp
 
-  void manage_cc_fifo(bool VALUE);
+  void manage_cc_fifo(bool VALUE); //DAQinstruction.cpp
 
-  void manage_cc_fifo_slaveDevice(bool VALUE);
+  void manage_cc_fifo_slaveDevice(bool VALUE); //DAQinstruction.cpp
 
-  void system_card_trig_valid(bool valid);
+  void system_card_trig_valid(bool valid); //DAQinstruction.cpp
 
-  void system_slave_card_trig_valid(bool valid);
+  void system_slave_card_trig_valid(bool valid); //DAQinstruction.cpp
 
-  void hard_reset(bool DEVICE = false);
+  void hard_reset(bool DEVICE = false); //DAQinstruction.cpp
 
-  void usb_force_wakeup();
+  void usb_force_wakeup(); //DAQinstruction.cpp
 
-  void readACDC_RAM(int device, unsigned int mask);
+  void readACDC_RAM(int device, unsigned int mask); //DAQinstruction.cpp
 
-  void cleanup();
+  void cleanup(); //SuMo.cpp
 
-  void prep_sync();
+  void prep_sync(); //DAQinstruction.cpp
 
-  void make_sync();
+  void make_sync(); //DAQinstruction.cpp
 
   //send trigger over software
-  void software_trigger(unsigned int SOFT_TRIG_MASK, bool set_bin = false, unsigned int bin = 0);
+  void software_trigger(unsigned int SOFT_TRIG_MASK, bool set_bin = false, unsigned int bin = 0); //DAQinstruction.cpp
 
-  void software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK, bool set_bin = false, unsigned int bin = 0);
+  void software_trigger_slaveDevice(unsigned int SOFT_TRIG_MASK, bool set_bin = false, unsigned int bin = 0); //DAQinstruction.cpp
 
   //readout functions
-  int check_readout_mode();
+  int check_readout_mode(); //SuMo.cpp
 
-  int read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device = 0, int triGmode = 0);
+  int read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device = 0, int triGmode = 0); //GetSysPackets.cpp
 
-  int measure_rate(bool *AC_read_mask); //To be used in Automation function.
-  void adjust_thresh(int threshold, unsigned int board_number);
+  int measure_rate(bool *AC_read_mask); //SuMo.cpp //To be used in Automation function.
+  void adjust_thresh(int threshold, unsigned int board_number); //SuMo.cpp
 
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for additional retval handling: */
   int read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
-              bool sync = false, bool set_bin = false, unsigned int bin = 0);
+              bool sync = false, bool set_bin = false, unsigned int bin = 0); //GetAcdcPackets.cpp
 
-  void dump_data();
+  void dump_data(); //SuMo.cpp
 
   //int  get_AC_info(bool PRINT, int AC_adr);
   int *get_AC_info(bool PRINT, int frontEnd, bool PRINTALL = false, int count = 0, double time = 0.,
-                   double dateTime = 0., int evts = 0);         //parse meta-data from raw data stream
+                   double dateTime = 0., int evts = 0);   //form_meta_data.cpp //parse meta-data from raw data stream
 
   int generate_ped(
-          bool ENABLE_FILESAVE);              //generate pedestal calibration files for each active board (one per sample cell)
+          bool ENABLE_FILESAVE);  //makePedandLin.cpp            //generate pedestal calibration files for each active board (one per sample cell)
   int
-  make_count_to_voltage();                     //make count-to-voltage LUT for each active board (# active boards * 6 channels * 1536 cells * 4096 !!)
+  make_count_to_voltage();  //makePedandLin.cpp         //make count-to-voltage LUT for each active board (# active boards * 6 channels * 1536 cells * 4096 !!)
 
-  int load_ped();
+  int load_ped(); //loadPedandLin.cpp
 
-  int log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const char *log_filename);
+  int log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const char *log_filename); //dataIO.cpp
 
 
-  int check_active_boards(bool print);
+  int check_active_boards(bool print); //SuMo.cpp
 
-  int check_active_boards(int NUM);
+  int check_active_boards(int NUM); //SuMo.cpp
 
-  int check_active_boards_slaveDevice();
+  int check_active_boards_slaveDevice(); //SuMo.cpp
 
   bool DC_ACTIVE[numFrontBoards];           //TRUE if boards are connected and synced
   bool EVENT_FLAG[numFrontBoards];
@@ -152,20 +152,20 @@ public:
       usleep(sleep);
   }
 
-  bool fileExists(const std::string &filename);
+  bool fileExists(const std::string &filename); //SuMo.cpp
 
   unsigned int PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
 
 private:
-  void createUSBHandles();
+  void createUSBHandles(); //DAQinstruction.cpp
 
-  void closeUSBHandles();
+  void closeUSBHandles(); //DAQinstruction.cpp
 
-  int unwrap(int ASIC);
+  int unwrap(int ASIC); //SuMo.cpp
 
-  void unwrap_baseline(int *baseline, int ASIC);
+  void unwrap_baseline(int *baseline, int ASIC); //SuMo.cpp
 
-  void print_to_terminal(int k, int NUM_READS, int cc_event, int board_trig, double t);
+  void print_to_terminal(int k, int NUM_READS, int cc_event, int board_trig, double t); //dataIO.cpp
 
   struct cal_t {
     unsigned short raw_ped_data_array[AC_CHANNELS][psecSampleCells][num_ped_reads];
@@ -182,9 +182,9 @@ private:
   int metaData[psecSampleCells];
 
   int put_lut_on_heap(
-          bool *range); // cpu memory management when taking full count-to-voltage calibration scan
+          bool *range); //makePedandLin.cpp // cpu memory management when taking full count-to-voltage calibration scan
   void free_lut_from_heap(
-          bool *range); // cpu memory management when taking full count-to-voltage calibration scan
+          bool *range); //makePedandLin.cpp // cpu memory management when taking full count-to-voltage calibration scan
 
   float ***LUT_CELL;
   int ***LUT_CELL_COPY;
