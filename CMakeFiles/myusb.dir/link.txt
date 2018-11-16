@@ -1,0 +1,2 @@
+/usr/bin/ar qc bin/libmyusb.a  CMakeFiles/myusb.dir/lib/usb/stdUSBl.cpp.o CMakeFiles/myusb.dir/lib/usb/stdUSBl_Slave.cpp.o CMakeFiles/myusb.dir/lib/usb/usbResetDevice.C.o
+/usr/bin/ranlib bin/libmyusb.a

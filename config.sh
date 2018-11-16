@@ -5,9 +5,9 @@
 ./bin/setConfig -trig config/trigoff.config
 ./bin/setConfig -acdc config/ACDC.config
 sleep 1
-#./bin/takePed
+./bin/takePed
 #sleep 1
-#./bin/setConfig -trig config/trig-laserstand.config
+./bin/setConfig -trig config/trig.config
 
 # Read ACDC
 ./bin/readACDC

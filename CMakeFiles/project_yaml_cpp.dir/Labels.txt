@@ -1,0 +1,13 @@
+# Target labels
+ project_yaml_cpp
+# Source files and their labels
+/home/pi/test-acdcdaq-git/CMakeFiles/project_yaml_cpp
+/home/pi/test-acdcdaq-git/CMakeFiles/project_yaml_cpp.rule
+/home/pi/test-acdcdaq-git/CMakeFiles/project_yaml_cpp-complete.rule
+/home/pi/test-acdcdaq-git/yaml-cpp/src/project_yaml_cpp-stamp/project_yaml_cpp-install.rule
+/home/pi/test-acdcdaq-git/yaml-cpp/src/project_yaml_cpp-stamp/project_yaml_cpp-mkdir.rule
+/home/pi/test-acdcdaq-git/yaml-cpp/src/project_yaml_cpp-stamp/project_yaml_cpp-download.rule
+/home/pi/test-acdcdaq-git/yaml-cpp/src/project_yaml_cpp-stamp/project_yaml_cpp-update.rule
+/home/pi/test-acdcdaq-git/yaml-cpp/src/project_yaml_cpp-stamp/project_yaml_cpp-patch.rule
+/home/pi/test-acdcdaq-git/yaml-cpp/src/project_yaml_cpp-stamp/project_yaml_cpp-configure.rule
+/home/pi/test-acdcdaq-git/yaml-cpp/src/project_yaml_cpp-stamp/project_yaml_cpp-build.rule
