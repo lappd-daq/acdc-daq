@@ -7,24 +7,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(LIBRARY_SOURCE_DIR "${CMAKE_SOURCE_DIR}/lib")
-set(EXECUTABLE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
+set(LIBRARY_SOURCE_DIR ${CMAKE_SOURCE_DIR}/lib)
+set(EXECUTABLE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 
-include(ExternalProject)
-ExternalProject_Add(project_yaml_cpp
-        GIT_REPOSITORY "https://github.com/jbeder/yaml-cpp"
-        GIT_TAG "yaml-cpp-0.6.2"
-        INSTALL_COMMAND ""
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/yaml-cpp)
-ExternalProject_Get_Property(project_yaml_cpp source_dir)
-ExternalProject_Get_Property(project_yaml_cpp binary_dir)
 
-add_library(yaml-cpp SHARED IMPORTED)
-add_dependencies(yaml-cpp project_yaml_cpp)
-set_property(TARGET yaml-cpp PROPERTY IMPORTED_LOCATION ${binary_dir}/libyaml-cpp.a)
+include(prereqs.cmake)
+
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${source_dir}/include)
+
 
 add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/SuMo.cpp
@@ -35,22 +26,17 @@ add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/oscilloscope.cpp
         ${LIBRARY_SOURCE_DIR}/ScopePipe.cpp
         ${LIBRARY_SOURCE_DIR}/dataIO.cpp
-        ${LIBRARY_SOURCE_DIR}/config.cpp)
+        ${LIBRARY_SOURCE_DIR}/config.cpp
+        ${LIBRARY_SOURCE_DIR}/calibration/loadPedandLin.cpp
+        ${LIBRARY_SOURCE_DIR}/calibration/makePedandLin.cpp)
 
 add_library(myusb
         ${LIBRARY_SOURCE_DIR}/usb/stdUSBl.cpp
         ${LIBRARY_SOURCE_DIR}/usb/stdUSBl_Slave.cpp
         ${LIBRARY_SOURCE_DIR}/usb/usbResetDevice.C)
 
-add_library(calibration
-        ${LIBRARY_SOURCE_DIR}/calibration/loadPedandLin.cpp
-        ${LIBRARY_SOURCE_DIR}/calibration/makePedandLin.cpp)
-
-
 target_link_libraries(myusb PRIVATE usb)
-target_link_libraries(SuMo myusb calibration yaml-cpp)
-
-
+target_link_libraries(SuMo myusb ${YAML_CPP_LIBRARY})
 
 add_executable(Automated_selfTrig ${EXECUTABLE_SOURCE_DIR}/Automated_SelfTrig.cpp)
 add_executable(Automated_selfTrig_Cutoffs ${EXECUTABLE_SOURCE_DIR}/Automated_SelfTrig_Cutoffs.cpp)
@@ -89,3 +75,4 @@ target_link_libraries(setPed PUBLIC SuMo)
 target_link_libraries(setupLVDS PUBLIC SuMo)
 target_link_libraries(takePed PUBLIC SuMo)
 target_link_libraries(toggle_led PUBLIC SuMo)
+
