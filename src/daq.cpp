@@ -33,7 +33,8 @@ int main(int argc, char * argv[]) {
             }
         }
     }
-    s.to_csv(d, "../test.csv");
+    s.data_to_csv(d, "../test.csv");
+    s.meta_to_csv(d, "../test_meta.csv");
     return 0;
 }
 

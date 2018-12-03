@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 using namespace std;
 
 /*
@@ -104,16 +105,9 @@ SumoData SuMoInterface::getData() {
     bool all[numFrontBoards];
     for (int i = 0; i < numFrontBoards; i++){
         all[i] = true;
-        board_mask[i] = false;
     }
-
     sumo.load_ped();
 
-    int number_of_frontend_cards = 0;
-
-    for (int board = 0; board < numFrontBoards; board++) {
-        if (sumo.DC_ACTIVE[board]) number_of_frontend_cards++;
-    }
     SumoData data;
     int digs = 0;
     sumo.system_card_trig_valid(false);
@@ -131,28 +125,101 @@ SumoData SuMoInterface::getData() {
     int numBoards = sumo.read_AC(1, all, false);
     for (int board = 0; board < numFrontBoards; board++) {
         if(sumo.BOARDS_READOUT[board] && numBoards > 0) {
-            board_mask[board] = true;
             meta_tmp = sumo.get_AC_info(false, board, false, 0, 0, 0, events);
+            data.meta.emplace(board, map_metadata(meta_tmp));
+            map<int, vector<int>> ch_data;
             for (int ch = 0; ch < AC_CHANNELS; ch++) {
                 if (ch > 0 && ch % 6 == 0) psec_cnt++;
+                vector<int> trace;
                 for (int cell = 0; cell < psecSampleCells; cell++) {
-                    data.metaData[board][cell] = meta_tmp[cell];
                     sample = sumo.adcDat[board]->AC_RAW_DATA[psec_cnt][ch % 6 * 256 + cell];
                     sample -= sumo.PED_DATA[board][ch][cell];
-                    data.data[board][ch][cell] = sample;
+                    trace.push_back(sample);
                 }
+                ch_data.emplace(ch+1, trace);
             }
-
+            data.data.emplace(board, ch_data);
         }
     }
     return data;
+}
+
+/*
+ * Mother of all meta-maps. I want to incorporate this into the base meta parsing in the future (M Lucas)
+ */
+map<string, unsigned int> map_metadata(int meta_array[]) {
+    map<string, unsigned int> meta;
+    meta.emplace("count", meta_array[0]);
+    meta.emplace("aa", meta_array[1]);
+    meta.emplace("time", meta_array[2]);
+    meta.emplace("datetime", meta_array[3]);
+    meta.emplace("events", meta_array[4]);
+    meta.emplace("bin_count_rise", meta_array[7]);
+    meta.emplace("self_trig_settings_2", meta_array[8]);
+    meta.emplace("sys_coinc_width", meta_array[9]);
+    meta.emplace("coinc_num_chips", meta_array[10]);
+    meta.emplace("coinc_num_chans", meta_array[11]);
+    meta.emplace("self_trig_settings", meta_array[12]);
+    meta.emplace("trig_en", meta_array[13]);
+    meta.emplace("trig_wait_for_sys", meta_array[14]);
+    meta.emplace("trig_rate_only", meta_array[15]);
+    meta.emplace("trig_sign", meta_array[16]);
+    meta.emplace("use_sma_trig_en", meta_array[17]);
+    meta.emplace("use_coinc_settings", meta_array[18]);
+    meta.emplace("use_trig_valid_as_reset", meta_array[19]);
+    meta.emplace("coinc_window", meta_array[20]);
+    meta.emplace("reg_self_trig", meta_array[21]);
+    meta.emplace("counts_of_sys_no_local", meta_array[22]);
+    meta.emplace("sys_trig_count", meta_array[23]);
+    meta.emplace("resets_from_firmw", meta_array[24]);
+    meta.emplace("firmware_version", meta_array[25]);
+    meta.emplace("self_trig_mask", meta_array[26]);
+    meta.emplace("dig_timiestamp_lo", meta_array[27]);
+    meta.emplace("dig_timestamp_mid", meta_array[28]);
+    meta.emplace("dig_timestamp_hi", meta_array[29]);
+    meta.emplace("dig_event_count", meta_array[30]);
+    meta.emplace("event_count", meta_array[31]);
+    meta.emplace("timestamp_hi", meta_array[32]);
+    meta.emplace("timestamp_mid", meta_array[33]);
+    meta.emplace("timestamp_lo", meta_array[34]);
+    meta.emplace("CC_bin_count", meta_array[35]);
+    meta.emplace("CC_event_count", meta_array[36]);
+    meta.emplace("CC_timestamp_lo", meta_array[37]);
+    meta.emplace("CC_timestamp_mid", meta_array[38]);
+    meta.emplace("CC_timestamp_hi", meta_array[39]);
+    stringstream tmp;
+    for (int i = 0; i < numChipsOnBoard; i++) {
+        tmp << "RO_count_" << i;
+        meta.emplace(tmp.str(), meta_array[40+i]);
+        tmp.str("");
+        tmp << "RO_target_count_" << i;
+        meta.emplace(tmp.str(), meta_array[45+i]);
+        tmp.str("");
+        tmp << "vbias_" << i;
+        meta.emplace(tmp.str(), meta_array[50+i]);
+        tmp.str("");
+        tmp << "trigger_threshold_" << i;
+        meta.emplace(tmp.str(), meta_array[55+i]);
+        tmp.str("");
+        tmp << "RO_DAC_value_" << i;
+        meta.emplace(tmp.str(), meta_array[60+i]);
+        tmp.str();
+    }
+    for (int i = 0; i < AC_CHANNELS; i++) {
+        tmp << "self_trig_scalar_" << i;
+        meta.emplace(tmp.str(), meta_array[70+i]);
+    }
+    meta.emplace("time_from_valid_to_trig", meta_array[110]);
+    meta.emplace("firmware_reset_time", meta_array[111]);
+    meta.emplace("last_coinc_num_chans", meta_array[112]);
+    return meta;
 }
 
 void SuMoInterface::reset() {
     // TODO
 }
 
-void SuMoInterface::to_csv(vector<SumoData> data, string filename) {
+void SuMoInterface::data_to_csv(vector<SumoData> data, string filename) {
     string tmp;
     while (SuMo::fileExists(filename)) {
         cout << "File already exists, would you like to overwrite? [yN]" << endl;
@@ -176,22 +243,63 @@ void SuMoInterface::to_csv(vector<SumoData> data, string filename) {
         out << delim << i;
     }
     out << endl;
+    int board, ch;
     for (int event = 0; event < data.size(); event++) {
         SumoData datum = data[event];
-        for (int board = 0; board < numFrontBoards; board++) {
-            if (board_mask[board]) {
-                for (int ch = 0; ch < AC_CHANNELS; ch++) {
-                    out << event << delim << board << delim << ch + 1;
-                    for (int cell = 0; cell < psecSampleCells; cell++) {
-                        out << delim << datum.data[board][ch][cell];
+        for (const auto& boards: datum.data) {
+            board = boards.first;
+                for (const auto& channels: boards.second) {
+                    ch = channels.first;
+                    out << event << delim << board << delim << ch;
+                    for (int cell : channels.second) {
+                        out << delim << cell;
                     }
                     out << endl;
                 }
-            }
+
         }
     }
 }
 
+void SuMoInterface::meta_to_csv(vector<SumoData> data, string filename) {
+    string tmp;
+    while (SuMo::fileExists(filename)) {
+        cout << "File already exists, would you like to overwrite? [yN]" << endl;
+        getline(cin, tmp);
+        if (tmp == "y") {
+            break;
+        } else {
+            cout << "Enter new filename: ";
+            getline(cin, tmp);
+            filename = tmp;
+        }
+    }
+
+    ofstream out;
+    out.open(filename, ios::trunc);
+
+    char delim = ',';
+    int board;
+    for (int event = 0; event < data.size(); event++) {
+        SumoData datum = data[event];
+        for (const auto& boards : datum.meta) {
+            if (event == 0) {
+                out << "Event" << delim << "Board";
+                for (const auto& meta : boards.second) {
+                    out << delim << meta.first;
+                }
+                out << endl;
+            }
+            board = boards.first;
+            out << event << delim << board;
+            for (const auto& meta : boards.second) {
+                out << delim << meta.second;
+            }
+            out << endl;
+        }
+    }
+
+}
 
 
 

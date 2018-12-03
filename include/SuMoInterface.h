@@ -9,11 +9,11 @@
 
 class SumoData {
 public:
-    int metaData[numFrontBoards][psecSampleCells];
-    int data[numFrontBoards][AC_CHANNELS][psecSampleCells];
+    std::map<int, std::map<std::string, unsigned int>> meta;
+    std::map<int, std::map<int, std::vector<int>>> data;
 };
 
-
+std::map<std::string, unsigned int> map_metadata(int meta_array[]);
 
 class SuMoInterface {
 public:
@@ -25,7 +25,8 @@ public:
     bool hasTriggered(bool force=false);
     SumoData getData();
     void reset();
-    void to_csv(std::vector<SumoData> data, std::string filename);
+    void data_to_csv(std::vector<SumoData> data, std::string filename);
+    void meta_to_csv(std::vector<SumoData> data, std::string filename);
 protected:
     SuMo sumo;
     int last_trigger;
