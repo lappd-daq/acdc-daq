@@ -28,7 +28,7 @@ add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/dataIO.cpp
         ${LIBRARY_SOURCE_DIR}/config.cpp
         ${LIBRARY_SOURCE_DIR}/calibration/loadPedandLin.cpp
-        ${LIBRARY_SOURCE_DIR}/calibration/makePedandLin.cpp)
+        ${LIBRARY_SOURCE_DIR}/calibration/makePedandLin.cpp lib/SuMoInterface.cpp lib/SuMoInterface.h)
 
 add_library(myusb
         ${LIBRARY_SOURCE_DIR}/usb/stdUSBl.cpp
