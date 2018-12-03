@@ -125,11 +125,7 @@ int SuMo::check_active_boards(int NUM){
 bool SuMo::fileExists(const string& filename)
 {
     struct stat buf;
-    if (stat(filename.c_str(), &buf) != -1)
-    {
-        return true;
-    }
-    return false;
+    return (stat(filename.c_str(), &buf) == 0);
 }
 int SuMo::unwrap(int ASIC){
   int last_sampling_bin = adcDat[ASIC]->bin_count_rise;

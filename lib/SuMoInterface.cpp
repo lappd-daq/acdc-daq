@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include <iostream>
-#include "Timer.h"
+#include <fstream>
 using namespace std;
 
 /*
@@ -24,7 +24,7 @@ void SuMoInterface::configure() {
  */
 void SuMoInterface::configure(string filename, bool verbose) {
     // Check if file exists
-    if (!sumo.fileExists(filename)) {
+    if (!SuMo::fileExists(filename)) {
         throw invalid_argument("filename does not point to a valid file");
     }
 
@@ -59,49 +59,61 @@ void SuMoInterface::getStatus() {
         sumo.read_CC(true, true, 1, 0);
     }
 
-    SuMo.sys_wait(1000);
+    SuMo::sys_wait(1000);
     sumo.dump_data();
 }
 
 void SuMoInterface::prepare() {
+    int num_checks = 5;
+    if (sumo.check_active_boards(num_checks)) {
+        throw runtime_error("Could not initialize boards to get status");
+    }
+    sumo.set_usb_read_mode(0);
+    sumo.read_CC(false, false, 100);
+    board_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
+    last_trigger = board_trigger;
+    is_prepared = true;
     sumo.set_usb_read_mode(0);
     sumo.manage_cc_fifo(true);
-    sumo.system_card_trig_valid(false);
-    SuMo.sys_wait(100);
-    sumo.prep_sync();
-    is_prepared = true;
 }
 
-bool SuMoInterface::hasTriggered() {
-    if (!is_prepared) {
-        throw runtime_error("Must run SuMoInterface::prepare before any triggering");
-    }
-    sumo.system_card_trig_valid(true);
-    sumo.make_sync();
-    last_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
-    for (int i = 0; i < numFrontBoards; i++) {
-        board_mask[i] = true;
-    }
-    sumo.read_CC(false, false, 100);
-    int board_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
-    if (board_trigger != last_trigger) {
-        last_trigger = board_trigger;
-        return true;
+bool SuMoInterface::hasTriggered(bool force) {
+    if (force) {
+        sumo.prep_sync();
+        sumo.software_trigger(15);
     } else {
-        return false;
+        sumo.system_card_trig_valid(false);
+        sumo.prep_sync();
+        sumo.system_card_trig_valid(true);
     }
-}
-
-void SuMoInterface::forceTrigger() {
-    if (!is_prepared) {
-        throw runtime_error("Must run SuMoInterface::prepare before any triggering");
-    }
-    sumo.software_trigger((unsigned int) 15);
     sumo.make_sync();
-    last_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
+    SuMo::sys_wait(6000);
+    int num_steps;
+    while(board_trigger == last_trigger) {
+        sumo.read_CC(false, false, 100);
+        board_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
+        if (num_steps++ > 100) {
+            return true;
+        }
+    }
+
+    return (board_trigger != last_trigger);
 }
 
 SumoData SuMoInterface::getData() {
+    bool all[numFrontBoards];
+    for (int i = 0; i < numFrontBoards; i++){
+        all[i] = true;
+        board_mask[i] = false;
+    }
+
+    sumo.load_ped();
+
+    int number_of_frontend_cards = 0;
+
+    for (int board = 0; board < numFrontBoards; board++) {
+        if (sumo.DC_ACTIVE[board]) number_of_frontend_cards++;
+    }
     SumoData data;
     int digs = 0;
     sumo.system_card_trig_valid(false);
@@ -116,9 +128,10 @@ SumoData SuMoInterface::getData() {
     int *meta_tmp;
     short sample;
     int psec_cnt = 0;
-    int numBoards = sumo.read_AC(1, board_mask, false);
+    int numBoards = sumo.read_AC(1, all, false);
     for (int board = 0; board < numFrontBoards; board++) {
         if(sumo.BOARDS_READOUT[board] && numBoards > 0) {
+            board_mask[board] = true;
             meta_tmp = sumo.get_AC_info(false, board, false, 0, 0, 0, events);
             for (int ch = 0; ch < AC_CHANNELS; ch++) {
                 if (ch > 0 && ch % 6 == 0) psec_cnt++;
@@ -126,7 +139,7 @@ SumoData SuMoInterface::getData() {
                     data.metaData[board][cell] = meta_tmp[cell];
                     sample = sumo.adcDat[board]->AC_RAW_DATA[psec_cnt][ch % 6 * 256 + cell];
                     sample -= sumo.PED_DATA[board][ch][cell];
-                    data.data[board][ch][cell] = (unsigned int) sample;
+                    data.data[board][ch][cell] = sample;
                 }
             }
 
@@ -139,6 +152,45 @@ void SuMoInterface::reset() {
     // TODO
 }
 
+void SuMoInterface::to_csv(vector<SumoData> data, string filename) {
+    string tmp;
+    while (SuMo::fileExists(filename)) {
+        cout << "File already exists, would you like to overwrite? [yN]" << endl;
+        getline(cin, tmp);
+        if (tmp == "y") {
+            break;
+        } else {
+            cout << "Enter new filename: ";
+            getline(cin, tmp);
+            filename = tmp;
+        }
+    }
+
+    ofstream out;
+    out.open(filename, ios::trunc);
+
+    /* Create header */
+    char delim = ',';
+    out << "Event" << delim << "Board" << delim << "Ch";
+    for (int i = 0; i < psecSampleCells; i++) {
+        out << delim << i;
+    }
+    out << endl;
+    for (int event = 0; event < data.size(); event++) {
+        SumoData datum = data[event];
+        for (int board = 0; board < numFrontBoards; board++) {
+            if (board_mask[board]) {
+                for (int ch = 0; ch < AC_CHANNELS; ch++) {
+                    out << event << delim << board << delim << ch + 1;
+                    for (int cell = 0; cell < psecSampleCells; cell++) {
+                        out << delim << datum.data[board][ch][cell];
+                    }
+                    out << endl;
+                }
+            }
+        }
+    }
+}
 
 
 

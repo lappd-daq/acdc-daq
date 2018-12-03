@@ -152,7 +152,7 @@ public:
       usleep(sleep);
   }
 
-  bool fileExists(const std::string &filename);
+  static bool fileExists(const std::string &filename);
 
   unsigned int PED_DATA[numFrontBoards][AC_CHANNELS][psecSampleCells];
 
