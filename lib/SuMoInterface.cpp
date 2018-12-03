@@ -1,7 +1,6 @@
 #include "SuMoInterface.h"
 #include "config.h"
 #include <stdexcept>
-#include <sys/stat.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -89,7 +88,7 @@ bool SuMoInterface::hasTriggered(bool force) {
     }
     sumo.make_sync();
     SuMo::sys_wait(6000);
-    int num_steps;
+    int num_steps = 0;
     while(board_trigger == last_trigger) {
         sumo.read_CC(false, false, 100);
         board_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
