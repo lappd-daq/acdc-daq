@@ -21,7 +21,6 @@ public:
     void configure(std::string filename, bool verbose=false);
     void getStatus();
     void calibrate();
-    void prepare();
     bool hasTriggered(bool force=false);
     SumoData getData();
     void reset();
@@ -29,10 +28,6 @@ public:
     void meta_to_csv(std::vector<SumoData> data, std::string filename);
 protected:
     SuMo sumo;
-    int last_trigger;
-    int board_trigger;
-    bool is_prepared = false;
-    bool board_mask[numFrontBoards];
 };
 
 

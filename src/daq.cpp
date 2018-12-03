@@ -7,7 +7,7 @@ using namespace std;
 int main(int argc, char * argv[]) {
     int max_events = 10;
     if (argc == 2) {
-        max_events = std::stoi(argv[1]);
+        max_events = stoi(argv[1]);
     }
 
     SuMoInterface s;
@@ -15,7 +15,6 @@ int main(int argc, char * argv[]) {
 //    s.configure();
     s.calibrate();
     s.getStatus();
-    s.prepare();
     vector<SumoData> d;
     Timer timer = Timer();
     timer.start();
@@ -27,9 +26,8 @@ int main(int argc, char * argv[]) {
         if (s.hasTriggered()) {
             try {
                 d.push_back(s.getData());
-                s.prepare();
-            } catch (std::runtime_error) {
-                cout << "Invalid read" << endl;
+            } catch (runtime_error) {
+                cout << "Invalid readout. Data will be dumped." << endl;
             }
         }
     }

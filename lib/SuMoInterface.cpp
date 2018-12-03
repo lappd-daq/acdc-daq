@@ -37,6 +37,9 @@ void SuMoInterface::configure(string filename, bool verbose) {
     write_config_to_hardware(sumo, true, true);
 }
 
+/*
+ * Does pedestal subtraction
+ */
 void SuMoInterface::calibrate() {
     int num_checks = 10;
     if (sumo.check_active_boards(num_checks)) {
@@ -47,6 +50,9 @@ void SuMoInterface::calibrate() {
     sumo.generate_ped(true);
 }
 
+/*
+ * Prints the ACDC status to cout
+ */
 void SuMoInterface::getStatus() {
     int num_checks = 3;
     if (sumo.check_active_boards(num_checks)) {
@@ -63,21 +69,19 @@ void SuMoInterface::getStatus() {
     sumo.dump_data();
 }
 
-void SuMoInterface::prepare() {
+
+bool SuMoInterface::hasTriggered(bool force) {
     int num_checks = 5;
     if (sumo.check_active_boards(num_checks)) {
         throw runtime_error("Could not initialize boards to get status");
     }
     sumo.set_usb_read_mode(0);
     sumo.read_CC(false, false, 100);
-    board_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
-    last_trigger = board_trigger;
+    int board_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
+    int last_trigger = board_trigger;
     is_prepared = true;
     sumo.set_usb_read_mode(0);
     sumo.manage_cc_fifo(true);
-}
-
-bool SuMoInterface::hasTriggered(bool force) {
     if (force) {
         sumo.prep_sync();
         sumo.software_trigger(15);
@@ -221,7 +225,7 @@ void SuMoInterface::reset() {
 void SuMoInterface::data_to_csv(vector<SumoData> data, string filename) {
     string tmp;
     while (SuMo::fileExists(filename)) {
-        cout << "File already exists, would you like to overwrite? [yN]" << endl;
+        cout << "'" << filename << "' already exists, would you like to overwrite? [yN]: ";
         getline(cin, tmp);
         if (tmp == "y") {
             break;
@@ -263,7 +267,7 @@ void SuMoInterface::data_to_csv(vector<SumoData> data, string filename) {
 void SuMoInterface::meta_to_csv(vector<SumoData> data, string filename) {
     string tmp;
     while (SuMo::fileExists(filename)) {
-        cout << "File already exists, would you like to overwrite? [yN]" << endl;
+        cout << "'" << filename << "' already exists, would you like to overwrite? [yN]: ";
         getline(cin, tmp);
         if (tmp == "y") {
             break;
