@@ -1,5 +1,6 @@
 # This config was written for ISU's test bench to use one board to hardware trigger on a rising pulse
 # for more details on these configuration files, see the README and the example document
+led_enable: on
 acdc_settings:
   pedestal:
     1:

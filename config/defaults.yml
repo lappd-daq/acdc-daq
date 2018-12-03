@@ -4,6 +4,7 @@
 #
 # An idea of the usage of this would be the basis for any other config, then delete the
 # settings you don't need to change
+led_enable: on
 acdc_settings:
   pedestal:
     0:

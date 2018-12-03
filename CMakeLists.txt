@@ -19,6 +19,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/SuMo.cpp
+        ${LIBRARY_SOURCE_DIR}/SuMoInterface.cpp
         ${LIBRARY_SOURCE_DIR}/DAQinstruction.cpp
         ${LIBRARY_SOURCE_DIR}/form_meta_data.cpp
         ${LIBRARY_SOURCE_DIR}/GetAcdcPackets.cpp
@@ -28,7 +29,7 @@ add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/dataIO.cpp
         ${LIBRARY_SOURCE_DIR}/config.cpp
         ${LIBRARY_SOURCE_DIR}/calibration/loadPedandLin.cpp
-        ${LIBRARY_SOURCE_DIR}/calibration/makePedandLin.cpp lib/SuMoInterface.cpp lib/SuMoInterface.h)
+        ${LIBRARY_SOURCE_DIR}/calibration/makePedandLin.cpp lib/SuMoInterface.cpp include/SuMoInterface.h)
 
 add_library(myusb
         ${LIBRARY_SOURCE_DIR}/usb/stdUSBl.cpp
@@ -41,6 +42,7 @@ target_link_libraries(SuMo myusb ${YAML_CPP_LIBRARY})
 add_executable(Automated_selfTrig ${EXECUTABLE_SOURCE_DIR}/Automated_SelfTrig.cpp)
 add_executable(Automated_selfTrig_Cutoffs ${EXECUTABLE_SOURCE_DIR}/Automated_SelfTrig_Cutoffs.cpp)
 add_executable(Automation ${EXECUTABLE_SOURCE_DIR}/Automation.cpp)
+add_executable(daq ${EXECUTABLE_SOURCE_DIR}/daq.cpp)
 add_executable(ledEn ${EXECUTABLE_SOURCE_DIR}/ledEn.cpp)
 add_executable(calEn ${EXECUTABLE_SOURCE_DIR}/calEn.cpp)
 add_executable(dumpData ${EXECUTABLE_SOURCE_DIR}/dumpData.cpp)
@@ -60,6 +62,7 @@ add_executable(toggle_led ${EXECUTABLE_SOURCE_DIR}/toggle_led.cpp)
 target_link_libraries(Automated_selfTrig PUBLIC SuMo)
 target_link_libraries(Automated_selfTrig_Cutoffs PUBLIC SuMo)
 target_link_libraries(Automation PUBLIC SuMo)
+target_link_libraries(daq PUBLIC SuMo)
 target_link_libraries(ledEn PUBLIC SuMo)
 target_link_libraries(calEn PUBLIC SuMo)
 target_link_libraries(dumpData PUBLIC SuMo)

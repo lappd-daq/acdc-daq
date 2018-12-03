@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
-#include <math.h>
+#include <cmath>
 #include "yaml-cpp/yaml.h"
 
 using namespace std;
@@ -21,6 +21,7 @@ bool hrdw_trig;
 bool hrdw_sl_trig;
 unsigned int hrdw_trig_src;
 unsigned int hrdw_sl_trig_src;
+bool led_en;
 
 // programmability for 'wait_for_sys' self-trig coincidence mode
 unsigned int coinc_window;
@@ -41,10 +42,10 @@ void set_default_values() {
         trig_mask[i] = 0x00000000;  // 32 bit
         trig_enable[i] = false;
         sma_trig_on_fe[i] = false;
-        trig_sign[i] = 0;
+        trig_sign[i] = false;
 
     }
-
+    led_en = true;
     wait_for_sys = false;
     rate_only = false;
     hrdw_trig = false;
@@ -65,6 +66,7 @@ int write_config_to_hardware(SuMo &Sumo, bool WRITETRIG, bool WRITEACDC) {
 
     cout << "__________________________" << endl;
 
+    Sumo.toggle_LED(led_en);
     Sumo.set_usb_read_mode(16);
 
     int mode = Sumo.check_readout_mode();
@@ -81,7 +83,7 @@ int write_config_to_hardware(SuMo &Sumo, bool WRITETRIG, bool WRITEACDC) {
             if (i >= 4) device = 1;
 
             if (jj == 1) {
-                if (Sumo.DC_ACTIVE[i] == false) {
+                if (!Sumo.DC_ACTIVE[i]) {
                     cout << "no board = " << i << " addressed at device "
                          << device << ":0x" << hex << boardAddress << endl;
                     //cout << "__________________________" << std::dec << endl;
@@ -94,8 +96,8 @@ int write_config_to_hardware(SuMo &Sumo, bool WRITETRIG, bool WRITEACDC) {
 
             if (WRITETRIG) {
                 /* send trig mask to boards in 2 sets of 16 bit words */
-                Sumo.set_self_trigger_mask(0x00007FFF & trig_mask[i], 0, boardAddress, device);
-                Sumo.set_self_trigger_mask((0x3FFF8000 & trig_mask[i]) >> 15, 1, boardAddress, device);
+                Sumo.set_self_trigger_mask(0x00007FFF & trig_mask[i], false, boardAddress, device);
+                Sumo.set_self_trigger_mask((0x3FFF8000 & trig_mask[i]) >> 15, true, boardAddress, device);
 
 
                 Sumo.set_self_trigger_lo(trig_enable[i],
@@ -165,6 +167,9 @@ int parse_setup_file(const char *file, bool verbose) {
     if (config["trigger_settings"]) {
         retval = parse_trig_setup_yaml(config["trigger_settings"], verbose);
 
+    }
+    if (config["led_enable"]) {
+        led_en = config["led_enable"].as<bool>();
     }
     return retval;
 }

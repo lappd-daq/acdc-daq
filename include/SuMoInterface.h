@@ -1,9 +1,17 @@
 #pragma once
 
 #include <string>
+#include <map>
 
 #include "SuMo.h"
 #include "Packet.h"
+
+class SumoData {
+public:
+    int metaData[numFrontBoards][psecSampleCells];
+    int data[numFrontBoards][AC_CHANNELS][psecSampleCells];
+
+};
 
 class SuMoInterface {
 public:
@@ -14,12 +22,15 @@ public:
     void prepare();
     bool hasTriggered();
     void forceTrigger();
-    packet_t getData();
+    SumoData getData();
     void reset();
 protected:
     SuMo sumo;
 private:
     int last_trigger;
     bool is_prepared = false;
+    bool board_mask[numFrontBoards];
 };
+
+
 
