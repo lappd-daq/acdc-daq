@@ -73,13 +73,12 @@ void SuMoInterface::getStatus() {
 bool SuMoInterface::hasTriggered(bool force) {
     int num_checks = 5;
     if (sumo.check_active_boards(num_checks)) {
-        throw runtime_error("Could not initialize boards to get status");
+        throw runtime_error("Could not initialize boards to ask for trigger");
     }
     sumo.set_usb_read_mode(0);
     sumo.read_CC(false, false, 100);
     int board_trigger = sumo.CC_EVENT_COUNT_FROMCC0;
     int last_trigger = board_trigger;
-    is_prepared = true;
     sumo.set_usb_read_mode(0);
     sumo.manage_cc_fifo(true);
     if (force) {
