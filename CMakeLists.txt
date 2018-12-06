@@ -8,11 +8,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+
 set(LIBRARY_SOURCE_DIR ${CMAKE_SOURCE_DIR}/lib)
 set(EXECUTABLE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 
 option(LIBRARY_ONLY "Library only" OFF)
 
+message(STATUS "${CMAKE_PREFIX_PATH}")
+find_package(PkgConfig)
+pkg_check_modules(libusb REQUIRED libusb)
 
 include(yamlcpp)
 
@@ -39,7 +43,7 @@ add_library(myusb
         ${LIBRARY_SOURCE_DIR}/usb/stdUSBl_Slave.cpp
         ${LIBRARY_SOURCE_DIR}/usb/usbResetDevice.C)
 
-target_link_libraries(myusb PRIVATE usb)
+target_link_libraries(myusb ${libusb_LIBRARIES})
 target_link_libraries(SuMo myusb ${YAML_CPP_LIBRARY})
 
 if (NOT ${LIBRARY_ONLY})
