@@ -43,8 +43,8 @@ add_library(myusb
         ${LIBRARY_SOURCE_DIR}/usb/stdUSBl_Slave.cpp
         ${LIBRARY_SOURCE_DIR}/usb/usbResetDevice.C)
 
-target_link_libraries(myusb PUBLIC ${libusb_LIBRARIES})
-target_link_libraries(SuMo PUBLIC myusb ${YAML_CPP_LIBRARY})
+target_link_libraries(myusb PRIVATE ${libusb_LIBRARIES})
+target_link_libraries(SuMo PRIVATE myusb ${YAML_CPP_LIBRARY})
 
 if (NOT ${LIBRARY_ONLY})
     add_executable(Automated_selfTrig ${EXECUTABLE_SOURCE_DIR}/Automated_SelfTrig.cpp)
