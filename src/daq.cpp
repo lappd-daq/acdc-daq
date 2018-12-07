@@ -11,7 +11,7 @@ int main(int argc, char * argv[]) {
     }
 
     SuMoInterface s;
-    s.configure("../config/rising_pulse.yml");
+    s.configure("/home/lappd/dev/acdc-daq/config/rising_pulse.yml");
 //    s.configure();
     s.calibrate();
     s.getStatus();
