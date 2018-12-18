@@ -68,7 +68,7 @@ bool stdUSB::createHandles(int num) {
         cout << "Failed to open device. handle=" << stdHandle << endl;
         return FAILED;
     }
-     
+
     retval = usb_set_configuration(stdHandle, USBFX2_CNFNO);
 
     if (retval != 0) {

@@ -13,7 +13,7 @@ ExternalProject_Add(yamlcpp
 
 ExternalProject_Get_Property(yamlcpp source_dir)
 ExternalProject_Get_Property(yamlcpp binary_dir)
-set(YAML_CPP_INCLUDE_DIRS ${source_dir}/include)
+include_directories(${source_dir}/include)
 set(YAML_CPP_LIBRARY yaml-cpp)
 add_library(${YAML_CPP_LIBRARY} STATIC IMPORTED)
 set_target_properties(${YAML_CPP_LIBRARY} PROPERTIES

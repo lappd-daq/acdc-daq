@@ -12,7 +12,6 @@ set(EXECUTABLE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 
 option(LIBRARY_ONLY "Library only" OFF)
 
-message(STATUS "${CMAKE_PREFIX_PATH}")
 find_package(PkgConfig)
 pkg_check_modules(libusb REQUIRED libusb)
 
@@ -22,7 +21,7 @@ include(yamlcpp)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 
-add_library(SuMo STATIC
+add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/SuMo.cpp
         ${LIBRARY_SOURCE_DIR}/SuMoInterface.cpp
         ${LIBRARY_SOURCE_DIR}/DAQinstruction.cpp
@@ -35,13 +34,25 @@ add_library(SuMo STATIC
         ${LIBRARY_SOURCE_DIR}/config.cpp
         ${LIBRARY_SOURCE_DIR}/calibration/loadPedandLin.cpp
         ${LIBRARY_SOURCE_DIR}/calibration/makePedandLin.cpp
-        ${LIBRARY_SOURCE_DIR}/SuMoInterface.cpp
+        ${LIBRARY_SOURCE_DIR}/SuMoInterface.cpp)
+
+add_library(myusb
         ${LIBRARY_SOURCE_DIR}/usb/stdUSBl.cpp
         ${LIBRARY_SOURCE_DIR}/usb/stdUSBl_Slave.cpp
         ${LIBRARY_SOURCE_DIR}/usb/usbResetDevice.C)
 
-target_link_libraries(SuMo PRIVATE ${libusb_LIBRARIES} ${YAML_CPP_LIBRARY})
-target_include_directories(SuMo PRIVATE ${libusb_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
+target_link_libraries(myusb ${libusb_LIBRARIES})
+target_include_directories(myusb PRIVATE ${libusb_INCLUDE_DIRS})
+target_link_libraries(SuMo myusb ${YAML_CPP_LIBRARY})
+
+add_custom_target(combined
+        COMMAND libtool -static -o ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcombined.a $<TARGET_FILE:SuMo> $<TARGET_FILE:myusb> $<TARGET_FILE:${YAML_CPP_LIBRARY}
+        working_directory ${CMAKE_BINARY_DIR}
+        DEPENDS SuMo myusb ${YAML_CPP_LIBRARY} ${libusb_LIBRARIES})
+
+add_library(c STATIC IMPORTED)
+add_dependencies(c combined)
+
 
 if (NOT ${LIBRARY_ONLY})
     add_executable(Automated_selfTrig ${EXECUTABLE_SOURCE_DIR}/Automated_SelfTrig.cpp)

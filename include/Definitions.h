@@ -13,14 +13,4 @@
 #define num_ped_reads         50       // number of pedestal readouts to generate ped.
 
 #define WRAP_CONSTANT         230      // constant for PSEC4 wraparound correction
-
-#define usbPacketStart        0x1234   // packet header word
-#define usbPacketEnd          0x4321   // packet footer word
-#define dataPacketStart       0xF005   // packet data start
-#define adcPacketEnd          0xBA11   // packet end-of-waveform
-#define dataPacketEnd         0xFACE   // packet end-of-AC/DC-data
-
-#define VID1                  0x6672
-#define VID2                  0x6672
-#define PID1                  0x2920
-#define PID2                  0x2921
+#define USE_ACC               true
