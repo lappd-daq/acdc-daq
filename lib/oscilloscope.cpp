@@ -8,9 +8,9 @@
 #include "Packet.h"
 #include "Timer.h"
 
-static int scopeRefresh = 30000;
+static int scopeRefresh = 2000;
 const  int SCOPE_AUTOSCALE = 200;
-const  int SCOPE_TIMEOUT   = 40;
+const  int SCOPE_TIMEOUT   = 4000;
 
 using namespace std;
 
@@ -43,7 +43,13 @@ int oscilloscope(SuMo& Sumo, int trig_mode, int numFrames, int boardID, int rang
       
     if(max_pdat < SCOPE_AUTOSCALE) myPipe.send_cmd("set zrange [-200:200]");
     else                           myPipe.send_cmd("set auto z");
-  
+ 
+    //force range for the moment
+    myPipe.send_cmd("set zrange [-1800:100]");
+    //set's view so that "y" is amplitude and
+    //"x" is sample, projects out the channel axis
+    //myPipe.send_cmd("set view 90, 90, 1, 1.5");
+
     plot_scope(myPipe, pdat, range); 
     frameCount++;
   }

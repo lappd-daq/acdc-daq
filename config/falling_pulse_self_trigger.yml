@@ -2,22 +2,22 @@
 # for more details on these configuration files, see the README and the example document
 acdc_settings:
   pedestal:
-    1:
+    0:
       all: 2000
 
   threshold:
-    1:
-      all: 1850
+    0:
+      all: 1800
 
 trigger_settings:
   trig_mask:
-    1: 0xFFFFFFFF
+    0: 0xFFFFFFFF
 
   trig_enable:
-    1: on
+    0: on
 
   trig_sign:
-    1: falling
+    0: falling
 
   hrdw_trig: on
   hrdw_trig_src: 0
