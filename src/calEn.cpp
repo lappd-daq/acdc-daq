@@ -14,7 +14,7 @@
 const int NUM_ARGS =      3;
 const char* filename =     "calEn";
 const char* description =  "turn cal switch on/off on ACDC card";
-const char* arg_desc = "<on/off> <board> [<hex channel code>]"
+const char* arg_desc = "<on/off> <board> [<hex channel code>]";
 
 using namespace std;
 
