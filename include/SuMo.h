@@ -46,7 +46,7 @@ public:
   //front-end card specific instructions
   void toggle_LED(bool EN); //DAQinstruction.cpp
 
-  void toggle_CAL(bool EN, int device = 0); //DAQinstruction.cpp
+  void toggle_CAL(bool EN, int device = 0, unsigned int channels=0x7FFF); //DAQinstruction.cpp
 
   void set_self_trigger_lo(bool ENABLE_TRIG, bool SYS_TRIG_OPTION,
                            bool RATE_ONLY, bool TRIG_SIGN, bool USE_SMA,

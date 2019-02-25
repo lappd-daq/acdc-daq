@@ -109,12 +109,16 @@ void SuMo::readACDC_RAM(int device,unsigned int boardAdr)
 /*
  *
  */
-void SuMo::toggle_CAL(bool EN,  int device)
+
+//channels is a 0x7FFF type hex key that enables
+//selected channels for calibration input. The lines
+//are arranged in pairs, such that 0x0001 will enable
+//channels 1 and 2 on chip A. 
+void SuMo::toggle_CAL(bool EN,  int device, unsigned int channels)
 {
   createUSBHandles();
  
   unsigned int send_word = 0x00020000;
-  unsigned int channels  = 0x7FFF; 
   unsigned int boardAdr  = 15;
   //cout << "HELLO";
   if(EN != false){							
