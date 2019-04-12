@@ -1,4 +1,4 @@
-
+run_blocks.py
 # Created by https://www.gitignore.io/api/c++,python
 
 ### C++ ###
@@ -137,8 +137,14 @@ ENV/
 
 # Data files
 *.acdc.dat
+*.acdc
+*.meta
+*.ped
 data
 
+#config files
+config
+set-config*
 #bin directory
 bin
 
