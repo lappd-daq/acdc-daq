@@ -173,7 +173,10 @@ $ ./bin/Automated_SelfTrig_Cutoffs <pedestal> <board> <amp> <freq> <filename>
 13. trig_wait_for_sys 			 0
 14. trig_rate_only 			 0
 15. trig_sign 			 0
-16. use_sma_trig_input 			 0
+16. use_sma_trig_input 			 
+  -Example: 0, 1
+  -Range: 0-1
+  -Description: Are you using sma as a trigger input in any way
 17. use_coincidence_settings 			 0
 18. use_trig_valid_as_reset 			 0
 19. coinc_window 			 0

@@ -54,8 +54,8 @@ int *SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
 
     int gg = metaData[8] = adcDat[aa]->self_trig_settings_2 = AC_INFO[0][9] >> 4;
     metaData[9] = adcDat[aa]->sys_coincidence_width = adcDat[aa]->self_trig_settings_2 & 0x007;
-    metaData[10] = adcDat[aa]->coincidence_num_chips = adcDat[aa]->self_trig_settings_2 & 0x038;
-    metaData[11] = adcDat[aa]->coincidence_num_chans = adcDat[aa]->self_trig_settings_2 & 0xFC0;
+    metaData[10] = adcDat[aa]->coincidence_num_chips = (adcDat[aa]->self_trig_settings_2 & 0x038) >> 3;
+    metaData[11] = adcDat[aa]->coincidence_num_chans = (adcDat[aa]->self_trig_settings_2 & 0xFC0) >> 6;
 
     int hh = metaData[12] = adcDat[aa]->self_trig_settings = AC_INFO[1][9] & 0x3FF;
     int ii = metaData[13] = adcDat[aa]->trig_en = adcDat[aa]->self_trig_settings & 0x1;
@@ -68,7 +68,7 @@ int *SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
     metaData[20] = adcDat[aa]->coincidence_window = adcDat[aa]->self_trig_settings >> 7;
     int ad = metaData[112] = adcDat[aa]->last_coincidence_num_chans = AC_INFO[1][9] & 0xF800;
 
-    int ac = metaData[111] = adcDat[aa]->firmware_reset_time = AC_INFO[2][9] | AC_INFO[3][10] << 16;
+    int ac = metaData[111] = adcDat[aa]->firmware_reset_time = AC_INFO[2][9] | AC_INFO[3][9] << 16;
     int mm = metaData[21] = adcDat[aa]->reg_self_trig = AC_INFO[0][10] | AC_INFO[1][10] << 16;
     int nn = metaData[22] = adcDat[aa]->counts_of_sys_no_local = AC_INFO[2][10] | AC_INFO[3][10] << 16;
     int oo = metaData[23] = adcDat[aa]->sys_trig_count = AC_INFO[4][10];
