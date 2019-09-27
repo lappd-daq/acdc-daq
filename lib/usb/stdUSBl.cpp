@@ -183,7 +183,22 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     buff[1] = (data >> 8);
     buff[2] = (data >> 16);
     buff[3] = (data >> 24);
-
+   
+   //for extreme verbose listening on usb line 
+  /* 
+    int bin;
+    int num = data;
+    int count = 0;
+    while (num > 0)
+    {
+	    count++;
+	    bin = num % 2;
+	    std::cout << bin;
+	    if(count % 4 == 0) std::cout << " ";
+	    num /=2;
+    }
+    std::cout << std::endl;
+	*/
     /*  USBFX2_EP_WRITE => end point addr.
     buff => bytes to send
     USB_TOUT_MS => timeout in ms

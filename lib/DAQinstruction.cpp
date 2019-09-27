@@ -175,10 +175,20 @@ void SuMo::set_self_trigger_lo(     bool ENABLE_TRIG,
       | SYS_TRIG_OPTION << 1 | ENABLE_TRIG 
       | coinc_window << 7
       | boardAdr << boardAdrOffset;
-    //printf("%i\n", send_word);
 
+    
     createUSBHandles();
+    std::cout << "trigger lo bits: " ;
 
+  unsigned int num = send_word;
+  int bin;
+  while(num > 0)
+  {
+	  bin = num % 2;
+	  std::cout << bin;
+	  num /= 2;
+  }
+  std::cout << std::endl;
     if(device == 0)                  usb.sendData((unsigned int)send_word);
     if(device == 1 && mode == USB2x) usb2.sendData((unsigned int)send_word);
     
@@ -266,7 +276,17 @@ void SuMo::set_usb_read_mode(unsigned int READ_MODE)
 {
   usb.createHandles();
   const unsigned int hi_cmd = 0x000C0000;    
-  unsigned int send_word = hi_cmd | READ_MODE | 15 << boardAdrOffset; 
+  unsigned int send_word = hi_cmd | READ_MODE | 15 << boardAdrOffset;
+  std::cout << "Set usb read " ;
+  unsigned int num = send_word;
+  int bin;
+  while(num > 0)
+  {
+	  bin = num % 2;
+	  std::cout << bin;
+	  num /= 2;
+  }
+  std::cout << std::endl;
   usb.sendData(send_word);
   usb.freeHandles();
   

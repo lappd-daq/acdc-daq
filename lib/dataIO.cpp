@@ -14,7 +14,7 @@ static bool PED_SUBTRCT = false;
 
 static int LIMIT_READOUT_RATE = 6000;  //usecs limit between event polling
 static int NUM_SEQ_TIMEOUTS = 100;    // number of sequential timeouts before ending run
-const float MAX_INT_TIMER = 800.;    // max cpu timer before ending run (secs)
+const float MAX_INT_TIMER = 80000.;    // max cpu timer before ending run (secs)
 /* note: usb timeout defined in include/stdUSB.h */
 
 bool overwriteExistingFile = false;

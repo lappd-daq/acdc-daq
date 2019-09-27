@@ -22,7 +22,7 @@ int main(int argc, char* argv[]){
  
 
  //check for right arguments
-  if((argc != 3 && argc != 2) && std::string(argv[1]) == "-h"){
+  if((argc != 3 && argc != 4) && std::string(argv[1]) == "-h"){
     cout << endl;
     cout << filename << " :: " << description << endl;
     cout << filename << " :: takes " << NUM_ARGS-1 << " arguments" << endl;
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]){
     //convert 3rd argument to an unsigned int mask. This means
     // the 3rd argument should be of the format 0x7FFF 
     unsigned int channels;
-    if(argc == 2)
+    if(argc == 3)
     {
       channels = 0x7FFF;
     }
