@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
                 cout << "Slave board detected " << endl;
                 device = 1;
                 Sumo.read_CC(true, true, device, 0);
-
             }
         }
 

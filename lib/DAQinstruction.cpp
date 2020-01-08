@@ -277,16 +277,8 @@ void SuMo::set_usb_read_mode(unsigned int READ_MODE)
   usb.createHandles();
   const unsigned int hi_cmd = 0x000C0000;    
   unsigned int send_word = hi_cmd | READ_MODE | 15 << boardAdrOffset;
-  std::cout << "Set usb read " ;
   unsigned int num = send_word;
   int bin;
-  while(num > 0)
-  {
-	  bin = num % 2;
-	  std::cout << bin;
-	  num /= 2;
-  }
-  std::cout << std::endl;
   usb.sendData(send_word);
   usb.freeHandles();
   

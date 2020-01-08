@@ -12,7 +12,7 @@ using namespace std;
 /* subtract pedestal values on-line */
 static bool PED_SUBTRCT = false;
 
-static int LIMIT_READOUT_RATE = 6000;  //usecs limit between event polling
+static int LIMIT_READOUT_RATE = 40000;  //usecs limit between event polling
 static int NUM_SEQ_TIMEOUTS = 100;    // number of sequential timeouts before ending run
 const float MAX_INT_TIMER = 80000.;    // max cpu timer before ending run (secs)
 /* note: usb timeout defined in include/stdUSB.h */
@@ -168,6 +168,8 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
     int board_trigger = CC_EVENT_COUNT_FROMCC0;
     int last_board_trigger = board_trigger;
 
+    cout << "At start, read board trigger as " << board_trigger << endl;
+
     /* cpu time zero */
     timer.start();
 
@@ -227,11 +229,12 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
 
             read_CC(false, false, 100);
             board_trigger = CC_EVENT_COUNT_FROMCC0;
+            cout << "Read board_trigger again as " << board_trigger << endl;
             cout << "waiting for trigger...     on system event: "
                  << board_trigger << " & readout attempt " << event
                  << " @time " << t << "                        \r";
             cout.flush();
-            usleep(1000);
+            usleep(10000); // changed from 1000 to 10000, for debugging 12-17-2019
             t = timer.stop();
             num_pulls++;
             if (num_pulls > 100) break;

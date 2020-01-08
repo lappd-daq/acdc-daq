@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <string.h>
 #include <math.h>
+#include <sstream>
+#include <bitset>
 #include "SuMo.h"
 
 using namespace std;
@@ -82,6 +84,33 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
 
             int cc_header_found = -1;
             int cc_start_found = -1;
+
+            //debugging, save entire buffer 
+            /*
+            ofstream ACC_bufferfile;
+            char ACC_bufferfilename[200];
+            sprintf(ACC_bufferfilename, "acc-buffer-top-%i.txt", std::rand() % 100);
+            ACC_bufferfile.open(ACC_bufferfilename, ios::trunc);
+            cout << "Opened file : " << ACC_bufferfilename << " to dump the buffer from the ACC" << endl;
+            ACC_bufferfile << "Decimal, hex, binary" << endl;
+            
+            for(int i = 0; i < cc_buffersize + 2; i++)
+            {
+                ACC_bufferfile << buffer[i] << ", ";
+                stringstream ss;
+                ss << std::hex << buffer[i];
+                string hexstr(ss.str());
+                ACC_bufferfile << hexstr << ", ";
+                unsigned n;
+                ss >> n;
+                bitset<16> b(n);
+                ACC_bufferfile << b.to_string() << endl;
+            }
+            ACC_bufferfile.close();
+            */
+            //end debugging printing
+        
+
 
             for (int i = 0; i < 5; i++) {
                 if (buffer[i] == 0x1234) {
@@ -178,7 +207,6 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
                     cout << endl << "AC/DC #" << board << ":";
                     get_AC_info(true, board);
                 }
-            //manage_cc_fifo_slaveDevice(1);
         } else if (device == 0) {          //master device
             for (int board = 0; board < boardsPerCC; board++) tmp_active[board] = DC_ACTIVE[board];
 
@@ -190,7 +218,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
                     get_AC_info(true, board);
                 }
             }
-            //manage_cc_fifo(1);
+
         } else if (device == 100) {          //all devices
 
             read_AC(triggerMode, DC_ACTIVE, false, true);
@@ -199,8 +227,6 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
                     cout << endl << "AC/DC #" << board << ":";
                     get_AC_info(true, board);
                 }
-            //manage_cc_fifo(1);
-            //if(mode == USB2x) manage_cc_fifo_slaveDevice(1);
         }
         sys_wait(5000);
         manage_cc_fifo(1);

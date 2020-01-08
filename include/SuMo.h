@@ -121,8 +121,7 @@ public:
 
   int generate_ped(
           bool ENABLE_FILESAVE);  //makePedandLin.cpp            //generate pedestal calibration files for each active board (one per sample cell)
-  int
-  make_count_to_voltage();  //makePedandLin.cpp         //make count-to-voltage LUT for each active board (# active boards * 6 channels * 1536 cells * 4096 !!)
+  int make_count_to_voltage();  //makePedandLin.cpp         //make count-to-voltage LUT for each active board (# active boards * 6 channels * 1536 cells * 4096 !!)
 
   int load_ped(); //loadPedandLin.cpp
 

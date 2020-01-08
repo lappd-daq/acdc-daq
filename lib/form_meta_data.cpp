@@ -36,11 +36,11 @@ int *SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
 
 
     for (int i = 0; i < numChipsOnBoard; i++) {
-        metaData[40 + i] = adcDat[aa]->ro_cnt[i] = AC_INFO[i][4];   //(float) AC_INFO[i][4] * 10 * pow(2,11)/ (pow(10,6));
-        metaData[45 + i] = adcDat[aa]->ro_target_cnt[i] = AC_INFO[i][5];  //(float) AC_INFO[i][5] * 10 * pow(2,11)/(pow(10,6));
-        metaData[50 + i] = adcDat[aa]->vbias[i] = AC_INFO[i][6];   //(int) AC_INFO[i][6];
-        metaData[55 + i] = adcDat[aa]->trigger_threshold[i] = AC_INFO[i][7];  //(float) AC_INFO[i][7] * ref_volt_mv/num_bits;
-        metaData[60 + i] = adcDat[aa]->ro_dac_value[i] = AC_INFO[i][8];    //(float) AC_INFO[i][8] * ref_volt_mv/num_bits;
+        metaData[40 + i] = adcDat[aa]->ro_cnt[i] = AC_INFO[i][0];   //(float) AC_INFO[i][4] * 10 * pow(2,11)/ (pow(10,6));
+        metaData[45 + i] = adcDat[aa]->ro_target_cnt[i] = AC_INFO[i][1];  //(float) AC_INFO[i][5] * 10 * pow(2,11)/(pow(10,6));
+        metaData[50 + i] = adcDat[aa]->vbias[i] = AC_INFO[i][2];   //(int) AC_INFO[i][6];
+        metaData[55 + i] = adcDat[aa]->trigger_threshold[i] = AC_INFO[i][3];  //(float) AC_INFO[i][7] * ref_volt_mv/num_bits;
+        metaData[60 + i] = adcDat[aa]->ro_dac_value[i] = AC_INFO[i][4];    //(float) AC_INFO[i][8] * ref_volt_mv/num_bits;
     }
 
     int ab = metaData[35] = adcDat[aa]->CC_BIN_COUNT = (adcDat[aa]->CC_HEADER_INFO[1] & 0x18) >> 3;
@@ -130,7 +130,7 @@ int *SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
             cout << "PSEC:" << i;
             cout << "|ADC clock/trgt:" << adcDat[aa]->ro_cnt[i] * 10 * pow(2, 11) / (pow(10, 6));
             cout << "/" << adcDat[aa]->ro_target_cnt[i] * 10 * pow(2, 11) / (pow(10, 6)) << "MHz";
-            cout << ",bias:" << adcDat[aa]->ro_dac_value[i] * ref_volt_mv / num_bits << "mV";
+            cout << ",ro-bias:" << adcDat[aa]->ro_dac_value[i] * ref_volt_mv / num_bits << "mV";
             cout << "|Ped:" << dec << adcDat[aa]->vbias[i] * ref_volt_mv / num_bits << "mV";
             cout << "|Trig:" << adcDat[aa]->trigger_threshold[i] * ref_volt_mv / num_bits << "mV";
             cout << endl;

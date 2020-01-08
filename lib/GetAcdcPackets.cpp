@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <fstream>
+#include <sstream>
+#include <bitset>
 
 using namespace std;
 
@@ -63,12 +65,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
         unsigned short buffer[ac_buffersize];
         memset(buffer, 0x0, (ac_buffersize + 2) * sizeof(unsigned short));
 
-        ofstream rawDatFile;
-        if (FILESAVE) {
-            char rawDatFilename[200];
-            sprintf(rawDatFilename, "acdc-raw-data-%i.txt", boardAddress);
-            rawDatFile.open(rawDatFilename, ios::trunc);
-        }
+        
 
         /* try to get packet from addressed AC/DC card */
         try {
@@ -76,6 +73,31 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
             else usb.readData(buffer, ac_buffersize + 2, &samples);
 
             if (print) cout << "samples received: " << samples << " on board " << boardAddress << endl;
+
+            //debugging, save entire buffer 
+            /*
+            ofstream ACDC_bufferfile;
+            char ACDC_bufferfilename[200];
+            sprintf(ACDC_bufferfilename, "acdc-buffer-%i.txt", std::rand() % 100);
+            ACDC_bufferfile.open(ACDC_bufferfilename, ios::trunc);
+            cout << "Opened file : " << ACDC_bufferfilename << " to dump the buffer from the ACDC" << endl;
+            ACDC_bufferfile << "Decimal, hex, binary" << endl;
+            
+            for(int i = 0; i < ac_buffersize + 2; i++)
+            {
+                ACDC_bufferfile << buffer[i] << ", ";
+                stringstream ss;
+                ss << std::hex << buffer[i];
+                string hexstr(ss.str());
+                ACDC_bufferfile << hexstr << ", ";
+                unsigned n;
+                ss >> n;
+                bitset<16> b(n);
+                ACDC_bufferfile << b.to_string() << endl;
+            }
+            ACDC_bufferfile.close();
+            */
+            //end debugging printing
 
             /* packet flags */
             int pkt_header = 0;
@@ -106,7 +128,6 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
 
             /* interpret data packet, save raw data to file if enabled */
             for (int i = 0; i < ac_buffersize; i++) {
-                if (FILESAVE) rawDatFile << buffer[i] << "\n";
                 if (buffer[i] == usbPacketStart) adcDat[boardAddress]->PKT_HEADER = i;
                 else if (buffer[i] == usbPacketEnd) {
                     adcDat[boardAddress]->PKT_FOOTER = i;
@@ -122,7 +143,6 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
                     data_footer++;
                 }
             }
-            if (FILESAVE) rawDatFile.close();
 
             CC_BIN_COUNT = (buffer[1] & 0x18) >> 3;
             CC_EVENT_NO = buffer[2];
@@ -145,19 +165,20 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
                 cout << "packet footer index " << adcDat[boardAddress]->PKT_FOOTER << endl;
             }
             /* real data starts here: */
-            usb_read_offset_flag = usb_read_offset_flag + 2;
             /* form usable data from packets */
+
             for (int i = 0; i < numChipsOnBoard; i++) {
+                //get raw data from buffer
                 for (int j = 0; j < psec_buffersize; j++) {
-                    adcDat[boardAddress]->AC_RAW_DATA[i][j] = buffer[usb_read_offset_flag +
-                            (psec_buffersize + infoBuffersize) * i + j];
+                    adcDat[boardAddress]->AC_RAW_DATA[i][j] = buffer[adcDat[boardAddress]->DATA_HEADER[i] + j + 1];    
                 }
+                //get metadata (like displayed on ./bin/readACDC) from buffer
                 for (int k = 0; k < infoBuffersize; k++) {
-                    adcDat[boardAddress]->AC_INFO[i][k] = buffer[usb_read_offset_flag +
-                            (i + 1) * psec_buffersize
-                                    + (i * infoBuffersize) + k + (i * 3)];
+                    adcDat[boardAddress]->AC_INFO[i][k] = buffer[adcDat[boardAddress]->DATA_ADC_END[i] + k + 1];
                 }
             }
+
+            //grab data on scalar info after all chip data
             for (int i = 0; i < AC_CHANNELS + 1; i++) {
                 adcDat[boardAddress]->self_trig_scalar[i] = buffer[adcDat[boardAddress]->DATA_FOOTER[numChipsOnBoard - 1] + 2 + i];
                 if (print) cout << i << endl;
