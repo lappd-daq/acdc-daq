@@ -172,8 +172,7 @@ bool stdUSB::freeHandles(void) {
  */
 bool stdUSB::sendData(unsigned int data)// throw(...)
 {
-    if (stdHandle == INVALID_HANDLE_VALUE)
-	return FAILED;
+    if (stdHandle == INVALID_HANDLE_VALUE) return FAILED;
 
     /* Shifted right because send value needs to be in 
        HEX base. char[4] ^= int (char -> 1byte, int -> 4 bytes)
@@ -235,8 +234,6 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
     }
 
     int buff_sz = l*sizeof(unsigned short);
-    //char* buff = new char[110];
-    //buff_sz = 110;
 
     /*  USBFX2_EP_READ => end point addr.
     buff => bytes to read (has to be <64 bytes)
@@ -252,11 +249,16 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
         *lread = (int)(retval / (unsigned long)sizeof(unsigned short));
         //*lread *= 4;
         return SUCCEED;
-    } else
+    } 
+    else{
       //printf("error code: %s\n", strerror(-1 * retval));
       //printf("error code: %i\n", retval);
         *lread = retval;
+        cout << "read failed with retval " << retval << endl;
         return FAILED;
+    }
+
+    return FAILED;
 }
 
 bool stdUSB::isOpen() {

@@ -8,7 +8,7 @@
 
 using namespace std;
 
-int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
+int SuMo::read_AC(unsigned int trig_mode, bool *mask,
                   bool sync, bool set_bin, unsigned int bin) {
     //cout << "read_AC!!!" << endl;
     bool print = false;     /* verbose switch for dumping info to terminal */
@@ -25,7 +25,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
 
     //temporarily loop over slave board, eventually connected in firmware
     for (int boardAddress = boardsPerCC; boardAddress < numFrontBoards; boardAddress++)
-        trig_mask_slave = (mask[boardAddress] << boardAddress - 4) | trig_mask_slave;
+        trig_mask_slave = (mask[boardAddress] << (boardAddress - 4)) | trig_mask_slave;
     if (print) cout << "trig mask on slave " << trig_mask_slave << endl;
 
     if (trig_mode == 0) {
@@ -61,18 +61,25 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
         if (device == 1) set_usb_read_mode_slaveDevice(boardAddress + 1 - boardsPerCC);
         else set_usb_read_mode(boardAddress + 1);
 
-        int samples;
-        unsigned short buffer[ac_buffersize];
-        memset(buffer, 0x0, (ac_buffersize + 2) * sizeof(unsigned short));
-
-        
 
         /* try to get packet from addressed AC/DC card */
         try {
+            int samples;
+            unsigned short* buffer;
+            buffer = (unsigned short*)calloc(ac_buffersize + 2, sizeof(unsigned short));
             if (device == 1) usb2.readData(buffer, ac_buffersize + 2, &samples);
             else usb.readData(buffer, ac_buffersize + 2, &samples);
 
-            if (print) cout << "samples received: " << samples << " on board " << boardAddress << endl;
+            cout << "samples received: " << samples << " on board " << boardAddress << endl;
+
+            //if the number of samples received is negative, 
+            //that means the retval in readData was -1 and the
+            //read failed. 
+            if(samples < 0)
+            {
+                cout << "No data were in the usb buffer on read mode board address: " << boardAddress << endl;
+            }
+
 
             //debugging, save entire buffer 
             /*
@@ -100,8 +107,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
             //end debugging printing
 
             /* packet flags */
-            int pkt_header = 0;
-            int pkt_footer = 0;
+           
             int data_header = 0;
             int data_adc_footer = 0;
             int data_footer = 0;
@@ -197,12 +203,15 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
             BOARDS_READOUT[boardAddress] = true;
             numBoardsRead++;
             //cout << numBoardsRead << endl;
+            free(buffer); //release this allocated memory
         }
 
         catch (...) {
             fprintf(stderr, "Please connect the board. [DEFAULT exception]\n");
             return 1;
         }
+
+        
 
     }
     return numBoardsRead;

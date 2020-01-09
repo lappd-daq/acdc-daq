@@ -69,7 +69,7 @@ public:
   void set_trig_threshold(unsigned int TRIG_VALUE, unsigned int mask, int device = 0, unsigned int psec_mask = 31); //DAQinstruction.cpp
 
   void
-  set_ro_target_count(unsigned int TARGET_RO_COUNT, unsigned int mask, int device = 0, unsigned int psec_mask = 31); //DAQinstruction.cpp
+  set_ro_target_count(unsigned int TARGET_RO_COUNT, unsigned int mask, unsigned int psec_mask = 31); //DAQinstruction.cpp
 
   //manage PC interface
   void set_usb_read_mode(unsigned int READ_MODE); //DAQinstruction.cpp
@@ -110,13 +110,13 @@ public:
   void adjust_thresh(int threshold, unsigned int board_number); //SuMo.cpp
 
   /* this function modifies class variables BOARDS_READOUT & BOARDS_TIMEOUT for additional retval handling: */
-  int read_AC(unsigned int trig_mode, bool *mask, bool FILESAVE,
+  int read_AC(unsigned int trig_mode, bool *mask,
               bool sync = false, bool set_bin = false, unsigned int bin = 0); //GetAcdcPackets.cpp
 
   void dump_data(); //SuMo.cpp
 
   //int  get_AC_info(bool PRINT, int AC_adr);
-  int *get_AC_info(bool PRINT, int frontEnd, bool PRINTALL = false, int count = 0, double time = 0.,
+  int *get_AC_info(bool PRINT, int frontEnd, int count = 0, double time = 0.,
                    double dateTime = 0., int evts = 0);   //form_meta_data.cpp //parse meta-data from raw data stream
 
   int generate_ped(

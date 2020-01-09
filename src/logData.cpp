@@ -36,8 +36,7 @@ int main(int argc, char* argv[]){
         num_events = atoi(argv[2]);
         int trig_mode = atoi(argv[3]);
 
-        if(command.check_active_boards(num_checks))
-            return 1;
+        if(command.check_active_boards(num_checks)) return 1;
 
 
         return command.log_data(num_events, trig_mode, 0, log_data_filename);

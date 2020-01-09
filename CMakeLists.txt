@@ -26,6 +26,9 @@ set_property(TARGET yaml-cpp PROPERTY IMPORTED_LOCATION ${binary_dir}/libyaml-cp
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${source_dir}/include)
 
+
+add_compile_options(-Wall -Wextra -Wpedantic -fstack-protector)
+
 add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/SuMo.cpp
         ${LIBRARY_SOURCE_DIR}/DAQinstruction.cpp
@@ -52,9 +55,6 @@ target_link_libraries(SuMo myusb calibration yaml-cpp)
 
 
 
-add_executable(Automated_selfTrig ${EXECUTABLE_SOURCE_DIR}/Automated_SelfTrig.cpp)
-add_executable(Automated_selfTrig_Cutoffs ${EXECUTABLE_SOURCE_DIR}/Automated_SelfTrig_Cutoffs.cpp)
-add_executable(Automation ${EXECUTABLE_SOURCE_DIR}/Automation.cpp)
 add_executable(ledEn ${EXECUTABLE_SOURCE_DIR}/ledEn.cpp)
 add_executable(calEn ${EXECUTABLE_SOURCE_DIR}/calEn.cpp)
 add_executable(dumpData ${EXECUTABLE_SOURCE_DIR}/dumpData.cpp)
@@ -71,9 +71,6 @@ add_executable(setupLVDS ${EXECUTABLE_SOURCE_DIR}/setupLVDS.cpp)
 add_executable(takePed ${EXECUTABLE_SOURCE_DIR}/takePed.cpp)
 add_executable(toggle_led ${EXECUTABLE_SOURCE_DIR}/toggle_led.cpp)
 
-target_link_libraries(Automated_selfTrig PUBLIC SuMo)
-target_link_libraries(Automated_selfTrig_Cutoffs PUBLIC SuMo)
-target_link_libraries(Automation PUBLIC SuMo)
 target_link_libraries(ledEn PUBLIC SuMo)
 target_link_libraries(calEn PUBLIC SuMo)
 target_link_libraries(dumpData PUBLIC SuMo)

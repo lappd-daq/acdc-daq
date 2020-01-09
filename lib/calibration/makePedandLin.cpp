@@ -9,7 +9,7 @@ using namespace std;
 
 const unsigned int LINEARITY_SCAN_START = 10; /* ADC counts */
 const unsigned int LINEARITY_SCAN_STEPSIZE = 80; /* ADC counts */
-const unsigned int DAC_RANGE = 4096; /* ADC counts */
+const int DAC_RANGE = 4096; /* ADC counts */
 
 int SuMo::generate_ped(bool ENABLE_FILESAVE) {
     sync_usb(0);
@@ -18,9 +18,6 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE) {
     float temp;
 
     bool verbose = false;
-
-    bool all[numFrontBoards];
-    for (int i = 0; i < numFrontBoards; i++) all[i] = true;
 
     if (mode == USB2x) set_usb_read_mode_slaveDevice(16);
     set_usb_read_mode(16);
@@ -40,7 +37,7 @@ int SuMo::generate_ped(bool ENABLE_FILESAVE) {
         bin = k % 4;
         /* read data using trigger over software */
         //read_AC(0, DC_ACTIVE, false);
-        read_AC(0, DC_ACTIVE, false, false, true, bin);
+        read_AC(0, DC_ACTIVE, false, true, bin);
 
         /* make pedestal files for each board */
         for (int targetAC = 0; targetAC < numFrontBoards; targetAC++) {
@@ -160,7 +157,7 @@ int SuMo::make_count_to_voltage(void) {
 
     char LUT_filename[100], LUT_all_filename[100], raw_scan_filename[100], raw_scan_all_filename[100];;
     ofstream flut[numFrontBoards], flut_all[numFrontBoards], ftemp[numFrontBoards], ftemp_all[numFrontBoards];
-    unsigned int dac_level, temp[AC_CHANNELS], temp_all[AC_CHANNELS][psecSampleCells];
+    unsigned int temp[AC_CHANNELS], temp_all[AC_CHANNELS][psecSampleCells];
 
     /* initiate, open filestreams, save old LUT data, if specified */
     for (int targetAC = 0; targetAC < numFrontBoards; targetAC++) {
@@ -196,7 +193,6 @@ int SuMo::make_count_to_voltage(void) {
     int level_number = 0;
     /* looping thru DAC values, defined at top of file */
     for (int i = LINEARITY_SCAN_START; i < DAC_RANGE; i += LINEARITY_SCAN_STEPSIZE) {
-        dac_level = i;
         float voltage = i * 1.200 / 4096.0;
 
         /* set ped. redunancy probably shouldn't be necessary */
@@ -255,7 +251,7 @@ int SuMo::make_count_to_voltage(void) {
                         temp_all[m][j] = (unsigned int) calData[targetAC].PED_DATA[m][j];
                         ftemp_all[targetAC] << temp_all[m][j] << "\t";
                         /* assign value to cell-level LUT */
-                        if (temp_all[m][j] >= 0 && temp_all[m][j] < DAC_RANGE) {
+                        if (temp_all[m][j] < DAC_RANGE) {
                             LUT_CELL[targetAC][m * psecSampleCells + j][temp_all[m][j]] = voltage;
                             //cout << temp_all[m][j] << ":"<<LUT_CELL[targetAC][m][temp_all[m][j]][j] << ",";
                         }
@@ -264,7 +260,7 @@ int SuMo::make_count_to_voltage(void) {
                     temp[m] /= psecSampleCells;
                     ftemp[targetAC] << temp[m] << "\t";
                     /* assign value to channel-level LUT */
-                    if (temp[m] >= 0 && temp[m] < DAC_RANGE) LUT[targetAC][m][temp[m]] = voltage;
+                    if (temp[m] < DAC_RANGE) LUT[targetAC][m][temp[m]] = voltage;
 
                 }
                 ftemp[targetAC] << endl;

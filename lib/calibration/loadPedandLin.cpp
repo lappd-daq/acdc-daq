@@ -37,7 +37,7 @@ int SuMo::load_ped(){
       
       int tmp;
       sscanf(buf, 
-	     "%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t\n",
+	     "%i\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t\n",
 	      &tmp,&PED_DATA[targetAC][0][i],&PED_DATA[targetAC][1][i],&PED_DATA[targetAC][2][i],
 	      &PED_DATA[targetAC][3][i],&PED_DATA[targetAC][4][i],&PED_DATA[targetAC][5][i],
 	      &PED_DATA[targetAC][6][i],&PED_DATA[targetAC][7][i],&PED_DATA[targetAC][8][i],

@@ -26,7 +26,7 @@ int oscilloscope(SuMo& Sumo, int trig_mode, int numFrames, int boardID, int rang
 
   device = setup_scope(Sumo, boardID);
   if(device < 0) return -1;
-  if(setup_scope(myPipe, boardID) == 1) return -2;
+  if(setup_scope(myPipe) == 1) return -2;
 
   Sumo.load_ped();
   timer.start();
@@ -83,7 +83,7 @@ int setup_scope(SuMo& Sumo, int boardID){
   return device;
 
 }
-int setup_scope(ScopePipe& myPipe, int boardID){
+int setup_scope(ScopePipe& myPipe){
 
   if(myPipe.init()) return 1;
   //myPipe.send_cmd("set zrange [-1000:1000]");
@@ -118,7 +118,7 @@ int prime_scope(SuMo& Sumo, int trig_mode, int device, int boardID, int scopeRef
     }
     // otherwise, send trigger over software 
     else if(trig_mode == 0){ 
-      if(device==1) Sumo.software_trigger_slaveDevice(1 << boardID-boardsPerCC);
+      if(device==1) Sumo.software_trigger_slaveDevice(1 << (boardID-boardsPerCC));
       else          Sumo.software_trigger(1 << boardID);
 
       Sumo.sys_wait(1000);
@@ -165,7 +165,6 @@ int log_from_scope(SuMo& Sumo,  int boardID, int pdat[AC_CHANNELS][psecSampleCel
 
 int plot_scope(ScopePipe& myPipe, int pdat[AC_CHANNELS][psecSampleCells], int* range){
   string sendWord;
-  int baseline[psecSampleCells];
   int asic_baseline[psecSampleCells];
 
   for (int j = 0; j < psecSampleCells; j++){

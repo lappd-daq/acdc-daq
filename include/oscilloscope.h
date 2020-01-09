@@ -4,7 +4,7 @@
 #include "SuMo.h"
 #include "ScopePipe.h"
 
-int setup_scope(ScopePipe &, int boardID);
+int setup_scope(ScopePipe &);
 
 int setup_scope(SuMo &, int boardID);
 

@@ -9,23 +9,16 @@
 #include "Timer.h"
 
 using namespace std;
-/* subtract pedestal values on-line */
-static bool PED_SUBTRCT = false;
 
 static int LIMIT_READOUT_RATE = 40000;  //usecs limit between event polling
-static int NUM_SEQ_TIMEOUTS = 100;    // number of sequential timeouts before ending run
 const float MAX_INT_TIMER = 80000.;    // max cpu timer before ending run (secs)
 /* note: usb timeout defined in include/stdUSB.h */
-
 bool overwriteExistingFile = false;
 
 int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const char *log_filename) {
-    int check_event;
-    int asic_baseline[psecSampleCells];
-    int count = 0;
     int psec_cnt = 0;
     int last_k;
-    float _now_, t = 0.;
+    float t = 0.;
     Timer timer = Timer();
     time_t now;
     short sample;
@@ -155,7 +148,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
     usleep(100000);
 
 
-    bool reset_event = true;
+
 
     // set read mode to NULL
     set_usb_read_mode(0);
@@ -173,7 +166,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
     /* cpu time zero */
     timer.start();
 
-    for (int event = 0; event < NUM_READS; event++) {
+    for (int event = 0; event < (int)NUM_READS; event++) {
         set_usb_read_mode(0);
         if (mode == USB2x) set_usb_read_mode_slaveDevice(0);
 
@@ -251,7 +244,6 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
 
         if (evts == 0 || evts != digs) {
             cout << "    --NULL--       " << endl;
-            reset_event = true;
             event = event - 1;             //repeat event
             continue;
         }
@@ -264,7 +256,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
         }
         /**************************************/
         //Do bulk read on all front-end cards
-        int numBoards = read_AC(1, all, false);
+        int numBoards = read_AC(1, all);
         /**************************************/
         sys_wait(10000);
 
@@ -276,14 +268,13 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
             if (mode == USB2x) set_usb_read_mode_slaveDevice(0);
             set_usb_read_mode(0);
         }
-        reset_event = true; //have event, go ahead and reset for next event
 
         // form data for filesave
         for (int board = 0; board < numFrontBoards; board++) {
             if (BOARDS_READOUT[board] && numBoards > 0) {
                 psec_cnt = 0;
                 // assign meta data
-                Meta = get_AC_info(false, board, false, event, t, t, evts);
+                Meta = get_AC_info(false, board, event, t, t, evts);
                 // wraparound_correction
                 int baseline[psecSampleCells];
                 unwrap_baseline(baseline, board);
@@ -293,7 +284,6 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
                     if (ch > 0 && ch % 6 == 0) psec_cnt++;
 
                     for (int cell = 0; cell < psecSampleCells; cell++) {
-                        asic_baseline[cell] = baseline[cell];
                         sample = adcDat[board]->AC_RAW_DATA[psec_cnt][ch % 6 * 256 + cell];
                         sample -= PED_DATA[board][ch][cell];
                         adcDat[board]->Data[ch][baseline[cell]] = (unsigned int) sample;

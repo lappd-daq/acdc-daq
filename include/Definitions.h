@@ -1,9 +1,9 @@
 #pragma once
 
-#define numFrontBoards        8        // max number of plugged boards
+#define numFrontBoards        4        // max number of plugged boards
 #define boardsPerCC           8        // max number of AC/DC cards per central card
-#define cc_buffersize         31       // Central-card meta-data size
-#define ac_buffersize         8100     // firmware packet size should not exceed this
+#define cc_buffersize         50       // Central-card meta-data size, more than expected
+#define ac_buffersize         9000     // ACDC data buffer size + many extra 
 #define AC_CHANNELS           30       // number of channels per AC/DC board
 #define psec_buffersize       1536     // data size per ASIC
 #define infoBuffersize        13       // meta-data size per ASIC

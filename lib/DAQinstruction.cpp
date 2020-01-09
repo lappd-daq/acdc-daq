@@ -95,7 +95,6 @@ void SuMo::align_lvds()
 }
 void SuMo::readACDC_RAM(int device,unsigned int boardAdr)
 {
-  unsigned int boardAdr_override  = 15;
   
   createUSBHandles();
   unsigned int send_word = 0x000A0006;
@@ -178,6 +177,8 @@ void SuMo::set_self_trigger_lo(     bool ENABLE_TRIG,
 
     
     createUSBHandles();
+
+    /*
     std::cout << "trigger lo bits: " ;
 
   unsigned int num = send_word;
@@ -189,6 +190,8 @@ void SuMo::set_self_trigger_lo(     bool ENABLE_TRIG,
 	  num /= 2;
   }
   std::cout << std::endl;
+  */
+
     if(device == 0)                  usb.sendData((unsigned int)send_word);
     if(device == 1 && mode == USB2x) usb2.sendData((unsigned int)send_word);
     
@@ -260,7 +263,6 @@ void SuMo::set_trig_threshold(unsigned int TRIG_VALUE,
 {
   createUSBHandles();
   const unsigned int hi_cmd = 0x00080000;    
-  const unsigned int mask = 31;  //chip mask
   unsigned int send_word = hi_cmd | TRIG_VALUE | psec_mask << 20 | boardAdr << boardAdrOffset
                                   | psec_mask << psecAdrOffset;
 
@@ -277,8 +279,6 @@ void SuMo::set_usb_read_mode(unsigned int READ_MODE)
   usb.createHandles();
   const unsigned int hi_cmd = 0x000C0000;    
   unsigned int send_word = hi_cmd | READ_MODE | 15 << boardAdrOffset;
-  unsigned int num = send_word;
-  int bin;
   usb.sendData(send_word);
   usb.freeHandles();
   
@@ -298,7 +298,6 @@ void SuMo::set_usb_read_mode_slaveDevice(unsigned int READ_MODE)
  */
 void SuMo::set_ro_target_count(unsigned int TARGET_RO_COUNT, 
 			       unsigned int boardAdr, 
-			       int device,
 			       unsigned int psec_mask)
 {
   createUSBHandles();
@@ -307,7 +306,6 @@ void SuMo::set_ro_target_count(unsigned int TARGET_RO_COUNT,
                                   | psec_mask << psecAdrOffset;
 
   usb.sendData(send_word);
-  std::cout << "hello";
   if(mode==USB2x) usb2.sendData(send_word);
   closeUSBHandles();
   

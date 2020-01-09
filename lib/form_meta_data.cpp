@@ -10,7 +10,7 @@
 
 using namespace std;
 
-int *SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, double time,
+int *SuMo::get_AC_info(bool PRINT, int frontEnd, int count, double time,
                        double dateTime, int evts) {
 
     int aa = frontEnd;
@@ -69,7 +69,7 @@ int *SuMo::get_AC_info(bool PRINT, int frontEnd, bool PRINTALL, int count, doubl
     int ad = metaData[112] = adcDat[aa]->last_coincidence_num_chans = AC_INFO[1][9] & 0xF800;
 
     int ac = metaData[111] = adcDat[aa]->firmware_reset_time = AC_INFO[2][9] | AC_INFO[3][9] << 16;
-    int mm = metaData[21] = adcDat[aa]->reg_self_trig = AC_INFO[0][10] | AC_INFO[1][10] << 16;
+
     int nn = metaData[22] = adcDat[aa]->counts_of_sys_no_local = AC_INFO[2][10] | AC_INFO[3][10] << 16;
     int oo = metaData[23] = adcDat[aa]->sys_trig_count = AC_INFO[4][10];
     int pp = metaData[24] = adcDat[aa]->resets_from_firmw = AC_INFO[0][11] | AC_INFO[1][11] << 16;

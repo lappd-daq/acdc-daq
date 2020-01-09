@@ -56,11 +56,12 @@ void SuMo::cleanup(){
 //this function does something, change this
 //comment later
 void SuMo::dump_data(void){
+  return; //put in by Evan 1/9/2020
   bool all[numFrontBoards];
   for(int i=0; i<numFrontBoards; i++) all[i] = true;
   manage_cc_fifo(1);
   if(mode == USB2x) manage_cc_fifo_slaveDevice(1);
-  read_AC(1, all,false);
+  read_AC(1, all);
   manage_cc_fifo(1);
   if(mode == USB2x) manage_cc_fifo_slaveDevice(1);
 }
@@ -186,7 +187,7 @@ int SuMo::measure_rate(bool* AC_read_mask){
   
   usleep(100); //sleep and let the data roll on in.
   read_CC(false,false,0); //read the ACC to update the list of active boards ACDC boards.
-  int num_boards = read_AC(1,AC_read_mask,false); //trig mode 1, read all the boards, don't save to a file.
+  int num_boards = read_AC(1,AC_read_mask); //trig mode 1, read all the boards, don't save to a file.
   usleep(4000); //wait 4000usec.
   system_card_trig_valid(false); //don't allow triggers while we work with the data.
   return(num_boards);

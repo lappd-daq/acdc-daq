@@ -14,8 +14,6 @@ using namespace std;
 int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int triggerMode) {
 
     bool print = false; // verbose
-    int samples;        // no. of words in usb packet
-    int samples_device_0, samples_device_1;
 
     if (device == 0)
         for (int i = 0; i < 4; i++) {
@@ -65,25 +63,22 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
 
         if (print) cout << "device in central card address loop : " << loop_cc << endl;
 
-        unsigned short buffer[cc_buffersize];
-        memset(buffer, 0x0, cc_buffersize * sizeof(unsigned short));
+        int samples;
+        unsigned short* buffer;
+        buffer = (unsigned short*)calloc(cc_buffersize + 2, sizeof(unsigned short));
         /* try readout */
         try {
             if (loop_cc == 0) {
                 usb.readData(buffer, cc_buffersize + 2, &samples);
-                samples_device_0 = samples;
             } else if (loop_cc == 1) {
                 usb2.readData(buffer, cc_buffersize + 2, &samples);
-                samples_device_1 = samples;
             }
-
             if (samples < 2 && device != 100) {
                 if (print) cout << "error: no data in buffer on device #" << device << endl;
                 return -1;
             }
+            cout << "cc_buffersize+2 is " << cc_buffersize+2 << " and samples is " << samples << endl;
 
-            int cc_header_found = -1;
-            int cc_start_found = -1;
 
             //debugging, save entire buffer 
             /*
@@ -110,18 +105,6 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
             */
             //end debugging printing
         
-
-
-            for (int i = 0; i < 5; i++) {
-                if (buffer[i] == 0x1234) {
-                    cc_header_found = i;
-                    if (print) cout << "cc header @ " << i << endl;
-                }
-                if (buffer[i] == 0xDEAD) {
-                    cc_start_found = i;
-                    if (print) cout << "cc start @ " << i << endl;
-                }
-            }
             if (loop_cc == 0) {
                 CC_EVENT_COUNT_FROMCC0 = buffer[5];
                 if (SHOW_CC_STATUS) cout << "master event = " << buffer[5] << endl;
@@ -192,6 +175,9 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
         if (buffer[4] >> 4 & 0x4) DIGITIZING_START_FLAG[2 + slave_index] = true;
         if (buffer[4] >> 4 & 0x8) DIGITIZING_START_FLAG[3 + slave_index] = true;
 
+
+        free(buffer);
+
     }  //end loop over central cards
 //probe ac/dc cards if specified
     if (SHOW_AC_STATUS) {
@@ -201,7 +187,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
         if (device == 1) {     //slave device
             for (int board = boardsPerCC; board < numFrontBoards; board++) tmp_active[board] = DC_ACTIVE[board];
 
-            read_AC(triggerMode, tmp_active, false);
+            read_AC(triggerMode, tmp_active);
             for (int board = boardsPerCC; board < numFrontBoards; board++)
                 if (DC_ACTIVE[board]) {
                     cout << endl << "AC/DC #" << board << ":";
@@ -211,7 +197,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
             for (int board = 0; board < boardsPerCC; board++) tmp_active[board] = DC_ACTIVE[board];
 
 
-            read_AC(triggerMode, tmp_active, false);
+            read_AC(triggerMode, tmp_active);
             for (int board = 0; board < boardsPerCC; board++) {
                 if (DC_ACTIVE[board]) {
                     cout << endl << "AC/DC #" << board << ":";
@@ -221,7 +207,7 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
 
         } else if (device == 100) {          //all devices
 
-            read_AC(triggerMode, DC_ACTIVE, false, true);
+            read_AC(triggerMode, DC_ACTIVE, false);
             for (int board = 0; board < numFrontBoards; board++)
                 if (DC_ACTIVE[board]) {
                     cout << endl << "AC/DC #" << board << ":";

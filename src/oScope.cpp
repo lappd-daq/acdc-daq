@@ -21,7 +21,6 @@ const char* description =  "pipe data to gnuplot window.";
 
 int interrupt_flag = 0;
 using namespace std;
-void handle_keyboard_interrupt(int sig);
 
 int main(int argc, char* argv[]){
 
@@ -54,14 +53,10 @@ int main(int argc, char* argv[]){
     if(Sumo.check_active_boards(num_checks))
       return 1;
     
-    int mode = Sumo.check_readout_mode();
+    Sumo.check_readout_mode();
 
     oscilloscope(Sumo, trigMode, numFrames, acdcNum, plotRange);
  
     return 0;
   }
 } 
-
-void handle_keyboard_interrupt(int sig){
-  interrupt_flag = 1;
-}

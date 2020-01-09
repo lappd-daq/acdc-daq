@@ -219,11 +219,16 @@ bool stdUSBSlave::readData(unsigned short * pData, int l, int* lread)// throw(..
         *lread = (int)(retval / (unsigned long)sizeof(unsigned short));
         //*lread *= 4;
         return stdUSB::SUCCEED;
-    } else
-      //printf("error code: %s\n", strerror(-1 * retval));
+    } 
+    else
+    {
+       //printf("error code: %s\n", strerror(-1 * retval));
       //printf("error code: %i\n", retval);
         *lread = retval;
-        return stdUSB::FAILED;
+        return stdUSB::FAILED; 
+    }
+    return stdUSB::FAILED;
+      
 }
 
 bool stdUSBSlave::isOpen() {
