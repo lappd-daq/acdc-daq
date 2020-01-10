@@ -32,7 +32,6 @@ int main(int argc, char* argv[]){
   /* function defined below */
   else{
     SuMo Sumo;
-    int num_checks = 10;    
     Sumo.set_usb_read_mode(16); 
     Sumo.read_CC(false, false);
     Sumo.read_CC(false, false);

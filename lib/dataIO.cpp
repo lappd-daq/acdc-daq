@@ -145,7 +145,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
          << MAX_INT_TIMER << " seconds" << endl;
     cout << "--------------------------------------------------------------" << endl << endl;
 
-    usleep(100000);
+    usleep(10000);
 
 
 
@@ -242,13 +242,15 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
         for (int chkdig = 0; chkdig < numFrontBoards; chkdig++)
             digs += DIGITIZING_START_FLAG[chkdig];
 
+
+        //what the hell is this: -Evan 1/10/2020
         if (evts == 0 || evts != digs) {
             cout << "    --NULL--       " << endl;
             event = event - 1;             //repeat event
             continue;
         }
 
-            // show event number at terminal
+        // show event number at terminal
         else {
             if ((event + 1) % 1 == 0 || event == 0) {
                 print_to_terminal(event, NUM_READS, CC_EVENT_COUNT_FROMCC0, board_trigger, t);
@@ -275,9 +277,6 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
                 psec_cnt = 0;
                 // assign meta data
                 Meta = get_AC_info(false, board, event, t, t, evts);
-                // wraparound_correction
-                int baseline[psecSampleCells];
-                unwrap_baseline(baseline, board);
                 for (int ch = 0; ch < AC_CHANNELS; ch++) {
                     dataofs << event << delim << board << delim << ch + 1;
 
@@ -286,7 +285,7 @@ int SuMo::log_data(unsigned int NUM_READS, int trig_mode, int acq_rate, const ch
                     for (int cell = 0; cell < psecSampleCells; cell++) {
                         sample = adcDat[board]->AC_RAW_DATA[psec_cnt][ch % 6 * 256 + cell];
                         sample -= PED_DATA[board][ch][cell];
-                        adcDat[board]->Data[ch][baseline[cell]] = (unsigned int) sample;
+                        adcDat[board]->Data[ch][cell] = (unsigned int) sample;
                     }
                     for (int wrap: adcDat[board]->Data[ch]) {
                         dataofs << delim << dec << wrap; // std::dec

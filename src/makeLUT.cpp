@@ -31,7 +31,6 @@ int main(int argc, char* argv[]){
   /* function defined below */
   else{
     SuMo Sumo;
-    int temp = 0;
     int num_checks = 5;
     
     if(Sumo.check_active_boards(num_checks))

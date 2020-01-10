@@ -31,7 +31,6 @@ int main(int argc, char* argv[]){
   /* function defined below */
   else{
     SuMo Sumo;
-    int temp = 0;
     int num_checks = 3;
     int device = 0;
     int ped = atoi(argv[1]);

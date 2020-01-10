@@ -20,15 +20,12 @@ int *SuMo::get_AC_info(bool PRINT, int frontEnd, int count, double time,
             AC_INFO[i][j] = adcDat[aa]->AC_INFO[i][j];
         }
     }
-    char meta[100][300];
+
     for (int i = 0; i < psecSampleCells; i++) {
         metaData[i] = 0;
     }
-    unsigned short ref_volt_mv = 1200;
-    unsigned short num_bits = 4096;
-
+    
     metaData[0] = count;
-    sprintf(meta[0], "%s=%i", "metaData[0] = count", metaData[0]);
     metaData[1] = aa;
     metaData[2] = (int) time;
     metaData[3] = (int) dateTime;
@@ -43,12 +40,13 @@ int *SuMo::get_AC_info(bool PRINT, int frontEnd, int count, double time,
         metaData[60 + i] = adcDat[aa]->ro_dac_value[i] = AC_INFO[i][4];    //(float) AC_INFO[i][8] * ref_volt_mv/num_bits;
     }
 
-    int ab = metaData[35] = adcDat[aa]->CC_BIN_COUNT = (adcDat[aa]->CC_HEADER_INFO[1] & 0x18) >> 3;
-    int bb = metaData[36] = adcDat[aa]->CC_EVENT_COUNT = adcDat[aa]->CC_HEADER_INFO[3] |
-            adcDat[aa]->CC_HEADER_INFO[2] << 16;
-    int cc = metaData[37] = adcDat[aa]->CC_TIMESTAMP_LO = adcDat[aa]->CC_HEADER_INFO[4];
-    int dd = metaData[38] = adcDat[aa]->CC_TIMESTAMP_MID = adcDat[aa]->CC_HEADER_INFO[5];
-    int ee = metaData[39] = adcDat[aa]->CC_TIMESTAMP_HI = adcDat[aa]->CC_HEADER_INFO[6];
+    int ab = metaData[35] = adcDat[aa]->CC_BIN_COUNT = (adcDat[aa]->CC_HEADER_INFO[0] & 0x18) >> 3;
+    //event count is two 16 bit words, this combines them into an int
+    int bb = metaData[36] = adcDat[aa]->CC_EVENT_COUNT = (adcDat[aa]->CC_HEADER_INFO[1] << 16) | adcDat[aa]->CC_HEADER_INFO[2];
+    //CC clock count is three 16 bit words. Literally counting 40MHz clock cycles (not 125MHz, 25MHz, but 40Mhz from pll)
+    int cc = metaData[37] = adcDat[aa]->CC_TIMESTAMP_LO = adcDat[aa]->CC_HEADER_INFO[3];
+    int dd = metaData[38] = adcDat[aa]->CC_TIMESTAMP_MID = adcDat[aa]->CC_HEADER_INFO[4];
+    int ee = metaData[39] = adcDat[aa]->CC_TIMESTAMP_HI = adcDat[aa]->CC_HEADER_INFO[5];
 
     int ff = metaData[7] = adcDat[aa]->bin_count_rise = AC_INFO[0][9] & 0x0F;
 
@@ -125,6 +123,9 @@ int *SuMo::get_AC_info(bool PRINT, int frontEnd, int count, double time,
              << endl;
         cout << "bin count rise edge: " << ff
              << endl;
+
+        unsigned short ref_volt_mv = 1200;
+        unsigned short num_bits = 4096;
 
         for (int i = 0; i < 5; i++) {
             cout << "PSEC:" << i;

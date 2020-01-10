@@ -27,7 +27,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${source_dir}/include)
 
 
-add_compile_options(-Wall -Wextra -Wpedantic -fstack-protector)
+add_compile_options(-g -Wall -Wextra -Wpedantic -fstack-protector)
 
 add_library(SuMo
         ${LIBRARY_SOURCE_DIR}/SuMo.cpp

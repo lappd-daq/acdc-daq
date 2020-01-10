@@ -77,7 +77,6 @@ int SuMo::read_CC(bool SHOW_CC_STATUS, bool SHOW_AC_STATUS, int device, int trig
                 if (print) cout << "error: no data in buffer on device #" << device << endl;
                 return -1;
             }
-            cout << "cc_buffersize+2 is " << cc_buffersize+2 << " and samples is " << samples << endl;
 
 
             //debugging, save entire buffer 

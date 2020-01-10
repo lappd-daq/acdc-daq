@@ -70,7 +70,6 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask,
             if (device == 1) usb2.readData(buffer, ac_buffersize + 2, &samples);
             else usb.readData(buffer, ac_buffersize + 2, &samples);
 
-            cout << "samples received: " << samples << " on board " << boardAddress << endl;
 
             //if the number of samples received is negative, 
             //that means the retval in readData was -1 and the
@@ -78,6 +77,7 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask,
             if(samples < 0)
             {
                 cout << "No data were in the usb buffer on read mode board address: " << boardAddress << endl;
+                throw std::exception();
             }
 
 
@@ -105,33 +105,36 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask,
             ACDC_bufferfile.close();
             */
             //end debugging printing
+     
 
-            /* packet flags */
-           
-            int data_header = 0;
-            int data_adc_footer = 0;
-            int data_footer = 0;
-            int usb_read_offset_flag = -1;
-
-            /* check data in packet */
+            //save CC meta-data at the front of every buffer
+            int save_byte_count = 0;
             int checkpkt = 0;
-            while (checkpkt < cc_buffersize) {
-                adcDat[boardAddress]->CC_HEADER_INFO[checkpkt] = buffer[checkpkt];
-                if (print) cout << checkpkt << ":" << buffer[checkpkt] << "  ";
-
-                if (buffer[checkpkt] == dataPacketStart) {
-                    usb_read_offset_flag = checkpkt;
-                    break;
+            bool start_found = false;
+            //save a constant number of bytes after 1234, set in definitions as ccinfoBuffersize
+            while(save_byte_count < ccinfoBuffersize && checkpkt < cc_buffersize+2) {
+                //have not found start byte 1234 yet
+                if(start_found == false)
+                {
+                    if(buffer[checkpkt] == usbPacketStart)
+                    {
+                        start_found = true;
+                    }
+                }
+                else
+                {
+                    adcDat[boardAddress]->CC_HEADER_INFO[save_byte_count] = buffer[checkpkt];
+                    save_byte_count++;
+                    //cout << "Adding byte to cc-header-info["<<save_byte_count<<"] = " << buffer[checkpkt] << endl;
                 }
                 checkpkt++;
             }
 
-            if (usb_read_offset_flag < 0) {
-                BOARDS_TIMEOUT[boardAddress] = true;
-                if (print) cout << "timeout on board " << boardAddress << endl;
-                continue;
-            }
 
+
+            int data_header = 0;
+            int data_adc_footer = 0;
+            int data_footer = 0;
             /* interpret data packet, save raw data to file if enabled */
             for (int i = 0; i < ac_buffersize; i++) {
                 if (buffer[i] == usbPacketStart) adcDat[boardAddress]->PKT_HEADER = i;
@@ -150,29 +153,16 @@ int SuMo::read_AC(unsigned int trig_mode, bool *mask,
                 }
             }
 
-            CC_BIN_COUNT = (buffer[1] & 0x18) >> 3;
-            CC_EVENT_NO = buffer[2];
+            //don't know what the &0x18 is about or the 3 bit shift. 
+            CC_BIN_COUNT = (adcDat[boardAddress]->CC_HEADER_INFO[0] & 0x18) >> 3;
+            //evt number in CC is two 16 bit counters, with most significant coming first
+            unsigned int evt_no_upper = adcDat[boardAddress]->CC_HEADER_INFO[1];
+            unsigned int evt_no_lower = adcDat[boardAddress]->CC_HEADER_INFO[2];
+            CC_EVENT_NO = (evt_no_upper << 16) | evt_no_lower;
 
-            if (print) {
-                cout << buffer[0] << "," << buffer[1] << "," << buffer[2] << ","
-                     << buffer[3] << "," << buffer[4] << "," << buffer[5] << "," << endl;
-                cout << "packet header index " << adcDat[boardAddress]->PKT_HEADER << endl;
-                cout << "packet data indices " << adcDat[boardAddress]->DATA_HEADER[0] << ","
-                     << adcDat[boardAddress]->DATA_ADC_END[0] << ","
-                     << adcDat[boardAddress]->DATA_FOOTER[0] << " "
-                     << adcDat[boardAddress]->DATA_HEADER[1] << "," << adcDat[boardAddress]->DATA_ADC_END[1] << ","
-                     << adcDat[boardAddress]->DATA_FOOTER[1] << " "
-                     << adcDat[boardAddress]->DATA_HEADER[2] << "," << adcDat[boardAddress]->DATA_ADC_END[2] << ","
-                     << adcDat[boardAddress]->DATA_FOOTER[2] << " "
-                     << adcDat[boardAddress]->DATA_HEADER[3] << "," << adcDat[boardAddress]->DATA_ADC_END[3] << ","
-                     << adcDat[boardAddress]->DATA_FOOTER[3] << " "
-                     << adcDat[boardAddress]->DATA_HEADER[4] << "," << adcDat[boardAddress]->DATA_ADC_END[4] << ","
-                     << adcDat[boardAddress]->DATA_FOOTER[4] << endl;
-                cout << "packet footer index " << adcDat[boardAddress]->PKT_FOOTER << endl;
-            }
-            /* real data starts here: */
-            /* form usable data from packets */
 
+
+            //waveform data parsing here
             for (int i = 0; i < numChipsOnBoard; i++) {
                 //get raw data from buffer
                 for (int j = 0; j < psec_buffersize; j++) {

@@ -7,6 +7,7 @@
 #define AC_CHANNELS           30       // number of channels per AC/DC board
 #define psec_buffersize       1536     // data size per ASIC
 #define infoBuffersize        13       // meta-data size per ASIC
+#define ccinfoBuffersize 	  10 		//meta-data on CC only, counting starting after 1234 byte
 #define USB_READ_OFFSET       13       // start of data in packet
 #define psecSampleCells       256      // length of PSEC4 waveform in sample steps
 #define numChipsOnBoard       5        // number of PSEC4's on each AC/DC boards

@@ -49,7 +49,7 @@ struct packet_t {
 
     unsigned int firmware_version;
 
-    unsigned int CC_HEADER_INFO[cc_buffersize];
+    unsigned int CC_HEADER_INFO[ccinfoBuffersize];
     unsigned int CC_TIMESTAMP_LO;
     unsigned int CC_TIMESTAMP_MID;
     unsigned int CC_TIMESTAMP_HI;
